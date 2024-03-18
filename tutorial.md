@@ -243,7 +243,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 ### Clion 调试 ROS
 
-clion编辑器主要是在debug比较方便，但是配置上需要稍微注意下。  
+​	clion编辑器主要是在debug比较方便，但是配置上需要稍微注意下。与在终端中直接使用catkin_make来编译程序相比，clion在编译程序中使用的还是cmake(catkin只是一种包装好的cmake方式，本质上还是cmake) | 这里加载CMakeList.txt文件的时候就会出现如下提示，说明clion中的编辑方式是cmake，只不过修改了一些文件的输出路径到ros程序中的devel与build文件夹中
+
+![image-20240315133235356](figure/image-20240315133235356.png)
 
 #### 项目打开目录
 
@@ -399,21 +401,192 @@ Debug过程中的设置
 
 
 
-
-
 ## Bash文件 
 
-想设计一个bash文件，可以一键将这个slam环境中需要的第第三方库都完成安装
+​	想设计一个bash文件，可以一键将这个slam环境中需要的第三方库都完成安装(这种功能不复杂) | 太复杂的功能实现不了，但是安装第三方库没问题。
+
+- 输入 ./install.sh 需要加上thirdparty的路径 使用的内核数
+
+```bash
+#!/bin/bash
+
+# 开始安装过程 依次为 | ceres 1.14.0 | eigen 3.3.7 | pcl 1.11 | Sophus
+chmod +x install.sh
+
+echo "-------------------------------------------------------------------Starting the install process-------------------------------------------------------------------"
+
+# 调用脚本文件是 需要加上thirdparty的路径 作为bash文件的第一个参数
+#THIRDPARTY_PATH=/home/supercoconut/Myfile/thirdparty
+THIRDPARTY_PATH=$1
+echo "The directory of thirdparty is " $1
+# make使用的内核数 作为bash文件的第二个参数
+NR_JOBS=${2:-$(nproc)}
+set -e
+
+echo "-------------------------------------------------------------------Installing the Ceres-------------------------------------------------------------------"
+sudo apt-get update						# 在docker中出现无法定位一些安装包的时候，使用update可以解决
+sudo apt-get install -y liblapack-dev libsuitesparse-dev libgflags-dev
+sudo apt-get install -y libgoogle-glog-dev libgtest-dev
+sudo apt-get install -y libcxsparse3
+cd ${THIRDPARTY_PATH}/ceres-solver-1.14.0/
+mkdir build && cd build
+cmake ..
+make -j${NR_JOBS}
+sudo make install
 
 
+echo "-------------------------------------------------------------------Installing the Eigen-------------------------------------------------------------------"
+cd ${THIRDPARTY_PATH}/eigen-3.3.7/
+mkdir build && cd build
+cmake ..
+sudo make install
+
+
+echo "-------------------------------------------------------------------Installing the pcl-------------------------------------------------------------------"
+sudo apt-get update
+sudo apt-get install -y build-essential linux-libc-dev cmake cmake-gui libusb-1.0-0-dev libusb-dev libudev-dev
+sudo apt-get install -y mpi-default-dev openmpi-bin openmpi-common
+sudo apt-get install -y libflann1.9 libflann-dev  # ubuntu20.4对应1.9
+sudo apt-get install -y libboost-all-dev libqhull* libgtest-dev freeglut3-dev pkg-config libxmu-dev libxi-dev
+sudo apt-get install -y mono-complete libopenni-dev libopenni2-dev
+cd ${THIRDPARTY_PATH}/pcl/
+mkdir build && cd build
+cmake  -DCMAKE_BUILD_TYPE=None ..
+make -j${NR_JOBS}
+sudo make install
+
+
+echo "-------------------------------------------------------------------Installing the fmt-------------------------------------------------------------------"
+cd ${THIRDPARTY_PATH}/fmt/
+mkdir build && cd build
+cmake ..
+make -j${NR_JOBS}
+sudo make install
+
+
+echo "-------------------------------------------------------------------Installing the Sophus-------------------------------------------------------------------"
+cd ${THIRDPARTY_PATH}/Sophus/
+mkdir build && cd build
+cmake ..
+make -j${NR_JOBS}
+sudo make install
+
+# 结束
+exit 0
+
+```
+
+
+
+参考链接
+
+1. https://wangdoc.com/bash/script bash脚本入门
 
 
 
 ## Docker 环境配置
 
-- docker环境的配置 除去clion远程来控制docker中的程序进行调试，还有就是直接将本地的目录挂载到docker中进行开发
+- docker环境的配置 除去clion远程来控制docker中的程序进行调试，还有就是直接将本地的目录挂载到docker中进行开发。在docker中使用的时候需要设置远程桌面的连接
 
-    
+
+
+
+
+补充缺少的文件:
+
+docker cp /home/supercoconut/groundfusion 6a961944a2b6:/home
+
+docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 程序部署
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Python 部署
+
+- LibTorch部署PyTorch模型
+- https://blog.csdn.net/qq_44895181/article/details/131521945 介绍Libtorch用于部署模型
+- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
