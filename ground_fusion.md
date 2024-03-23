@@ -10,13 +10,40 @@
 
 
 
-### 关于 nvidia驱动 | cuda | cudnn 安装
+
+
+### nvidia驱动 | cuda | cudnn | libtorch | conda安装
+
+**最需要注意的部分：可以在安装cuda | cudnn | libtorch之前先安装conda —> 这样可以在一个虚拟环境中完成环境的管理，后期想进行环境的替换或者移植到另一台设别上，也都是很方便的(给我一种docker的感觉—>但是conda更像是管理学习相关的虚拟环境，对于其他情况，其效果应该没有docker方便)**
+
+首先是关于显卡驱动 | cuda | cudnn方面的解释(因为这里没有去使用anaconda去管理环境)
+
+- 显卡驱动明显就是让图形化界显示的更好一些的手段——安装之后就可以使用nvidia-smi来获取driver以及支持的cuda最高版本信息(并不代表安装上了cuda)
+- cuda 就是让系统更好的利用显卡设备
+- cudnn 更好地利用显卡设备来处理深度学习
+- libtorch 就是提供一种C++的方式来搭建模型来处理输数据(模型搭建好之后还是需要python自己训练好的模型权重)
+
+
+
+在安装上：
 
 1. nvidia驱动一直是一个比较简单的安装项。只需要自己在设置里找到对应的位置就可以直接安装。在安装过程中需要设置一个boot的密码，然后reboot。在reboot之后一定不要选择continue boot(也就是第一项)
     - 反正是reboot之后会出现四个选项，选择第一项就是continue boot(选择之后重新启动也没有完成显卡驱动安装 | 这次安装选择的是第二项) 
 2. 安装cuda以及cudnn可以选择deb或者.run文件的安装方式，但是一定要注意对应的版本问题。这次安装的是cuda-11.8以及cudnn8(cuda的路径/usr/local/cuda-11.8)
 
 ![在这里插入图片描述](figure/3361fbc088234d61a9660950bb76afea.png)
+
+3. libtorch的安装——这里的安装简单，就是找一个版本直接安装 (虽然这里不是严格按照版本的对应关系安装的，但是可以work不出问题) | 直接使用如下的.sh文件安装的
+
+```CPP
+#! /bin/bash
+wget -O LibTorch.zip https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.6.0.zip
+sudo unzip LibTorch.zip -d /usr/local
+```
+
+
+
+
 
 参考链接:
 
@@ -32,9 +59,9 @@ cuda| cudnn官方教程
 
 
 
-目前的思路是使用github中已经写好的libtorch模型来操作
 
-- nvcc -V 显示cuda版本是10.2版本的
+
+
 
 
 
@@ -49,6 +76,12 @@ https://blog.51cto.com/u_15905131/5918429 卸载方法
 - 这个还是可以写的，关于如何使用如何更新
 
 https://blog.csdn.net/weixin_41010198/article/details/109367449
+
+
+
+还有一种方法是使用https://github.com/RichExplor/CNN_VINS 这种方法是直接用Python的方法并且加入了numpy，比起来直接使用libtroch的方法看起来好不少 | 或者是使用libtorch自己的方法来实现功能
+
+https://blog.51cto.com/u_15088375/5735740 解释的是；libtorch的基本解释
 
 
 

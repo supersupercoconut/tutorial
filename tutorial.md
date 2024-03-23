@@ -158,11 +158,17 @@ ADD_SUBDIRECTORY(ov_msckf)
 
 
 
+**CMAKE_PREFIX_PATH 查找路径**
+
+​	给cmake指定了路径去进行查找-相当于为find_package()`，`find_program()`，`find_library()`，`find_file()`和`find_path()指sss定了路径。并且其可以指定的路径有很多个，每一个互相之间用;隔开。同时也三可以指定list命令(其相当于在一个变量的最后再加上一个值，再这里就可以拓宽CMAKE_PREFIX_PATH指定的路径)
+
+```cmake
+list(APPEND CMAKE_PREFIX_PATH "/opt/eigen-3.4.0")
+```
 
 
 
-
-**信息输出**
+**message 信息输出**
 
 ```cmake
 # 对于一些未知的路径或者CMakeLists.txt中对应变量值，都可以使用这种方式进行输出
@@ -510,7 +516,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
-## 程序部署
+s
 
 
 
@@ -540,13 +546,13 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
-
-
-## Python 部署
+## Python | libtorch部署
 
 - LibTorch部署PyTorch模型
+
 - https://blog.csdn.net/qq_44895181/article/details/131521945 介绍Libtorch用于部署模型
-- 
+
+    
 
 
 
