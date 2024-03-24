@@ -48,40 +48,36 @@ sudo unzip LibTorch.zip -d /usr/local
 参考链接:
 
 1. [安装教程(但是缺少了最后在bashrc中需要添加的内容)](https://blog.csdn.net/qq_34972053/article/details/127689332?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-8-127689332-blog-119003405.235^v43^pc_blog_bottom_relevance_base5&spm=1001.2101.3001.4242.5&utm_relevant_index=11)
+
 2. https://blog.csdn.net/h3c4lenovo/article/details/119003405
+
+3. [cuda 卸载](https://blog.csdn.net/2301_77554343/article/details/134376103?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-134376103-blog-121158255.235^v43^pc_blog_bottom_relevance_base5&spm=1001.2101.3001.4242.1&utm_relevant_index=3)
+
+4. [卸载教程](https://blog.51cto.com/u_15905131/5918429)
+
+5. [libtorch使用教程](https://blog.51cto.com/u_15088375/5735740)
+
+    
 
 cuda| cudnn官方教程
 
 1. cudnn https://developer.nvidia.com/rdp/cudnn-archive 
+
 2. cuda https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=20.04&target_type=deb_local
 
+    
 
 
 
 
 
+PS: 目前碰到的问题
+
+- 使用cuda永远在提示版本的问题或者是一个张量的溢出-更换了好几个版本都不能正常使用 —— CNN VINS中用的那种方法还没看懂(估计是使用ros中对于python的依赖，然后直接去使用虚拟环境中的torch来使用整个模型 | 目前整个superpoint里面只有cpu能使用)
 
 
 
-
-
-一个小的提示: 显卡驱动与cuda还是两个东西的，毕竟不是所有人都是用来跑模型的
-
-
-
-https://blog.51cto.com/u_15905131/5918429 卸载方法
-
-我在使用过的过程中删除了自己安装的显卡驱动
-
-- 这个还是可以写的，关于如何使用如何更新
-
-https://blog.csdn.net/weixin_41010198/article/details/109367449
-
-
-
-还有一种方法是使用https://github.com/RichExplor/CNN_VINS 这种方法是直接用Python的方法并且加入了numpy，比起来直接使用libtroch的方法看起来好不少 | 或者是使用libtorch自己的方法来实现功能
-
-https://blog.51cto.com/u_15088375/5735740 解释的是；libtorch的基本解释
+还是有很多不理解的地方的——conda中安装的环境怎么管理，| cmakelists.txt如何去找conda中的安装的cuda 
 
 
 
