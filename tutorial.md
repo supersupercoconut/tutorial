@@ -490,11 +490,29 @@ exit 0
 
 
 
+****
+
+
+
 ## Docker 环境配置
 
-- docker环境的配置 除去clion远程来控制docker中的程序进行调试，还有就是直接将本地的目录挂载到docker中进行开发。在docker中使用的时候需要设置远程桌面的连接
+### 常用docker命令
 
+- 设置显示 | 设置网络
 
+```dockerfile
+docker run --privileged -it \
+           -e NVIDIA_DRIVER_CAPABILITIES=all \
+           -e NVIDIA_VISIBLE_DEVICES=all \
+           --volume=/home/supercoconut/Myfile/lvisam_ws/src:/home/catkin_ws/src \
+           --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw \
+           --net=host \
+           --ipc=host \
+           --shm-size=1gb \
+           --name=lvisam \
+           --env="DISPLAY=$DISPLAY" \
+           tyoung96/lvi_sam:1.0 /bin/bash
+```
 
 
 
@@ -506,17 +524,11 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
+### **目前使用中的docker容器**
 
+1. b1cc5c857785 其中包含了lvi-sam | groundfusion 其中依赖的image是osrf/ros:noetic-desktop-full。这是一个完成的ubuntu20.04 + ros的image。因为这个image 对于x11这种远程桌面的依赖使用的比较好，程序除了没有办法进行调试之外，没有出现其他问题。因为在配置clion远程的时候一直会报错。总之现在是没有类似的问题了。
 
-
-
-
-
-
-
-
-
-s
+    
 
 
 
@@ -546,7 +558,11 @@ s
 
 
 
-## Python | libtorch部署
+## Python | libtorch | tensorRT | onnx部署
+
+尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧
+
+
 
 - LibTorch部署PyTorch模型
 
