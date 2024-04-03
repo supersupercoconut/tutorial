@@ -321,17 +321,19 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 
+### rosrun | roslaunch
+
+​	这里使用的都是 package_name - 之前碰到了一个tab没有补全(已经source过了)，多打几个字符就能正常的tab补全了。package_name都能在package.xml中查到，launch文件在哪个package下都能找到对应。 
+
+```cmake
+rosrun package_name executable_file_name
+```
 
 
 
-
-
-
-
-
-
-
-
+```cmake
+roslaunch package_name  launch_file_name
+```
 
 
 
@@ -402,6 +404,90 @@ Debug过程中的设置
     
 
 
+
+
+
+## Nvidia 相关
+
+### nvidia驱动 | cuda | cudnn | libtorch | conda安装
+
+**最需要注意的部分：可以在安装cuda | cudnn | libtorch之前先安装conda —> 这样可以在一个虚拟环境中完成环境的管理，后期想进行环境的替换或者移植到另一台设别上，也都是很方便的(给我一种docker的感觉—>但是conda更像是管理学习相关的虚拟环境，对于其他情况，其效果应该没有docker方便)**
+
+首先是关于显卡驱动 | cuda | cudnn方面的解释(这里没有去使用anaconda去管理环境)
+
+- 显卡驱动明显就是让图形化界显示的更好一些的手段——安装之后就可以使用nvidia-smi来获取driver以及支持的cuda最高版本信息(并不代表安装上了cuda)
+- cuda 就是让系统更好的利用显卡设备
+- cudnn 更好地利用显卡设备来处理深度学习
+- libtorch 就是提供一种C++的方式来搭建模型来处理输数据(模型搭建好之后还是需要python自己训练好的模型权重)
+
+
+
+在安装上：
+
+1. nvidia驱动一直是一个比较简单的安装项。只需要自己在设置(ubuntu自带的那种)里找到对应的位置就可以直接安装。在安装过程中需要设置一个boot的密码，然后reboot。在reboot之后一定不要选择continue boot(也就是第一项)
+    - 反正是reboot之后会出现四个选项，选择第一项就是continue boot(选择之后重新启动也没有完成显卡驱动安装 | 这次安装选择的是第二项 enroll那种) 
+    - 但是在后续使用的过程中出现了显卡驱动失效的情况，具体原因是因为系统内核升级了，导致了内核kernel与驱动版本不对应从525升级到了545之后，nvidia-smi可以正常输出
+2. 安装cuda以及cudnn可以选择deb或者.run文件的安装方式，但是一定要注意对应的版本问题。这次安装的是cuda-11.8以及cudnn8(cuda的路径/usr/local/cuda-11.8)
+
+    - cuda的安装完成之后要在bashrc中加入一些语句
+
+    - cudnn的安装之后要发现查找cudnn.h或者cudnn_version.h都没有正常时，需要使用这个[教程](https://blog.csdn.net/weixin_39518984/article/details/120881546)中的命令sudo cp cuda/include/cudnn_version.h /usr/local/cuda/include/ 
+
+![在这里插入图片描述](figure/3361fbc088234d61a9660950bb76afea.png)
+
+3. libtorch的安装——这里的安装简单，-d即指定了安装路径，我已经习惯将其安装到/usr/local中了
+
+```CPP
+#! /bin/bash
+wget -O LibTorch.zip https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-abi-shared-with-deps-1.6.0.zip
+sudo unzip LibTorch.zip -d /usr/local
+```
+
+
+
+参考链接:
+
+1. [安装教程(但是缺少了最后在bashrc中需要添加的内容)](https://blog.csdn.net/qq_34972053/article/details/127689332?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-8-127689332-blog-119003405.235^v43^pc_blog_bottom_relevance_base5&spm=1001.2101.3001.4242.5&utm_relevant_index=11)
+
+2. https://blog.csdn.net/h3c4lenovo/article/details/119003405
+
+3. [cuda 卸载](https://blog.csdn.net/2301_77554343/article/details/134376103?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-134376103-blog-121158255.235^v43^pc_blog_bottom_relevance_base5&spm=1001.2101.3001.4242.1&utm_relevant_index=3)
+
+4. [卸载教程](https://blog.51cto.com/u_15905131/5918429)
+
+5. [libtorch使用教程](https://blog.51cto.com/u_15088375/5735740)
+
+     
+
+cuda| cudnn官方教程
+
+1. cudnn https://developer.nvidia.com/rdp/cudnn-archive 
+2. cuda https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=20.04&target_type=deb_local
+
+
+
+
+****
+
+
+
+还是有很多不理解的地方的——conda中安装的环境怎么管理，cmakelists.txt如何去找conda中的安装的cuda 
+
+
+
+将模型运行到Cpp上还有的方法：onnx以及tensorRT
+
+现在还有一个人的博客写的挺精彩的 
+
+https://arxiv.org/pdf/1711.02508.pdf
+
+https://zhuanlan.zhihu.com/p/96465592
+
+https://zhuanlan.zhihu.com/p/269257787
+
+就是这个博客，很好看
+
+https://sjtu-robotics.com/zh/blog/2024/hello-jacobian/
 
 
 
@@ -524,27 +610,17 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
+参考链接
+
+1. [docker的使用中配置clion的远程开发](https://blog.csdn.net/maogeweiwu/article/details/135818633?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-135818633-blog-116946321.235%5Ev43%5Epc_blog_bottom_relevance_base5&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-135818633-blog-116946321.235%5Ev43%5Epc_blog_bottom_relevance_base5&utm_relevant_index=6)
+
+
+
 ### **目前使用中的docker容器**
 
 1. b1cc5c857785 其中包含了lvi-sam | groundfusion 其中依赖的image是osrf/ros:noetic-desktop-full。这是一个完成的ubuntu20.04 + ros的image。因为这个image 对于x11这种远程桌面的依赖使用的比较好，程序除了没有办法进行调试之外，没有出现其他问题。因为在配置clion远程的时候一直会报错。总之现在是没有类似的问题了。
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -570,6 +646,15 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
     
 
+ncnn 专门使用CPU来进行推理的模型
+
+- 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
+
+    
+
+pybind11: C++ 工程如何提供 Python 接口
+
+首先要强调的是，有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
 
 
 
@@ -583,10 +668,17 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
+## 传感器
 
+### IMU 
 
+1. 6轴传感器 三个轴的加速度+三个轴的角速度 -> 这样可以积分得到三个轴的上面的欧拉角
 
+2. 9轴传感器 在6轴的基础上，多了三个磁力计 -> 在室内使用的效果很差
 
+    
+
+https://zhuanlan.zhihu.com/p/344884686
 
 
 
