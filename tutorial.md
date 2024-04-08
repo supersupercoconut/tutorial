@@ -11,6 +11,23 @@
 
 
 
+## Linux 设置
+
+- 安装第三方库的时候，如果使用的是源码安装，一般都是直接使用git下载之后，mkdir build && cd build，然后最后sudo make install。这种安装方式，会将文件安装到 /usr/local/bin.
+- 使用apt-get的安装方法，系统安装软件一般在/usr/share，可执行的文件在/usr/bin，配置文件可能安装到了/etc下等。文档一般在 /usr/share；可执行文件 /usr/bin；配置文件 /etc；lib文件 /usr/lib
+
+
+
+
+
+
+
+
+
+****
+
+
+
 ## 运行环境设置(ROS1)
 
 
@@ -622,29 +639,31 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
     
 
+2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint的模型，已经成功运行了。
 
 
 
 
 
-
-
-
-
+****
 
 
 
 ## Python | libtorch | tensorRT | onnx部署
 
-尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧
+
+
+## libtorch
+
+- 尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧。出现的问题就是需要频繁地更换版本来满足在github中程序所需要的版本 (删除起来其实也很简单的)。使用的版本：
+
+    - cuda 11.3
+
+        
 
 
 
-- LibTorch部署PyTorch模型
-
-- https://blog.csdn.net/qq_44895181/article/details/131521945 介绍Libtorch用于部署模型
-
-    
+  
 
 ncnn 专门使用CPU来进行推理的模型
 
@@ -654,17 +673,37 @@ ncnn 专门使用CPU来进行推理的模型
 
 pybind11: C++ 工程如何提供 Python 接口
 
-首先要强调的是，有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
+
+
+## onnx
+
+​	对于tensorRT  如果想部署pytorch的模型，就需要将模型的pt文件转换为onnx模型
+
+- onnx 有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
 
 
 
+## TensorRT
+
+​	之前看到的博客中提到了tensorRT的推理速度提升的比传统方法好一些,所以这里会尝试使用tensorRT方法。github上面代码使用的tensorRT的版本是8.4.1.5。但是这个版本只能使用30系列的GPU，40系列的GPU使用的框架与30系列不相同，所以会导致版本的不对应，需要重新进行转换。
 
 
 
+**关于tensorRT的安装**
+
+(1) 只安装到这里就可以了,官网后面还有一堆onnx的安装wheel。 使用方法为https://suborbit.net/posts/tensorrt-tutorial/
+
+![image-20240408194135576](figure/image-20240408194135576.png)
+
+- 但是添加环境变量可使用这种方法 https://blog.csdn.net/qq_46111138/article/details/131686150
 
 
 
+参考链接: https://blog.csdn.net/qq_41938005/article/details/132846925
 
+
+
+****
 
 
 
@@ -676,9 +715,15 @@ pybind11: C++ 工程如何提供 Python 接口
 
 2. 9轴传感器 在6轴的基础上，多了三个磁力计 -> 在室内使用的效果很差
 
-    
+​	https://zhuanlan.zhihu.com/p/344884686
 
-https://zhuanlan.zhihu.com/p/344884686
+
+
+
+
+
+
+## 
 
 
 
