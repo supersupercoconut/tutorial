@@ -8,22 +8,21 @@
 
 ## ImMesh(lidar + imu)
 
-建图部分使用的是 voxel + mesh，可以直接用其生成depth图像。
+建图部分使用的是 voxel + mesh，可以直接用其生成depth图像。voxel即体素(体素就是在3D空间中的最小空间，类似与2D平面中的像素点)，mesh我的个人理解就是一个面，跟论文中说的trianglar facet是一个东西(三角形的面)
 
 ![image-20240407211446720](figure/image-20240407211446720.png)
 
-- 定位：将lidar scan转换到了一个global frame中，雷达的点云数据就可以作为新的三角mesh的顶点(具体的方法在VoxelMap文章中)。主要作用是 (1)保证lidar点云的准确 (2)提供一个plane方便3D点投影到2D点提高速率
+- 定位：将lidar scan转换到了一个global frame中，雷达的点云数据就可以作为新的三角mesh的顶点(具体的方法在VoxelMap文章中)。主要作用是 (1)保证lidar点云的准确 (2)提供一个plane方便3D点投影到2D点提高建图速率
 - 建图：以voxel为单位进行处理
 
 首先就先介绍一个voxel中的mesh平面的形成
 
-- 顶点的选取：对于一个voxel来说(体素就是在3D空间中的最小空间，类似与2D平面中的像素点)，会有很多Lidar扫描到的点落到这个voxel中，这些点本身就是通过反射得到的，所以点的位置如果准确的话(这里就需要依靠odometry的准确度)，是可以描述出一种轮廓来的。对这些点进行处理(downsample以及限制距离)可以选择出一些点可以作为mesh的顶点，这也是后续处理的基础。
+- 顶点的选取：对于一个voxel来说，会有很多Lidar扫描到的点落到这个voxel中，这些点本身就是通过反射得到的，所以点的位置如果准确的话(这里就需要依靠odometry的准确度)，是可以描述出一种轮廓来的。对这些点进行处理(downsample以及限制距离)可以选择出一些点可以作为mesh的顶点，这也是后续处理的基础。
     - 注意：这里一个voxel中顶点不是仅仅选取落到整个voxel中的点，这种会导致的情况是voxel中的mesh平面与其他mesh平面之间是没有边连接的，如下图。所以本文使用的方法是选择与这个voxel中的点距离小于一个固定值的点(会降重)，最后形成一个顶点集合$V_i$
 
 ![image-20240407201613402](figure/image-20240407201613402.png)
 
-- voxel级别的mesh/facet的形成
-    - 直接使用上面的点进行生成mesh。
+- voxel级别的mesh/facet的形成(直接使用上面的点进行生成，并且是现在2D平面中生成)
     - 3D点转到2D平面: 2D Delaunay triangulation方法可以直接在2D 平面上生成三角形(我一直将这里的mesh认为是三角形的面，即facet)。顶点集合$V_i$中的点会全部投影到平面上(localization系统中找到了这个2D平面)，之后将2D的mesh转换到3D中形成3D mesh。时间效率可以从O(n^2)变成O(nlog(n))。
 
 ![image-20240407204213280](figure/image-20240407204213280.png)
@@ -44,19 +43,35 @@
 
 ## R3live(lidar + camera + imu)
 
+![image-20240408135033542](./figure/image-20240408135033542.png)
 
+LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状)，VIO用于地图渲染(也就是给点云提供色彩信息)。点云地图中最小单位是point,其保存在voxel(voxel作为一个小的容器可以包含一部分的点云数据)。一帧新的点云获取之后，会将其分到对应的voxel中。
 
-- 
+- LIO 使用的是降低point-to-plane的残差来估计状态(在FAST-LIO2中提出的概念)。新来一帧数据，估计出位姿之后，其包含的点在实际环境中的哪一个voxel就被确定了。
 
-
-
-1. texture rendering 纹理渲染 -> 难道这里对于这个纹理信息的说明仅仅只是一个对于点云颜色的增加么
-2. photometric error 光度误差指的又是什么(是重投影误差么) 应该不是重投影误差，这个是在r2live中使用的
-3. Motion  compensation Immesh与R3live中都提到了这个运动补偿的说法
-
+**PS: 文章中没有明确写后面的tracked map points是怎么得到的，但是看流程图上面的解释应该是从LIO生成的点云地图中读取的，毕竟LIO是要比VIO先开始工作的。**
 
 
 
+**重点是VIO的使用**
+
+依据是一个点的色彩是这个点的固有属性，相机的旋转与平移不会影响色彩。估计位姿采用流程为两步 (1) 最小化 frame-to-frame 的重投影误差 (2) 最小化 frame-to-map 光度误差
+
+- frame-to-frame
+
+  光流找帧与帧之间的特征点，然后PnP最小化投影误差
+
+  ![image-20240408131354052](./figure/image-20240408131354052.png)
+
+  上面是使用visual方式得到的R,t观测值，IMU得到一个先验的状态值，用ESIKF卡尔曼滤波做了一个融合即VIO的位姿估计。
+
+- frame-to-map
+
+  - 所谓的光度误差就是点在global map中的颜色(即使用之前帧渲染出来的颜色)与当前帧中观测到的颜色之间的差值。下图就是将上一步上得到的Tracked map point投影到当前帧，即得到了这个点对应的像素位置，用周围像素点的RGB值做插值就可以得到在当前帧中这个点的颜色信息。
+
+    ![image-20240408132810567](./figure/image-20240408132810567.png)
+
+  - 对误差表达Taylor展开-因为其中包含了(1) 当前帧位姿 (2)地图点位置 (3)地图点颜色，所以最小化误差的时候可以将这三者进行一个联合优化。这样即实现了地图点颜色的更新，并且当前帧的位姿与地图点位置更加准确。被优化后的当前帧位姿作为下一帧VIO/LIO的起始状态。
 
 
 
@@ -64,7 +79,9 @@
 
 
 
-## RTabMap
+
+
+
 
 
 
@@ -74,27 +91,15 @@
 
 
 
+## RTabMap
 
 
 
 
-目前关于这个lidar与imu一起使用的调研
-
-- r3live
-- immesh
-
-https://blog.csdn.net/lovely_yoshino/article/details/126572997
-
-ROS中的tf工具 
-
-https://blog.csdn.net/wilylcyu/article/details/51724966
 
 
 
-这个对于体素解释的很清楚
 
-https://blog.csdn.net/a_eastern/article/details/107508861?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3-107508861-blog-121698677.235%5Ev43%5Epc_blog_bottom_relevance_base1&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7ECTRLIST%7ERate-3-107508861-blog-121698677.235%5Ev43%5Epc_blog_bottom_relevance_base1&utm_relevant_index=6
 
-这个也是对于voxel的解释
 
-https://blog.csdn.net/m0_47163076/article/details/121698677
+
