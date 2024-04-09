@@ -87,11 +87,13 @@ LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状
 
 
 
-## Kimera | Kimera2
+## Kimera | Kimera2(lidar+)
 
 
 
-## RTabMap
+
+
+## RTAB-Map(lidar + IMU)
 
 
 
