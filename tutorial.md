@@ -639,7 +639,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
     
 
-2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint的模型，已经成功运行了。
+2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint+superglue的模型，已经成功运行了。
 
 
 
