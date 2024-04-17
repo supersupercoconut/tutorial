@@ -665,7 +665,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
   
 
-ncnn 专门使用CPU来进行推理的模型
+ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发现他们使用的网络部署模型）
 
 - 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
 
