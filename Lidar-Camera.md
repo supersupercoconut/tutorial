@@ -1,5 +1,9 @@
 
 
+[TOC]
+
+
+
 # Lidar + Camera
 
 这部分主要是用于调研Lidar与Camera联合建图
@@ -94,6 +98,16 @@ LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状
 ## RTabMap
 
 
+
+## FC-Hetero
+
+Fast and Autonomous Aerial Reconstruction Using a LiDAR-Visual Heterogeneous Multi-UAV System。一个很好的框架，2024的IROS，但是论文还是没有发出来。多机多传感器宾并且还是异构的形式。
+
+
+
+这里还提到了一种新的数据结构
+
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 
 
