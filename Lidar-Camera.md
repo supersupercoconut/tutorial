@@ -117,23 +117,121 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 ## LiDAR4D(Lidar-only)
 
-​	用nerf(神经辐射场)去做了一个动态场景的视角合成(时空视角) - 即可以显示一个物体在场景中的位置信息与时间信息。特点主要有如下三种: 
+​	用nerf(神经辐射场)去做了一个动态场景的视角合成(时空视角) - 即可以显示一个物体在场景中的位置信息与时间信息。
+
+特点主要有如下三种: 
+
+
+
+
 
 - multi-planar
-
 - grid
-
 - ray-drop 
+
+
+
+文章需要解决的问题主要有三个
+
+1. 动态场景
+
+2. 雷达数据是大尺度的并且稀疏
+
+3. 为了最后生成场景的真实 - 需要保留强度与射线特性(这也是我最不理解的部分)
 
     
 
 
 
-PS: 目前
+输入: 雷达点云(每一帧点云有对应的位姿信息以及时间戳信息)，点云上对应的点包含了xyz以及强度信息。
+
+输出: (1)对于整个动态场景的重建 (2) 输入一个位姿以及时间 可以输出对应的雷达点云信息
 
 
 
 
 
 
+
+
+
+补充信息:
+
+​	在这种论文中会提到一个camera与lidar之间稀疏性的比较: 因为camera扫描到的信息更多(因为相机扫描方式得到的点数据会被雷达扫描得到的更加稠密，但是相机受到基线影响比较大，在距离上不能与雷达相比，精度也不算高)
+
+
+
+
+
+
+
+
+
+
+
+
+
+****
+
+
+
+
+
+感谢！因为我之前基本没有使用过python以及conda相关的部分，把这个pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121以为是安装cuda+torch的命令，实际上这里只是安装cuda版本对应的pytorch。我在本机中安装了cuda11.8之后就解决了上面的错误，成功运行之后
+
+
+
+运行教程:
+
+1. 安装conda https://www.eriktse.com/technology/1008.html
+
+2. 之后按照github上面的教程进行
+
+​	在运行的时候提示了本机安装的cuda11.3与conda中使用的cuda12.1不匹配，故删除cuda11.3，再次运行时提示nvcc: not found，个人感觉应该是没有cuda导致，在本机重新安装cuda11.8(对应的命令应该为pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118)。
+
+```python
+git clone https://github.com/ispc-lab/LiDAR4D.git
+cd LiDAR4D
+
+conda create -n lidar4d python=3.9
+conda activate lidar4d
+
+# PyTorch
+# CUDA 12.1
+pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+# CUDA 11.8
+# pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
+# CUDA <= 11.7
+# pip install torch==2.0.0 torchvision torchaudio
+
+# Dependencies
+pip install -r requirements.txt
+```
+
+- 但是我本机环境中为了运行其他SLAM算法将gcc降低到了7.5，在安装tiny-cuda-nn出现了fatal error: filesystem: No such file or directory       #include <filesystem>的错误，将其修改为<experimental/filesystem>也解决不了问题，故继续将整体算法更改到docker环境中，避免了修改gcc版本后影响其他算法运行。
+    - 使用<experimental/filesystem>的错误如下:[**error: no instance of constructor nlohmann::basic_json::basic_json [with ObjectType=std::map, ArrayType=std::vector, StringType=std::string, BooleanType=__nv_bool, NumberIntegerType=int64_t, NumberUnsignedType=uint64_t, NumberFloatType=double, AllocatorType=std::allocator, JSONSerializer=nlohmann::adl_serializer, BinaryType=std::vector>\] matches the argument list argument types are: (__nv_bool) detected during: instantiation of void __gnu_cxx::new_allocator<_Tp>::construct(_Up \*, _Args &&...) [with _Tp=nlohmann::basic_json>>, _Up=nlohmann::basic_json>>, _Args=<__nv_bool &>]**](https://www.google.com/search?sca_esv=fa55d09ee79ad1d1&sca_upv=1&sxsrf=ACQVn0_FSQTqJZQR1b3LQoHJwmFA1_jcEQ:1713791914932&q=error:+no+instance+of+constructor+nlohmann::basic_json::basic_json+[with+ObjectType%3Dstd::map,+ArrayType%3Dstd::vector,+StringType%3Dstd::string,+BooleanType%3D__nv_bool,+NumberIntegerType%3Dint64_t,+NumberUnsignedType%3Duint64_t,+NumberFloatType%3Ddouble,+AllocatorType%3Dstd::allocator,+JSONSerializer%3Dnlohmann::adl_serializer,+BinaryType%3Dstd::vector>]+matches+the+argument+list+argument+types+are:+(__nv_bool)+detected+during:+instantiation+of+void+__gnu_cxx::new_allocator<_Tp>::construct(_Up+*,+_Args+%26%26...)+[with+_Tp%3Dnlohmann::basic_json>>,+_Up%3Dnlohmann::basic_json>>,+_Args%3D<__nv_bool+%26>]&sa=X&ved=2ahUKEwj6rruy9NWFAxUdr1YBHQlwBU0QgwN6BAg0EAE)
+
+```python
+git clone --recursive https://github.com/nvlabs/tiny-cuda-nn
+cd tiny-cuda-nn/bindings/torch
+python setup.py install
+```
+
+- docker选用nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04。在docker中安装conda来方便python库的下载(因为我没怎么运行过python算法，想着在docker中继续使用conda可以方便配置环境)。docker中安装conda与本机安装没有区别。docker中运行剩余命令基本没有问题，除了在运行preprocess_data.sh文件中出现了libX11.so.6与OSError: libGL.so.1的错误，通过下面的命令可以解决：
+
+    - apt-get install libx11-dev 解决 OSError: libX11.so.6: cannot open shared object file: No such file or directory
+
+    - apt-**get** **update** && apt-**get** install libgl1  解决 OSError: libGL.so.1: cannot open shared object file: No such file or directory
+
+        
+
+- 运行bash run_kitti_lidar4d.sh后开始训练数据(我还以为是直接有pt文件可以直接输出，难道是nerf里面不能直接使用.pt文件么，本人也是对于整个python以及nerf一窍不通，哈哈)，这是正常的情况么？总之一共训练了639轮，然后输出结果。
+
+![image-20240423163215694](figure/image-20240423163215694.png)
+
+
+
+下载数据集，即方框中给出来的部分，然后放到data对应的文件夹中。
+
+![image-20240423162845558](figure/image-20240423162845558.png)
 

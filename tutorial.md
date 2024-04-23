@@ -428,14 +428,14 @@ Debug过程中的设置
 
 ### nvidia驱动 | cuda | cudnn | libtorch | conda安装
 
-**最需要注意的部分：可以在安装cuda | cudnn | libtorch之前先安装conda —> 这样可以在一个虚拟环境中完成环境的管理，后期想进行环境的替换或者移植到另一台设别上，也都是很方便的(给我一种docker的感觉—>但是conda更像是管理学习相关的虚拟环境，对于其他情况，其效果应该没有docker方便)**
+**最需要注意的部分：可以在安装cuda | cudnn | libtorch之前先安装conda —> 这样可以在一个虚拟环境中完成环境设置，后期想进行环境的替换或者移植到另一台设备上使用，也都是很方便的(给我一种docker的感觉—>但是conda更像是管理学习相关的虚拟环境，对于其他情况，其效果应该没有docker方便 —— 我现在已经开始在docker容器中直接安装conda 即可以使用conda来方便一些库的安装，又可以设置本地的环境将其与算法要求配套)**
 
 首先是关于显卡驱动 | cuda | cudnn方面的解释(这里没有去使用anaconda去管理环境)
 
 - 显卡驱动明显就是让图形化界显示的更好一些的手段——安装之后就可以使用nvidia-smi来获取driver以及支持的cuda最高版本信息(并不代表安装上了cuda)
 - cuda 就是让系统更好的利用显卡设备
 - cudnn 更好地利用显卡设备来处理深度学习
-- libtorch 就是提供一种C++的方式来搭建模型来处理输数据(模型搭建好之后还是需要python自己训练好的模型权重)
+- libtorch 就是提供一种C++的方式来搭建模型来处理输数据(模型搭建好之后还是需要python自己训练好的模型权重) —— 目前来看并没有tensorRT好用()
 
 
 
@@ -460,6 +460,14 @@ wget -O LibTorch.zip https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-
 sudo unzip LibTorch.zip -d /usr/local
 ```
 
+4. conda 安装 + 使用
+
+    - 安装 —— 之前在使用conda是在~/.bashrc中设置的环境变量，现在变成在/etc/profile中使用。如果在安装完之后没有显示conda命令,可以使用source，之后就能使用conda。剩余问题可以看这个https://blog.csdn.net/qq_33825817/article/details/88959785。
+
+    ![image-20240423173354662](figure/image-20240423173354662.png)
+
+    
+
 
 
 参考链接:
@@ -474,12 +482,66 @@ sudo unzip LibTorch.zip -d /usr/local
 
 5. [libtorch使用教程](https://blog.51cto.com/u_15088375/5735740)
 
-     
+6. [conda安装](https://www.eriktse.com/technology/1008.html)
+
+      
 
 cuda| cudnn官方教程
 
 1. cudnn https://developer.nvidia.com/rdp/cudnn-archive 
 2. cuda https://developer.nvidia.com/cuda-11-8-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=20.04&target_type=deb_local
+
+
+
+### libtorch
+
+- 尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧。出现的问题就是需要频繁地更换版本来满足在github中程序所需要的版本 (删除起来其实也很简单的)。使用的版本：
+
+    - cuda 11.3
+
+      ​    
+
+
+
+  
+
+ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发现他们使用的网络部署模型）
+
+- 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
+
+  ​    
+
+pybind11: C++ 工程如何提供 Python 接口
+
+
+
+### onnx
+
+​	对于tensorRT  如果想部署pytorch的模型，就需要将模型的pt文件转换为onnx模型
+
+- onnx 有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
+
+
+
+### TensorRT
+
+​	之前看到的博客中提到了tensorRT的推理速度提升的比传统方法好一些,所以这里会尝试使用tensorRT方法。github上面代码使用的tensorRT的版本是8.4.1.5。但是这个版本只能使用30系列的GPU，40系列的GPU使用的框架与30系列不相同，所以会导致版本的不对应，需要重新进行转换。
+
+
+
+**关于tensorRT的安装**
+
+(1) 只安装到这里就可以了,官网后面还有一堆onnx的安装wheel。 使用方法为https://suborbit.net/posts/tensorrt-tutorial/。可以看到能直接在ubuntu中直接使用pip安装一些所需要的包/库。
+
+![image-20240408194135576](figure/image-20240408194135576.png)
+
+- 但是添加环境变量可使用这种方法 https://blog.csdn.net/qq_46111138/article/details/131686150
+
+
+
+参考链接: https://blog.csdn.net/qq_41938005/article/details/132846925
+
+
 
 
 
@@ -492,7 +554,7 @@ cuda| cudnn官方教程
 
 
 
-将模型运行到Cpp上还有的方法：onnx以及tensorRT
+将模型运行到Cpp上还有的方法: tensorRT
 
 现在还有一个人的博客写的挺精彩的 
 
@@ -507,6 +569,16 @@ https://zhuanlan.zhihu.com/p/269257787
 https://sjtu-robotics.com/zh/blog/2024/hello-jacobian/
 
 
+
+
+
+
+
+
+
+
+
+****
 
 
 
@@ -641,65 +713,11 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint+superglue的模型，已经成功运行了。
 
+3. 18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境。
 
 
 
 
-****
-
-
-
-## Python | libtorch | tensorRT | onnx部署
-
-
-
-## libtorch
-
-- 尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧。出现的问题就是需要频繁地更换版本来满足在github中程序所需要的版本 (删除起来其实也很简单的)。使用的版本：
-
-    - cuda 11.3
-
-        
-
-
-
-  
-
-ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发现他们使用的网络部署模型）
-
-- 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
-
-    
-
-pybind11: C++ 工程如何提供 Python 接口
-
-
-
-## onnx
-
-​	对于tensorRT  如果想部署pytorch的模型，就需要将模型的pt文件转换为onnx模型
-
-- onnx 有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
-
-
-
-## TensorRT
-
-​	之前看到的博客中提到了tensorRT的推理速度提升的比传统方法好一些,所以这里会尝试使用tensorRT方法。github上面代码使用的tensorRT的版本是8.4.1.5。但是这个版本只能使用30系列的GPU，40系列的GPU使用的框架与30系列不相同，所以会导致版本的不对应，需要重新进行转换。
-
-
-
-**关于tensorRT的安装**
-
-(1) 只安装到这里就可以了,官网后面还有一堆onnx的安装wheel。 使用方法为https://suborbit.net/posts/tensorrt-tutorial/
-
-![image-20240408194135576](figure/image-20240408194135576.png)
-
-- 但是添加环境变量可使用这种方法 https://blog.csdn.net/qq_46111138/article/details/131686150
-
-
-
-参考链接: https://blog.csdn.net/qq_41938005/article/details/132846925
 
 
 
@@ -719,7 +737,9 @@ pybind11: C++ 工程如何提供 Python 接口
 
 
 
+### lidar
 
+一般来说lidar通过扫描出来的数据在尺度上比图像更大，但是数据没有相机稠密。
 
 
 
