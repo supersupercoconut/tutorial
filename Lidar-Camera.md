@@ -121,10 +121,6 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 特点主要有如下三种: 
 
-
-
-
-
 - multi-planar
 - grid
 - ray-drop 
@@ -133,25 +129,16 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 文章需要解决的问题主要有三个
 
-1. 动态场景
+1. 动态场景重建
 
 2. 雷达数据是大尺度的并且稀疏
 
-3. 为了最后生成场景的真实 - 需要保留强度与射线特性(这也是我最不理解的部分)
-
-    
+3. 为了最后生成场景的真实 - 需要保留强度与射线特性(虽然不理解但是消融实验中其表现的确实好)
 
 
+- 输入: 雷达点云(每一帧点云有对应的位姿信息以及时间戳信息)，点云上对应的点包含了xyz以及强度信息。
 
-输入: 雷达点云(每一帧点云有对应的位姿信息以及时间戳信息)，点云上对应的点包含了xyz以及强度信息。
-
-输出: (1)对于整个动态场景的重建 (2) 输入一个位姿以及时间 可以输出对应的雷达点云信息
-
-
-
-
-
-
+- 输出: (1)对于整个动态场景的重建(但是这里没有形成一套完整的重建流程 即一个数据集中的车辆在前进，其周围的所有的场景都可以被重建出来) (2) 输入一个位姿以及时间 可以输出对应的雷达点云信息
 
 
 
@@ -161,27 +148,7 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 
 
-
-
-
-
-
-
-
-
-
-
-****
-
-
-
-
-
-感谢！因为我之前基本没有使用过python以及conda相关的部分，把这个pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121以为是安装cuda+torch的命令，实际上这里只是安装cuda版本对应的pytorch。我在本机中安装了cuda11.8之后就解决了上面的错误，成功运行之后
-
-
-
-运行教程:
+### 运行教程
 
 1. 安装conda https://www.eriktse.com/technology/1008.html
 
@@ -235,3 +202,10 @@ python setup.py install
 
 ![image-20240423162845558](figure/image-20240423162845558.png)
 
+
+
+
+
+相关的nerf/3DGS https://zhuanlan.zhihu.com/p/690749208
+
+https://arxiv.org/pdf/2403.11367v1.pdf 3DGS使用在重定位上
