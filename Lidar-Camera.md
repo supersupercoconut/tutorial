@@ -101,7 +101,7 @@ LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状
 
 ## FC-Hetero
 
-Fast and Autonomous Aerial Reconstruction Using a LiDAR-Visual Heterogeneous Multi-UAV System。一个很好的框架，2024的IROS，但是论文还是没有发出来。多机多传感器宾并且还是异构的形式。
+Fast and Autonomous Aerial Reconstruction Using a LiDAR-Visual Heterogeneous Multi-UAV System。一个很好的框架，2024的IROS，但是论文还是没有发出来。多机多传感器并且还是异构的形式。
 
 
 
