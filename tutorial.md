@@ -16,9 +16,18 @@
 - 安装第三方库的时候，如果使用的是源码安装，一般都是直接使用git下载之后，mkdir build && cd build，然后最后sudo make install。这种安装方式，会将文件安装到 /usr/local/bin.
 - 使用apt-get的安装方法，系统安装软件一般在/usr/share，可执行的文件在/usr/bin，配置文件可能安装到了/etc下等。文档一般在 /usr/share；可执行文件 /usr/bin；配置文件 /etc；lib文件 /usr/lib
 
+​	在使用ubuntu的过程中，看到之前分配的空间不够了。我使用的分区是 /(根目录) | /home | swap area | /boot四个区，但是经常被大量使用的区是/以及/home。但是 /根目录对应的空间是不够了，但是查看Blog的时候都是设置软链接(这种方法我感觉很复杂，有些花里胡哨)，不如直接使用剩余未分配的空间转移给/。下面是我使用的方法:
 
+- 更换挂载 使用一个ubuntu20.04的启动盘，进入BIOS再进入这个系统中(不是使用器重装系统，是选择try ubuntu)，再进入到Gparted(自带的分盘工具)。这么做是因为在使用系统的时候，没法对这个系统的分区进行操作。
 
+![image-20240425130913102](figure/image-20240425130913102.png)
 
+- 从上图的右往左来分配，先选择最右侧的区域(这里对应的是/home，如果其后面没有未分配空间的话，需要先resize这个区的大小，再进行剩余操作)。
+
+![image-20240425131229265](figure/image-20240425131229265.png)
+
+- 最主要的操作就是设置每一个区域的 Free space preceeding，能在这个区域前面生成出来一部分的未分配空间，如此反复，直到在根目录/之后出现一块未分配空间，然后直接扩展/的大小即可。
+- 剩余就是保存设置，等待Gparted完成设置(我2TB的硬盘操作了巨长时间，但是不需要那种软链接的方式)。
 
 
 
@@ -460,7 +469,11 @@ wget -O LibTorch.zip https://download.pytorch.org/libtorch/cu102/libtorch-cxx11-
 sudo unzip LibTorch.zip -d /usr/local
 ```
 
+4. conda 安装 + 使用
 
+    - 安装 —— 之前在使用conda是在~/.bashrc中设置的环境变量，现在变成在/etc/profile中使用。如果在安装完之后没有显示conda命令,可以使用source，之后就能使用conda。剩余问题可以看这个https://blog.csdn.net/qq_33825817/article/details/88959785。
+
+    ![image-20240423173354662](figure/image-20240423173354662.png)
 
 参考链接:
 
@@ -527,6 +540,66 @@ sh /opt/pycharm-2024.1/bin/pycharm.sh
 参考链接:
 
 https://zhuanlan.zhihu.com/p/457328760
+
+
+
+
+
+### libtorch
+
+- 尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧。出现的问题就是需要频繁地更换版本来满足在github中程序所需要的版本 (删除起来其实也很简单的)。使用的版本：
+
+    - cuda 11.3
+
+          
+
+
+
+  
+
+ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发现他们使用的网络部署模型）
+
+- 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
+
+      
+
+pybind11: C++ 工程如何提供 Python 接口
+
+
+
+### onnx
+
+​	对于tensorRT  如果想部署pytorch的模型，就需要将模型的pt文件转换为onnx模型
+
+- onnx 有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
+
+
+
+### TensorRT
+
+​	之前看到的博客中提到了tensorRT的推理速度提升的比传统方法好一些,所以这里会尝试使用tensorRT方法。github上面代码使用的tensorRT的版本是8.4.1.5。但是这个版本只能使用30系列的GPU，40系列的GPU使用的框架与30系列不相同，所以会导致版本的不对应，需要重新进行转换。
+
+
+
+**关于tensorRT的安装**
+
+(1) 只安装到这里就可以了,官网后面还有一堆onnx的安装wheel。 使用方法为https://suborbit.net/posts/tensorrt-tutorial/
+
+![image-20240408194135576](figure/image-20240408194135576.png)
+
+- 但是添加环境变量可使用这种方法 https://blog.csdn.net/qq_46111138/article/details/131686150
+
+
+
+参考链接: https://blog.csdn.net/qq_41938005/article/details/132846925
+
+
+
+****
+
+
+
+
 
 
 
@@ -673,61 +746,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
-## Python | libtorch | tensorRT | onnx部署
 
-
-
-## libtorch
-
-- 尝试使用libtorch的superpoint来运行程序->结果无论在CPU/GPU上都是几百ms一帧，正常的速度应该是几十ms一帧。出现的问题就是需要频繁地更换版本来满足在github中程序所需要的版本 (删除起来其实也很简单的)。使用的版本：
-
-    - cuda 11.3
-
-        
-
-
-
-  
-
-ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发现他们使用的网络部署模型）
-
-- 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
-
-    
-
-pybind11: C++ 工程如何提供 Python 接口
-
-
-
-## onnx
-
-​	对于tensorRT  如果想部署pytorch的模型，就需要将模型的pt文件转换为onnx模型
-
-- onnx 有两个版本的onnxruntime，一个叫onnxruntime，只能使用cpu推理，另一个叫onnxruntime-gpu，既可以使用gpu，也可以使用cpu。
-
-
-
-## TensorRT
-
-​	之前看到的博客中提到了tensorRT的推理速度提升的比传统方法好一些,所以这里会尝试使用tensorRT方法。github上面代码使用的tensorRT的版本是8.4.1.5。但是这个版本只能使用30系列的GPU，40系列的GPU使用的框架与30系列不相同，所以会导致版本的不对应，需要重新进行转换。
-
-
-
-**关于tensorRT的安装**
-
-(1) 只安装到这里就可以了,官网后面还有一堆onnx的安装wheel。 使用方法为https://suborbit.net/posts/tensorrt-tutorial/
-
-![image-20240408194135576](figure/image-20240408194135576.png)
-
-- 但是添加环境变量可使用这种方法 https://blog.csdn.net/qq_46111138/article/details/131686150
-
-
-
-参考链接: https://blog.csdn.net/qq_41938005/article/details/132846925
-
-
-
-****
 
 
 
@@ -747,7 +766,7 @@ pybind11: C++ 工程如何提供 Python 接口
 
 一般来说lidar通过扫描出来的数据在尺度上比图像更大，但是数据没有相机稠密。
 
-
+- 雷达数据一般包含了四个方面，也可以称其为四维即xyz+反射强度。xyz代表了扫描到的点的几何结构，反射强度可以从侧面解释物体的材质与距离。PCL的库中就有XYZI这种点云的数据格式(点云数据的整体反射率也可以衡量一个雷达性能好坏，一般会用10%的反射率的探测距离来说明)
 
 
 
