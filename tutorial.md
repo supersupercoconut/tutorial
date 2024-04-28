@@ -510,6 +510,26 @@ https://sjtu-robotics.com/zh/blog/2024/hello-jacobian/
 
 
 
+### pycharm 
+
+将自己解压好的数据转换一下然后打开对应文件夹进行处理
+
+sudo mv pycharm-2024.1 /opt/
+
+cd /opt/pycharm-2024.1/
+
+如果想启动pycharm就可以使用如下命令
+
+sh /opt/pycharm-2024.1/bin/pycharm.sh
+
+
+
+参考链接:
+
+https://zhuanlan.zhihu.com/p/457328760
+
+
+
 ## Bash文件 
 
 ​	想设计一个bash文件，可以一键将这个slam环境中需要的第三方库都完成安装(这种功能不复杂) | 太复杂的功能实现不了，但是安装第三方库没问题。
@@ -637,27 +657,13 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 1. b1cc5c857785 其中包含了lvi-sam | groundfusion 其中依赖的image是osrf/ros:noetic-desktop-full。这是一个完成的ubuntu20.04 + ros的image。因为这个image 对于x11这种远程桌面的依赖使用的比较好，程序除了没有办法进行调试之外，没有出现其他问题。因为在配置clion远程的时候一直会报错。总之现在是没有类似的问题了。
 
-    
+     
 
 2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint+superglue的模型，已经成功运行了。
 
+    
 
-
-### pycharm 安装
-
-感觉就是平常安装，但是不能像clion这样直接在终端中clion ./来调用clion。这里使用pycharm使用的命令为
-
-```text
-sh /opt/pycharm/pycharm-2020.1/bin/pycharm.sh
-```
-
-
-
-参考链接:
-
-https://zhuanlan.zhihu.com/p/457328760
-
-
+3.  18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境。
 
 
 
@@ -737,7 +743,9 @@ pybind11: C++ 工程如何提供 Python 接口
 
 
 
+### lidar
 
+一般来说lidar通过扫描出来的数据在尺度上比图像更大，但是数据没有相机稠密。
 
 
 
