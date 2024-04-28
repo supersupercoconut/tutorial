@@ -643,6 +643,24 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
+### pycharm 安装
+
+感觉就是平常安装，但是不能像clion这样直接在终端中clion ./来调用clion。这里使用pycharm使用的命令为
+
+```text
+sh /opt/pycharm/pycharm-2020.1/bin/pycharm.sh
+```
+
+
+
+参考链接:
+
+https://zhuanlan.zhihu.com/p/457328760
+
+
+
+
+
 
 
 ****
