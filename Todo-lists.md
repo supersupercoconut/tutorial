@@ -6,14 +6,14 @@
 
 ### wheel
 
-- [ ] ground-fusion论文
+- [x] ground-fusion论文(看过了，但是还是剩下的还是看源码)
 - [ ] Pose estimation based on wheel speed anomaly detection in monocular visual-inertial slam即ground-fusion中的[19]
 - [ ] Tightly-coupled monocu lar visual-odometric slam using wheels and a mems gyroscope即ground-fusion中的[18]
 
 ### vision
 
 - [ ] LEAP-VO: Long-term Effective Any Point Tracking for Visual Odometry (使用tracked point的方法来对动态物体进行去除，据说会比使用语义分割的方法更加节省算力)
-- [ ] let-net(这个还是我看到上一篇论文中看到的部分)
+- [ ] let-net(这个还是我看到上一篇论文中看到的部分) | 这篇论文直到现在还是在更新，而且作者也知道是谁，github上他们也在写设计的逻辑是什么，感觉学习起来应该会更全面一些。对应的数据集全部都在下载了，我2T的硬盘估计里面装载的全部是数据集了。
 - [ ] TartanVO(一直说深度学习的VO，但是我这里还没看过)
 
 ## superpoint + superglue
