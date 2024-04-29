@@ -16,7 +16,9 @@
 - 安装第三方库的时候，如果使用的是源码安装，一般都是直接使用git下载之后，mkdir build && cd build，然后最后sudo make install。这种安装方式，会将文件安装到 /usr/local/bin.
 - 使用apt-get的安装方法，系统安装软件一般在/usr/share，可执行的文件在/usr/bin，配置文件可能安装到了/etc下等。文档一般在 /usr/share；可执行文件 /usr/bin；配置文件 /etc；lib文件 /usr/lib
 
-​	在使用ubuntu的过程中，看到之前分配的空间不够了。我使用的分区是 /(根目录) | /home | swap area | /boot四个区，但是经常被大量使用的区是/以及/home。但是 /根目录对应的空间是不够了，但是查看Blog的时候都是设置软链接(这种方法我感觉很复杂，有些花里胡哨)，不如直接使用剩余未分配的空间转移给/。下面是我使用的方法:
+### Gparted 更改硬盘分区
+
+在使用ubuntu的过程中，看到之前分配的空间不够了。我使用的分区是 /(根目录) | /home | swap area | /boot四个区，但是经常被大量使用的区是/以及/home。但是 /根目录对应的空间是不够了，但是查看Blog的时候都是设置软链接(这种方法我感觉很复杂，有些花里胡哨)，不如直接使用剩余未分配的空间转移给/。下面是我使用的方法:
 
 - 更换挂载 使用一个ubuntu20.04的启动盘，进入BIOS再进入这个系统中(不是使用器重装系统，是选择try ubuntu)，再进入到Gparted(自带的分盘工具)。这么做是因为在使用系统的时候，没法对这个系统的分区进行操作。
 
@@ -471,9 +473,11 @@ sudo unzip LibTorch.zip -d /usr/local
 
 4. conda 安装 + 使用
 
-    - 安装 —— 之前在使用conda是在~/.bashrc中设置的环境变量，现在变成在/etc/profile中使用。如果在安装完之后没有显示conda命令,可以使用source，之后就能使用conda。剩余问题可以看这个https://blog.csdn.net/qq_33825817/article/details/88959785。
+    - 安装 —— 之前在使用conda是在~/.bashrc中设置的环境变量，现在变成在/etc/profile中使用。如果在安装完之后conda命令(command not found),可以使用source /etc/profile，之后就能使用conda。剩余问题可以看这个https://blog.csdn.net/qq_33825817/article/details/88959785。
 
     ![image-20240423173354662](figure/image-20240423173354662.png)
+
+
 
 参考链接:
 
@@ -487,7 +491,9 @@ sudo unzip LibTorch.zip -d /usr/local
 
 5. [libtorch使用教程](https://blog.51cto.com/u_15088375/5735740)
 
-     
+6. [conda安装使用](https://www.eriktse.com/technology/1008.html)
+
+      
 
 cuda| cudnn官方教程
 
@@ -551,7 +557,7 @@ https://zhuanlan.zhihu.com/p/457328760
 
     - cuda 11.3
 
-          
+      ​    
 
 
 
@@ -561,7 +567,7 @@ ncnn 专门使用CPU来进行推理的模型（这个是我在看let-net中发�
 
 - 如果要ONNX模型部署到Android设备上，也需要NCNN来进行部署，而不是直接部署ONNX
 
-      
+  ​    
 
 pybind11: C++ 工程如何提供 Python 接口
 
@@ -767,6 +773,10 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 一般来说lidar通过扫描出来的数据在尺度上比图像更大，但是数据没有相机稠密。
 
 - 雷达数据一般包含了四个方面，也可以称其为四维即xyz+反射强度。xyz代表了扫描到的点的几何结构，反射强度可以从侧面解释物体的材质与距离。PCL的库中就有XYZI这种点云的数据格式(点云数据的整体反射率也可以衡量一个雷达性能好坏，一般会用10%的反射率的探测距离来说明)
+
+
+
+
 
 
 
