@@ -13,7 +13,8 @@
 
 ### vision
 
-- [ ] LEAP-VO: Long-term Effective Any Point Tracking for Visual Odometry (使用tracked point的方法来对动态物体进行去除，据说会比使用语义分割的方法更加节省算力) 这种方法使用的方法是不是与let-net中使用方法相同
+- [ ] LEAP-VO: Long-term Effective Any Point Tracking for Visual Odometry (使用tracked point的方法来对动态物体进行去除，据说会比使用语义分割的方法更加节省算力) —— 光模型的训练就用了4张A100... 
+- [ ] 基于上面给出的LEAP-VO，之前的模型还有TartanVO以及DytanVO。这两种方法应该都是针对动态环境的方法并且不需要使用语义分割网络将物体分割出来
 - [ ] let-net(这个还是我看到上一篇论文中看到的部分) | 这篇论文直到现在还是在更新，而且作者也知道是谁，github上他们也在写设计的逻辑是什么，感觉学习起来应该会更全面一些。对应的数据集全部都在下载了，我2T的硬盘估计里面装载的全部是数据集了。而且这里面提到的Tensorboard是什么东西(https://github.com/linyicheng1/LET-NET-Train/wiki/%E4%BB%A3%E7%A0%81%E9%80%BB%E8%BE%91%E4%BB%8B%E7%BB%8D)
 - [ ] TartanVO(一直说深度学习的VO，但是我这里还没看过)
 
@@ -27,7 +28,13 @@
 
 ## Multi-SLAM
 
-- [ ] 突然就想起来了，多机初始化的部分一直没看。下一次汇报估计就得汇报这个部分的内容
+- [ ] 多机初始化部分(下一次汇报估计就得汇报这个部分的内容)
+
+    - kimera
+
+    - vins那个课题组使用的方法
+
+        
 
 ## else
 
