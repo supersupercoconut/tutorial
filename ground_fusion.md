@@ -138,9 +138,9 @@ https://blog.csdn.net/m0_47163076/article/details/121698677
 
 1. 第一次处理IMU数据的时候，依靠IMU测量得到的重力加速度，将IMU系转换到world系中([参考链接](https://blog.csdn.net/hltt3838/article/details/109514591?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522171342390616800215050781%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=171342390616800215050781&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~baidu_landing_v2~default-1-109514591-null-null.142^v100^pc_search_result_base6&utm_term=Eigen%3A%3AQuaterniond%3A%3AFromTwoVectors%28ng1%2C%20ng2%29.toRotationMatrix%28%29%3B&spm=1018.2226.3001.4187) ) | 这是我能找到的最详细的解释了
 
-![img](figure/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2hsdHQzODM4,size_16,color_FFFFFF,t_70.png)
+<img src="figure/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2hsdHQzODM4,size_16,color_FFFFFF,t_70.png" alt="img" style="zoom: 50%;" />
 
-2. 
+
 
 
 
