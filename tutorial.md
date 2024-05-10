@@ -742,7 +742,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
     
 
-3.  18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境。
+3.  18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境，整个程序是ok的。
 
 
 
