@@ -75,3 +75,71 @@
 
 
 
+eigen单独进行优化——在soc-cheap上实现功能(不使用ceres以及GTSAM)
+
+UWB来解决尺度方面上的drift(比如在有GPS以及无GPS环境切换的过程中，使用1到多个UWB来降低drift)
+
+- 之前的定位肯定是一直有误差存在的，在系统运行的过程中，不断地会加入量测信息，这时候的状态估计是结合两者(状态估计与量测)的协方差，使最终得出来的协方差信息一定是两者协方差的结合量。如果量测信息不准，就继续使用状态进行递推。如果新来的量测是准的，那么就可以使用该量测去降低当前状态估计的协方差，让当前状态更准——这不就让整个系统的不确定性下降了么。因为协方差代表的是真实值与估计值之间的误差，所以有效地使用量测可以抑制状态估计中的累积误差。
+
+
+
+
+
+先验地图生成
+
+- HCTO: Optimality-Aware LiDAR Inertial Odometry with Hybrid Continuous Time Optimization for Compact Wearable Mapping System(没开源)
+
+
+
+基于先验地图的SLAM
+
+- RAL 2023 SLICT: Multi-input Multi-scale Surfel-Based Lidar-Inertial Continuous-Time Odometry and Mapping(貌似之前看到过) | 已经开源了
+
+
+
+动态光照
+
+- AirVO —— 竟然也是应对动态光照的，还是存视觉的 (点线结合的)
+
+
+
+全局回环+全局匹配(貌似比港大的 STD 效果还要好) | 全局定位很容易就会使用语义信息
+
+- Outram: One-shot Global Localization via Triangulated Scene Graph and Global Outlier Pruning(也开源了)
+- Segregator: Global Point Cloud Registration with Semantic and Geometric Cues(也开源了)
+
+
+
+
+
+超出SLAM系统之外再上层——竟然还会出现防止绳子打结的论文(主要是发了TRO以及RSS )。
+
+关于地图融合的——比如在多机任务中，会存在着很多重复区域
+
+Magnetic Field-Aided Global Localization in Repetitive Environments(但是磁场辅助定位是不是太扯了) 
+
+
+
+
+
+
+
+MCD 数据集 —— 用于解决不同区域特征不相同的情况 —— 提供先验点云 | 提供IMU UWB Lidar camera数据
+
+- 雷达数据使用的是Livox 输出
+- 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
