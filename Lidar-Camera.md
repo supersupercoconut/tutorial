@@ -115,7 +115,7 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8838740/
 
 
 
-## LiDAR4D(Lidar-only)
+## LiDAR4D (Lidar-only)
 
 ​	用nerf(神经辐射场)去做了一个动态场景的视角合成(时空视角) - 即可以显示一个物体在场景中的位置信息与时间信息。
 
