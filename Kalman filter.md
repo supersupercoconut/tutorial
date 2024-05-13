@@ -323,5 +323,5 @@ plot(1:400/Ts, x(1,:)-z,'-r');
 
   
 
-- 信息滤波: IKF(information kalman filter) 。信息矩阵就是均方误差矩阵P的倒数，
+- 信息滤波: IKF(information kalman filter) 。信息矩阵就是均方误差矩阵P的倒数，信息即表示状态估计中含有真实状态信息(information)大小。
 
