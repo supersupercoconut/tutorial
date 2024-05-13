@@ -746,7 +746,7 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 
 
-
+4. 17be56464189 运行r3live以及immesh 作用是在调研如何使用点云pcd文件转换为mesh图
 
 ****
 
