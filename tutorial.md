@@ -722,7 +722,7 @@ docker run --privileged -it \
 
 docker cp /home/supercoconut/groundfusion 6a961944a2b6:/home
 
-docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
+
 
 
 
@@ -734,19 +734,23 @@ docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
 
 ### **目前使用中的docker容器**
 
-1. b1cc5c857785 其中包含了lvi-sam | groundfusion 其中依赖的image是osrf/ros:noetic-desktop-full。这是一个完成的ubuntu20.04 + ros的image。因为这个image 对于x11这种远程桌面的依赖使用的比较好，程序除了没有办法进行调试之外，没有出现其他问题。因为在配置clion远程的时候一直会报错。总之现在是没有类似的问题了。
+1. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint+superglue的模型，已经成功运行了。
 
      
 
-2. 17debbbc36f1 包含了安装好的 tensorRT 8.6.1 本身的镜像是cuda11.8-cudnn8.9的nvidia镜像，其中还按照openvins的方法安装了ros。挂载的程序是一个superpoint+superglue的模型，已经成功运行了。
+2. 18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境，整个程序是ok的。
+
+
+
+3. 33cdbaacddbf 中保留的是lvi-sam以及groundfusion两个模型的环境，在实际使用中是导入的thirdparty环境中的bash环境进行安装，但是在实际使用中由于Sophus版本的问题，所以使用的时候需要将在本地的一个Sophus.so文件cp到docker环境中。使用命令为: docker cp /usr/local/lib/libSophus.so 6a961944a2b6:/usr/local/lib/
+
+
+
+4. 0fa77a622e0b 中使用的r3live以及immesh的环境，但是在使用中livox驱动存在一定的问题，所以将一个Livox-SDK复制到需要使用的livox驱动中。并且如果想使用immesh中的launch文件，需要在终端中使用export MESA_GL_VERSION_OVERRIDE=3.3即可以成功使用可视化文件
+
+    ![image-20240514204832901](figure/image-20240514204832901.png)
 
     
-
-3.  18ae66131be1 里面是Lidar4D模型的复现，使用的是conda来管理整个环境，整个程序是ok的。
-
-
-
-4. 17be56464189 运行r3live以及immesh 作用是在调研如何使用点云pcd文件转换为mesh图
 
 ****
 
