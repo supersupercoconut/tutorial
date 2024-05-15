@@ -347,7 +347,9 @@ find_package(catkin REQUIRED COMPONENTS
 >
 > 3. 在clion里面直接运行/调试节点
 
+- 在后续分析中看到了clion虽然一次只能调试一个节点，如果这个节点信息需要使用其他节点的话，同样也可以把其他节点信息写到roslaunch中预加载——都是一样的，roslaunch毕竟也只是一次启动多个可执行文件——所以这里将要调试的节点与其他节点分开的方法也是可以使用的(还没测试过)
 
+    
 
 ### rosrun | roslaunch
 
