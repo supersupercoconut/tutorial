@@ -1,4 +1,4 @@
-# cpp | opencv 
+# cpp | opencv
 
 主要记录C++的opencv基本使用
 
