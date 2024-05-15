@@ -406,19 +406,6 @@ ROS2现在主要是工业届在使用，这里先使用ros2来进行环境的编
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 ****
 
 
@@ -718,7 +705,7 @@ docker run --privileged -it \
            tyoung96/lvi_sam:1.0 /bin/bash
 ```
 
-
+​      
 
 补充缺少的文件:
 
@@ -764,7 +751,7 @@ docker cp /home/supercoconut/groundfusion 6a961944a2b6:/home
 
 ## 传感器
 
-### IMU 
+### IMU
 
 1. 6轴传感器 三个轴的加速度+三个轴的角速度 -> 这样可以积分得到三个轴的上面的欧拉角
 
