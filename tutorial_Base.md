@@ -45,6 +45,8 @@
 
 ### ROS工作目录
 
+在ubuntu中，ros一般会被安装到/opt/ros/noetic/share中
+
 - 在一个ROS中的工作空间中，src下包含着多个功能包。并且需要注意在src的顶层目录下，需要设计一个top-level的CMakeLists.txt(即使用中央集权的方式来管理整个ROS工作空间下的功能包——这就是Clion中使用管理ROS项目的方式)
     - 每一个功能包中必须包含了一个CMakeLists.txt以及package.xml文件
 
