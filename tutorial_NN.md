@@ -18,14 +18,14 @@
 
 剩余可以继续看的部分:
 
-1. https://zh.d2l.ai/chapter_convolutional-neural-networks/why-conv.html（这里说到的一个平移不变性）
+1. https://zh.d2l.ai/chapter_convolutional-neural-networks/why-conv.html（这里说到的一个平移不变性 | 之前也看到其说CNN具有平移不变性，但是我没有理解出来其含义）
 2. https://www.youtube.com/watch?v=GGLr-TtKguA 继续看这个人的新手讲解(一个知识又不是一次能看懂的，肯定是反复的过程，不懂就慢慢看)
 
 
 
 ## Transfomer
 
-https://www.youtube.com/watch?v=GGLr-TtKguA
+
 
 
 
