@@ -134,13 +134,38 @@ https://blog.csdn.net/m0_47163076/article/details/121698677
 
 
 
-## 关于Vins-fusion匹配
+
+
+## Vins-fusion 部分
 
 1. 第一次处理IMU数据的时候，依靠IMU测量得到的重力加速度，将IMU系转换到world系中([参考链接](https://blog.csdn.net/hltt3838/article/details/109514591?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522171342390616800215050781%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=171342390616800215050781&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~baidu_landing_v2~default-1-109514591-null-null.142^v100^pc_search_result_base6&utm_term=Eigen%3A%3AQuaterniond%3A%3AFromTwoVectors%28ng1%2C%20ng2%29.toRotationMatrix%28%29%3B&spm=1018.2226.3001.4187) ) | 这是我能找到的最详细的解释了
 
 <img src="figure/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2hsdHQzODM4,size_16,color_FFFFFF,t_70.png" alt="img" style="zoom: 50%;" />
 
 
+
+2. 边缘化就是在滑动窗口删除图像帧的时候，删除之前帧的时候，让这些帧提供的约束信息保留，帧自己被删除。
+
+
+
+
+
+补充一点我疑惑点
+
+1. all_image_frame_   对应的 滑动窗口中所有的image 的信息(IMU预积分、2D的feature点等等信息)—— 存在insert以及erase，所以感觉就是在滑动窗口中
+2. 
+
+ 
+
+
+
+
+
+## LVI-SAM 
+
+这部分主要整理 视觉+雷达+IMU的融合 
+
+有关于器坐标系的更改之后的程序 https://blog.csdn.net/qq_42731705/article/details/128344179
 
 
 

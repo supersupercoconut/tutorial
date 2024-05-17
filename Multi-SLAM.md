@@ -127,7 +127,6 @@ Magnetic Field-Aided Global Localization in Repetitive Environments(但是磁场
 MCD 数据集 —— 用于解决不同区域特征不相同的情况 —— 提供先验点云 | 提供IMU UWB Lidar camera数据
 
 - 雷达数据使用的是Livox 输出
-- 
 
 
 
