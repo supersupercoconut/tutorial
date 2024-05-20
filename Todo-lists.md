@@ -25,6 +25,9 @@
 
 - [ ] 代码逻辑还没有看完，这个初始化到底能不能与剩余部分进行分离(openvins中应该是分离的吧，因为有一个模块是ov_init)
 - [ ] vins-fusion正好在淘宝上看到了类似的课程，这两天赶紧把所有的内容听完，这样就不耽误后续的进度了
+- [ ] lvi-sam中的视觉部分到底是怎么实现的 \| ImMesh中的生成点云的部分是要依赖与lidar来实现的 —— 但是两者的实现原理并不是一样的，lidar里程计实现的效果完全是不一样的。 (那个不确定的平面对应的部分是协方差么)
+
+
 
 ## Multi-SLAM
 
@@ -41,3 +44,14 @@
 - [ ] 想想自己之前的那个多机联合初始化的实验应该怎么做
 
   
+
+Efficient and probabilistic adaptive voxel mapping for accurate online lidar odometry
+
+1. 确定lvisam中的lidar作用
+2. 确定相机中lvisam中的作用
+3. ImMesh中所使用的里程计与lvisam中lidar的区别
+
+参考链接
+
+1. https://www.zhihu.com/people/gao-li-dong-62/posts
+2. voxelmap中没有使用IMU —— 是只使用了lidar里程计的方法
