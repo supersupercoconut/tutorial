@@ -54,4 +54,4 @@ Efficient and probabilistic adaptive voxel mapping for accurate online lidar odo
 参考链接
 
 1. https://www.zhihu.com/people/gao-li-dong-62/posts
-2. voxelmap中没有使用IMU —— 是只使用了lidar里程计的方法
+2. voxelmap中没有使用IMU —— 是只使用了lidar里程计的方法(看看点云地图转换成voxelmap——我感觉这一部分应该是转换成voxelmap的效率肯定是从0去修改这个lidar里程计更方便)

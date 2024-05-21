@@ -81,6 +81,19 @@ LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状
 
 
 
+## LVI-SAM
+
+Vins mono与LIO-SAM的结合体，使用起来的效果还不错。
+
+1. VIO使用LIO获取深度信息
+2. 回环检测 VIO先检测再使用LIO辅助判断
+
+
+
+
+
+
+
 ## Kimera | Kimera2(camera+imu)
 
 框架不断地在更新中，但是没有使用lidar数据，主要解决如下三个问题
