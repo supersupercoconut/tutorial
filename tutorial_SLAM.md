@@ -152,9 +152,9 @@ PS:
 
 
 
+(2) 之前这个SLAM-craft中的部分还提到了一些雷达里程计设置 | STD+fastlio用作回环检测 | 
 
-
-
+或者可以使用一些简单的网络进行特征提取 | Khronos: A Unified Approach for Spatio-Temporal Metric-Semantic SLAM in Dynamic Environments使用语义信息进行high-level任务的处理 | 无人机的巡检任务(IROS 2024以及CARIC任务)
 
 
 
