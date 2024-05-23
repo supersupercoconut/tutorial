@@ -29,6 +29,8 @@
 
 
 
+
+
 ## Multi-SLAM
 
 - [ ] 多机初始化部分(下一次汇报估计就得汇报这个部分的内容)
@@ -39,13 +41,11 @@
 
 ## else
 
-- [ ] 小六这边的交流会需要整理一下
+- [x] 小六这边的交流会需要整理一下
 
 - [ ] 想想自己之前的那个多机联合初始化的实验应该怎么做
 
   
-
-Efficient and probabilistic adaptive voxel mapping for accurate online lidar odometry
 
 1. 确定lvisam中的lidar作用
 2. 确定相机中lvisam中的作用
@@ -55,3 +55,14 @@ Efficient and probabilistic adaptive voxel mapping for accurate online lidar odo
 
 1. https://www.zhihu.com/people/gao-li-dong-62/posts
 2. voxelmap中没有使用IMU —— 是只使用了lidar里程计的方法(看看点云地图转换成voxelmap——我感觉这一部分应该是转换成voxelmap的效率肯定是从0去修改这个lidar里程计更方便)
+
+
+
+今晚需要确定的内容:
+
+- voxelmap与immesh中关于lidar数据的处理方式是不是一样的 | 其与lvisam中lidar odometry中使用的数据差距有多少
+    - voxelmap与immesh中lidar数据的处理方式是一样的，但是livox的数据包含时间戳，但是velodyne没有使用时间戳信息
+
+- immesh与voxelmap中能不能直接将点云数据转换成为voxelmap进行可视化(l515那个数据包的可视化作用比较一般，形成的效果让人看不清楚) 最好是使用kitti数据集
+- lvisam使用的里程计能不能直接使用voxelmap处理后的点云数据进行运行，这涉及到我能不能使用该方法来直接进行voxelmap的生成(这还不涉及到两者的优化方法不一样，一个是滑动窗口中非线性优化，另一个是直接ikf进行递推)
+

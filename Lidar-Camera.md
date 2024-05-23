@@ -239,3 +239,6 @@ python setup.py install
 相关的nerf/3DGS https://zhuanlan.zhihu.com/p/690749208
 
 https://arxiv.org/pdf/2403.11367v1.pdf 3DGS使用在重定位上
+
+
+

@@ -359,6 +359,25 @@ find_package(catkin REQUIRED COMPONENTS
 
 - 在后续分析中看到了clion虽然一次只能调试一个节点，如果这个节点信息需要使用其他节点的话，同样也可以把其他节点信息写到roslaunch中预加载——都是一样的，roslaunch毕竟也只是一次启动多个可执行文件——所以这里将要调试的节点与其他节点分开的方法也是可以使用的(还没测试过)
 
+  
+  
+  单节点的调试做了一个小尝试。对应的launch文件如下，因为没有在launch里面加入任何节点，所以launch文件一运行之后就自动退出了，这个时候在clion中开始代码调试，发现其能够读取到yaml文件中设置的参数，说明这种调试方法是有效果的。
+  
+  ```
+  <launch>
+  
+      <arg name="rviz" default="true" />
+      <rosparam command="load" file="$(find voxel_map)/config/l515.yaml" />
+      <group ns="voxel_map">
+  		<!-- <node pkg="voxel_map" type="voxel_mapping_odom" name="voxel_mapping_odom" output="screen"/>-->
+      </group>
+  
+  
+  </launch>
+  ```
+  
+  ![image-20240522105342280](figure/image-20240522105342280.png)
+  
     
 
 ### rosrun | roslaunch
@@ -786,6 +805,52 @@ Lidar的种类是很多的，并且Lidar的扫描结果是离散的——也就�
 
 
 ![image-20240520205047279](figure/image-20240520205047279.png)
+
+关于雷达线数的说明(主要是针对机械雷达而言，固态雷达没有传统意义上的线数)
+
+- 线数是在垂直分布的，而且并不是均匀分布，越靠近中间部分雷达的数据量就越多。
+
+![image-20240521232232604](figure/image-20240521232232604.png)
+
+参考连接：
+
+1. https://zhuanlan.zhihu.com/p/102621881
+
+
+
+
+
+
+
+不同型号雷达 最后对应的pcl中的点云信息有什么区别
+
+现在正在使用的雷达有如下三种
+
+(1) m2DGR 数据集/ lvisam数据集/kitti/跨越险阻/groundchallenge  velodyne 
+
+(2) m2DGR-plus 数据集 Robosense 16(怎么感觉没有看过关于其的调研) 速腾型号的雷达
+
+(3) mid70(固态雷达)即livox 主要分布在港大Immesh/voxelmap/r3live这种数据集上面，在开源代码中的处理基本完成可 
+
+(4) mid360(暂时不需要-不需要调研这部分)
+
+
+
+rs为国内的雷达厂家, 输出的雷达数据貌似只有XYZI，缺少了 ring以及timestamp. velodyne的数据类型好看，只需要看对应的源码里面是在怎么处理并且包含了什么信息即可。
+
+- velodyne
+
+    
+
+- livox
+
+
+
+
+
+
+
+
 
 
 

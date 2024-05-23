@@ -58,3 +58,12 @@ C++数据转换到Eigen时(Eigen::Map)，要注意，Eigen默认按列优先存�
 https://www.zhihu.com/question/41103160
 
 - 逆波兰表达式对于计算机来说是方便的，处理起来巨方便。
+
+
+
+## .hpp文件
+
+.hpp文件在cmakelists.txt中只需要手动include文件目录即可，不需要手动使用add_library的形式将.h文件对应的.cpp文件进行打包
+
+
+
