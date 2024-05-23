@@ -157,63 +157,21 @@ https://blog.csdn.net/m0_47163076/article/details/121698677
 
 
 
+## LVI-SAM + VoxelMap
+
+将voxelmap部分替换调lio-sam,这样在生成的plane平面的基础上，可以完成mesh图的生成。
+
+- voxelmap中velodyne的lidar数据可以没有time+ring属性，程序也可以运行。但是lio-sam本身不可以。
 
 
 
 
 
+time为offset_time 形成该lidar point与本帧lidar_scan的一个时间值 | ring就是这个点在哪一个线上被发现的
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## LVI-SAM 
-
-这部分主要整理 视觉+雷达+IMU的融合 
-
-有关于器坐标系的更改之后的程序 https://blog.csdn.net/qq_42731705/article/details/128344179
+1. https://blog.csdn.net/qq_42731705/article/details/128344179
 
 
 

@@ -58,11 +58,55 @@
 
 
 
-今晚需要确定的内容:
 
-- voxelmap与immesh中关于lidar数据的处理方式是不是一样的 | 其与lvisam中lidar odometry中使用的数据差距有多少
-    - voxelmap与immesh中lidar数据的处理方式是一样的，但是livox的数据包含时间戳，但是velodyne没有使用时间戳信息
 
-- immesh与voxelmap中能不能直接将点云数据转换成为voxelmap进行可视化(l515那个数据包的可视化作用比较一般，形成的效果让人看不清楚) 最好是使用kitti数据集
-- lvisam使用的里程计能不能直接使用voxelmap处理后的点云数据进行运行，这涉及到我能不能使用该方法来直接进行voxelmap的生成(这还不涉及到两者的优化方法不一样，一个是滑动窗口中非线性优化，另一个是直接ikf进行递推)
+- [x] voxelmap与immesh中关于lidar数据的处理方式是不是一样的 | 其与lvisam中lidar odometry中使用的数据差距有多少
 
+    - voxelmap与immesh中lidar数据的处理方式是一样的，但是livox的数据包含时间戳，但是velodyne没有时间戳信息 -- 没有找到合适的livox数据来运行voxelmap,单单从kitti数据集来看的话，都是可以直接运行的**(velodyne雷达数据中没有time属性，但程序可以运行)**
+
+        
+
+- [x] lvisam使用的里程计能不能直接使用voxelmap处理后的点云数据进行运行，这涉及到我能不能使用该方法来直接进行voxelmap的生成(这还不涉及到两者的优化方法不一样，一个是滑动窗口中非线性优化，另一个是直接ikf进行递推)
+    - 不行，点云的配准方法是不一样的，在voxelmap里面，形成的这个体素+plane的地图应该是可以辅助scan-to-map的配准，然后计算出来位姿的，所以在这里要么从位姿估计到建图都使用voxelmap的操作，要么是即进行点云建图又进行voxelmap的操作
+
+
+
+- [x] 尝试一下使用kitti的那个数据集运行 vins mono (感觉使用M2DGR会稍微好一些)
+
+    - kitti数据集因为有odometry以及raw两种，odom数据集里面的点云数据只有10HZ, raw里面的imu数据会产生跳变，所以这两种方法都没有去进行测试**(raw+odom 都有转换好的数据集——进行了voxelmap的测试，都是ok的)**
+
+    
+
+- [ ] voxelmap++ 是不是能符合的要求 从生成的odom后才会进行plane的生成 —— 这里对于lvisam的lidar部分的改进起来是不是更简单一些，但是这种方法最不放心的再于其能不能进行mesh图的重建 | 但是voxelmap上有一个很大的问题是如果将其可视化，那么对应的rviz很卡，估计是有部分占用了很大计算资源(程序本身还在运行，但是可视化部分是不行了)
+
+    
+
+- [ ] 能不能在lvisam中同时进行点云地图+voxelmap的重建，voxelmap形成的点云地图只用于生成plane信息，进而使用这个信息来做mesh的重建。
+
+
+
+- [ ] 更改lvisam中的雷达部分 —— 只要让lvisam在不考虑lidar+visual联合优化的部分，只使用雷达点云数据的深度信息进行初始化就可以
+
+    
+
+- [ ] 上一步基础上，将lidar+visual进行回环检测的部分也实现 | 现在感觉lvisam中互相的依赖关系还是没有整理清除
+
+
+
+使用的数据集可以改为kitti或者M2DGR的数据集，lvisam自己的数据集在voxelmap上的运行一直出现问题，运行lvisam自身的数据集会出现很严重的漂移，所以按照voxelmap自己指出的数据集类型，运行kitti自带的数据集(即kitti_2011_09_26_drive_0084_synced.bag这个数据集 - 包含了单目图像 IMU 以及 lidar points数据)
+
+
+
+
+
+voxelmap++ M2DGR walk.bag
+
+![image-20240523222258937](figure/image-20240523222258937.png)
+
+从中间过去，两边全是树
+
+![image-20240523222321580](figure/image-20240523222321580.png)
+
+从视觉上看貌似voxelmap没有voxelmap++效果好，but...voxelmap的可视化永远都在崩
+
+![image-20240523224209389](figure/image-20240523224209389.png)
