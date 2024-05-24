@@ -382,7 +382,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ### rosrun | roslaunch
 
-​	这里使用的都是 package_name - 之前碰到了一个tab没有补全(已经source过了)，多打几个字符就能正常的tab补全了。package_name都能在package.xml中查到，launch文件在哪个package下都能找到对应。 
+​	这里使用的都是 package_name - 之前碰到了一个tab没有补全(已经source过了)，多打几个字符就能正常的tab补全了(反正对于package name最好还是要写全的，后面launch或者是executable可执行文件一般tab是可以补全的)。package_name都能在package.xml中查到，launch文件在哪个package下都能找到对应。 
 
 ```cmake
 rosrun package_name executable_file_name
@@ -400,7 +400,10 @@ roslaunch package_name  launch_file_name
 
 rqt可以方便监视话题信息以及tf树
 
+- rqt_graph: 最近在使用lvi-sam的时候，使用了该命令去寻找目前所有正在被使用的话题名 (因为lvisam里面的lidar odometry竟然是使用一群rosnode之前通过topic来互换的话题数据——实在太让我恶心，找一个配准之后与配准之前的点云信息都很麻烦)
+  - 椭圆部分就是node，方框部分就是topic。 node与node之间发布与订阅者都清楚的时候，两者是通过中间一个话题连接起来的。但是这里显示出来的topic数量相比于rostopic list中的数量要少一些——原因是 rostopic list对于所有的发布/接受的话题都会进行显示 。**下图中/lvi_sam_rviz中订阅的话题是在rviz中进行可视化的话题！！**
 
+![image-20240524224719178](./figure/image-20240524224719178.png)
 
 
 
@@ -845,22 +848,6 @@ rs为国内的雷达厂家, 输出的雷达数据貌似只有XYZI，缺少了 ri
 - livox
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-ROS中的tf工具 
-
-https://blog.csdn.net/wilylcyu/article/details/51724966
 
 
 

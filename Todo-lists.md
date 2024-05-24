@@ -41,7 +41,7 @@
 
 ## else
 
-- [x] 小六这边的交流会需要整理一下
+
 
 - [ ] 想想自己之前的那个多机联合初始化的实验应该怎么做
 
@@ -85,19 +85,35 @@
 
 - [ ] 阅读 lvisam中lio对应代码，找在在哪里或者订阅什么话题可以进行voxelmap的重建
 
-    - 初步阅读lvisam，感觉是可以使用lvisam中mapOptimization中发布的话题，直接 cloud_registeredRaw 就可以使用了，这里肯定是已经从lidar坐标系转换到自定义的world frame中了(rviz里面可视化之后可以看到点云信息基本可以正常使用)。
+    - 初步阅读lvisam，感觉是可以使用lvisam中mapOptimization中发布的话题，直接 cloud_registeredRaw 就可以使用了，这里肯定是已经从lidar坐标系转换到自定义的world frame中了(rviz里面可视化之后可以看到点云信息基本可以正常使用)
 
-        
+    - 目前的问题是cloud_registeredRaw 是完全够用的，但是在voxelmap++中需要先得到R,t变换也就是配准之前的点云以及转换之后的点云去计算uncertainty信息，公式里面都是使用配准之前的信息来做的。从下面的lvisam node+topic tree可以看出来一些这部分的话题。
+    
+      
 
 ![image-20240524173303804](figure/image-20240524173303804.png)
 
+- 从这个逻辑开始看lvisam中的topic递推
+
+![image-20240524231137416](./figure/image-20240524231137416.png)
+
+
+
 - [ ] 能不能在lvisam中同时进行点云地图+voxelmap的重建，voxelmap形成的点云地图只用于生成plane信息，进而使用这个信息来做mesh的重建。
 
-- [ ] 更改lvisam中的雷达部分 —— 只要让lvisam在不考虑lidar+visual联合优化的部分，只使用雷达点云数据的深度信息进行初始化就可以
+  - 目前在做的就是这个，正好点云地图能与生成的平面信息相互对应，可以分析当前是不是出现了问题。
 
-    
+  
 
-- [ ] 上一步基础上，将lidar+visual进行回环检测的部分也实现 | 现在感觉lvisam中互相的依赖关系还是没有整理清除
+  参考
+
+  https://blog.csdn.net/xiaoma_bk/article/details/125446967
+
+  
+
+  
+
+  <font color='blue'>之前的voxelmap中的odom是通过kf直接得到的，但是这里是通过gtsam的因子图得到的，这就导致在生成voxel的时候，如果因子图对应的部分发现了回环检测或者是关键帧的优化策略，这样pose变换了对应的voxel理应是变换的，这里暂时不考虑这种变换 ——immesh里面是不是会存在这种变换我还不确定</font>
 
 
 
