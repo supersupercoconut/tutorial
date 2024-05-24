@@ -77,13 +77,21 @@
 
     
 
-- [ ] voxelmap++ 是不是能符合的要求 从生成的odom后才会进行plane的生成 —— 这里对于lvisam的lidar部分的改进起来是不是更简单一些，但是这种方法最不放心的再于其能不能进行mesh图的重建 | 但是voxelmap上有一个很大的问题是如果将其可视化，那么对应的rviz很卡，估计是有部分占用了很大计算资源(程序本身还在运行，但是可视化部分是不行了)
+- [ ] voxelmap++ 是不是能符合的要求 从生成的odom后才会进行plane的生成 —— 这里对于lvisam的lidar部分的改进起来是不是更简单一些，但是这种方法最不放心的再于其能不能进行mesh图的重建 | 但是voxelmap上有一个很大的问题是如果将其可视化，那么对应的rviz很卡，估计是有部分占用了很大计算资源(程序本身还在运行，但是可视化部分是不行了, voxelmap++本身没有这种限制)
 
-    
+    - 在读voxelmap++的论文上面，我感觉可以单独使用里程计进行voxel map的重建 + plane的生成 以及更新，这样里程计使用原始的lio-sam
+
+
+
+- [ ] 阅读 lvisam中lio对应代码，找在在哪里或者订阅什么话题可以进行voxelmap的重建
+
+    - 初步阅读lvisam，感觉是可以使用lvisam中mapOptimization中发布的话题，直接 cloud_registeredRaw 就可以使用了，这里肯定是已经从lidar坐标系转换到自定义的world frame中了(rviz里面可视化之后可以看到点云信息基本可以正常使用)。
+
+        
+
+![image-20240524173303804](figure/image-20240524173303804.png)
 
 - [ ] 能不能在lvisam中同时进行点云地图+voxelmap的重建，voxelmap形成的点云地图只用于生成plane信息，进而使用这个信息来做mesh的重建。
-
-
 
 - [ ] 更改lvisam中的雷达部分 —— 只要让lvisam在不考虑lidar+visual联合优化的部分，只使用雷达点云数据的深度信息进行初始化就可以
 
@@ -110,3 +118,20 @@ voxelmap++ M2DGR walk.bag
 从视觉上看貌似voxelmap没有voxelmap++效果好，but...voxelmap的可视化永远都在崩
 
 ![image-20240523224209389](figure/image-20240523224209389.png)
+
+继续进行测试，可以发现voxelmap++的鲁棒性好像不是很好，再尝试使用M2DGR 的数据集继续测试voxelmap++
+
+(1) M2DGR street08.bag 在前40s能正常一下，但是40s之后漂移很严重
+
+(2) gate03.bag 也存在漂移
+
+虽然不知道为什么出现了这么严重的漂移问题，但是gate03.bag的后半段还是可以得到一个大致的plane地图。中间是一个花坛，车是沿着花坛运动。
+
+![image-20240524143731343](figure/image-20240524143731343.png)
+
+
+
+
+
+
+
