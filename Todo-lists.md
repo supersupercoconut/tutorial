@@ -132,6 +132,11 @@
 - [x] 新的bug - 平面信息没有被成功更新
     - TM的玄学问题，把更新平面的函数从普通C++函数换成类的成员函数之后程序就没有问题了。
 
+- [ ] 学一下gstam的使用
+- [ ] 尝试用原版的voxel来进行lvisam的适配
+
+https://gtsam.org/2021/02/23/uncertainties-part1.html
+
 
 
 使用的数据集可以改为kitti或者M2DGR的数据集，lvisam自己的数据集在voxelmap上的运行一直出现问题，运行lvisam自身的数据集会出现很严重的漂移，所以按照voxelmap自己指出的数据集类型，运行kitti自带的数据集(即kitti_2011_09_26_drive_0084_synced.bag这个数据集 - 包含了单目图像 IMU 以及 lidar points数据)
