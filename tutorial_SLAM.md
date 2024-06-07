@@ -53,8 +53,6 @@
 
    
 
-—— 实现整个模块之后来发文章(保底三区)
-
 
 
 (1) 通讯
@@ -162,15 +160,23 @@ PS:
 
 
 
-关于openMVS的整理
+### 关于openMVS的整理
+
+openMVS的具体实现 | 主要使用四个部分来进行工作
+
+- **dense point-cloud reconstruction** 先从输入的图像中获取稠密点云
+
+- **mesh重建** 这里负责实现mesh结构
+
+- **mesh refinement**
+
+- **mesh texturing** 纹理信息
+
+输入信息为 多帧图像 + 位姿 (所以这里一般会跟一些SFM的方法联合使用，从这些方法中来生初始的稀疏点云)
 
 
 
-
-
-
-
-
+OpenMVS 的 TextureMesh 负责实现mesh上纹理信息的叠加，并且使用库也包含了CGAL库，所以我感觉这里的方法会跟Immesh中方法存在一个结合的可能性
 
 
 
