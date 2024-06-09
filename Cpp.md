@@ -93,3 +93,71 @@ lambda表达式
 
 
 
+
+
+
+
+
+
+
+
+## hash
+
+
+
+hash表使用的一个数据结构就是unorder_map，给定一个键值对，找到对应位置存放的数据。如果键值要使用自定义的数据类型的时候，就需要手动实现 
+
+- 数据类型的定义
+- hash函数的定义
+
+
+
+```CPP
+class VOXEL_LOC
+{
+  public:
+    int64_t x, y, z;
+    VOXEL_LOC( int64_t vx = 0, int64_t vy = 0, int64_t vz = 0 ) : x( vx ), y( vy ), z( vz ) {}
+    bool operator==( const VOXEL_LOC &other ) const { return ( x == other.x && y == other.y && z == other.z ); }
+};
+
+// Hash value
+namespace std
+{
+template <>
+struct hash< VOXEL_LOC >
+{
+    int64_t operator()( const VOXEL_LOC &s ) const
+    {
+        using std::hash;
+        using std::size_t;
+        return ( ( ( ( s.z ) * HASH_P ) % MAX_N + ( s.y ) ) * HASH_P ) % MAX_N + ( s.x );
+    }
+};
+} // namespace std
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
