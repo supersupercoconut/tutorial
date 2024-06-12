@@ -47,36 +47,13 @@
 
   
 
-1. 确定lvisam中的lidar作用
-2. 确定相机中lvisam中的作用
-3. ImMesh中所使用的里程计与lvisam中lidar的区别
-
-参考链接
-
-1. https://www.zhihu.com/people/gao-li-dong-62/posts
-2. voxelmap中没有使用IMU —— 是只使用了lidar里程计的方法(看看点云地图转换成voxelmap——我感觉这一部分应该是转换成voxelmap的效率肯定是从0去修改这个lidar里程计更方便)
 
 
 
 
+周三的todolist
 
-
-
-
-
-
-
-
-
-
-
-继续阅读mesh重建的设置(从新的线程中进行设置)
-
-
-
-
-
-
+- 尝试rosbag数据转成pcap或者是其他数据(方便clion调试) | 好像不能，目前感觉博客上面的方法都是pcap转rosbag(或者直接一帧一帧的来读取数据)
 
 
 
