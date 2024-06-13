@@ -162,6 +162,42 @@ PS:
 
 
 
+
+
+可以阅读论文:
+
+（1）omniColor [https://doi.org/10.48550/arXiv.2404.04693](https://doi.org/10.48550/arXiv.2404.04693)
+
+（2）Mean-shift exploration in shape assembly of robot swarms 非常好的nature工作
+
+（3）Detection, Localization, and Tracking of Multiple MAVs With Panoramic Stereo Camera Networks (TRO)  但是这种跟定位的关系还不是跟紧密
+
+（4）Keypoint-Guided Efficient Pose Estimation and Domain Adaptation for Micro Aerial Vehicles (TRO)
+
+（5）Swarm-SLAM : Sparse Decentralized Collaborative Simultaneous Localization and Mapping Framework for Multi-Robot Systems (RAL)
+
+（6）LIVER: A Tightly Coupled LiDAR-Inertial-Visual State Estimator With High Robustness for Underground Environments (RAL)
+
+（7）DAMS-LIO: A Degeneration-Aware and Modular Sensor-Fusion LiDAR-inertial Odometry
+
+（8）Efficient LoFTR: Semi-Dense Local Feature Matching with Sparse-Like Speed (关系不是很大的部分) 
+
+（9）剩下的就看完之前殷哥在群里发的论文
+
+（10）XFeat 比ORB
+
+（11）LTA-OM - 实时长期关联建图
+
+（12）再看一下Automerge
+
+（13）还有在上面说的很多方法
+
+KinectFusion
+
+TSDF
+
+
+
 ### 关于openMVS的整理
 
 openMVS的具体实现 | 主要使用四个部分来进行工作
@@ -186,11 +222,19 @@ OpenMVS 的 TextureMesh 负责实现mesh上纹理信息的叠加，并且使用�
 
 
 
+
+
+
+
+
+
 ## 关于相机果冻效应
 
 D435i 的红外为全局快门，RGBD是卷帘
 
 D455 RGBD是全局快门
 
+果冻效应: 在拍摄物体的时候会讲物体出现倾斜或者扭曲 —— 机桨应该是直直的而不是这种扭曲形状 | 在使用D435i的时候发现这种扭曲部分出现比较严重，但是D455不会出现这么严重的扭曲。拍摄物体高速运动的或者在拍摄时相机的晃动比较严重就容易出现这种果冻效应 —— 可以提高相机的帧率来减小这种情况的发生，或者使用D455这种全局快门的相机
 
+<img src="./figure/1280px-Jamtlands_Flyg_EC120B_Colibri.jpeg" alt="undefined" style="zoom:50%;" />
 
