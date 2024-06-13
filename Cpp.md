@@ -137,7 +137,9 @@ struct hash< VOXEL_LOC >
 } // namespace std
 ```
 
+但是我现在觉得这种使用起来比较神奇 : Hash_map_3d在这里是一个模板类，int以及Triangle_ptr都是指定模板类型，下面的int完全不是hash表里面的key值, 真正的hash表是这个类自己的成员变量
 
+Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 
 
 
