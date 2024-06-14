@@ -12,6 +12,43 @@
 
 ## ImMesh(lidar + imu)
 
+整理ImMesh中的demo以及实现思路
+
+
+
+ImMesh
+
+- real-time的mesh重建
+- 运行效率+mesh重建的准确率 与现有方法的对比 ( 这里不知道mesh重建的精确度是如何对比的 )
+- 潜在应用: (1) 点云强化 (2) mesh图的渲染
+
+
+
+其他mesh的重建方法
+
+- offline
+  1. 基于Possion方法
+  2. 三角剖分方法
+
+- online
+
+
+
+关于ImMesh上面与其他重建方法的对比
+
+- 数据集的选择 真实数据 + 虚拟数据(包括 结构化场景+非结构化场景)
+- 评价指标
+  - 平衡性 fairness
+  - 准确性 correctness
+
+在评价中没有关于色彩信息是否准确的衡量标准
+
+
+
+ImMesh中的上色部分可以直接基于height来实现，在加色彩信息的部分是只有实际的渲染时间。
+
+
+
 建图部分使用的是 voxel + mesh，可以直接用其生成depth图像。voxel即体素(体素就是在3D空间中的最小空间，类似与2D平面中的像素点)，mesh我的个人理解就是一个面，跟论文中说的trianglar facet是一个东西(三角形的面)
 
 ![image-20240407211446720](figure/image-20240407211446720.png)
