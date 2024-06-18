@@ -23,9 +23,98 @@
 
 
 
+****
+
 
 
 std::atomic 原子类型 适用于多线程的情况，可以不使用显式的互斥🔓。
+
+其实就是定义的一个变量，多线程的时候，每一个线程都能去使用这个变量值，读数据或者更改数据的时候还不用加锁 | 或者是主线程中更改这个原子值，让其他子线程停止while循环，退出。
+
+PS: 使用的时候需要注意链接库文件Threads::Threads以及find_package(Threads REQUIRED)
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <atomic>
+#include <vector>
+
+std::atomic<int> counter(0);
+
+void increment_counter(int num_iterations) {
+    for (int i = 0; i < num_iterations; ++i) {
+        ++counter; // 原子操作，线程安全
+    }
+}
+
+int main() {
+    const int num_threads = 10;
+    const int num_iterations = 1000;
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < num_threads; ++i) {
+        threads.emplace_back(increment_counter, num_iterations);
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    std::cout << "Final counter value: " << counter << std::endl;
+
+    return 0;
+}
+```
+
+在实际使用中多线程还需要注意的一个部分就是上锁 - 即对于需要重复读取的数据需要上锁进行限制, 我发现有时候锁是定义在全局变量中的,有时候这个锁是定义在类的成变量中的。 **但是不论怎么定义,对于同一个数据,其对应的锁就只能是同一个(即对应的mutex的变量应该是同一个)**。 对于类中的成员函数，其中可能使用多线程来并行加速计算，这样就会使用定义在类中的锁进行控制 | 正好可以在ImMesh中的程序来佐证
+
+
+
+
+
+****
+
+
+
+
+
+.h文件中extern变量进行导入 | 在main.cpp对变量进行定义
+
+但是如果变量定义在.h文件中，如果其他部分都include这个.h文件，这样就会导致变量的重复定义。所以一般定义在mian.cpp中，这样就不会导致重复定义。在这个.h中对应的函数中按顺序使用这些变量即可。
+
+
+
+- main函数
+
+![image-20240615151700037](figure/image-20240615151700037.png)
+
+- .h函数 中extern获取这些变量定义，在自己的成员函数中使用。 相当于在extern中只会实现
+
+<img src="figure/image-20240615152244362.png" alt="image-20240615152244362" style="zoom: 80%;" />
+
+
+
+
+
+
+
+
+
+
+
+**inline** 
+
+其可以用于修饰一个函数，这样可以让这个函数定义放在头文件中，但不用担心其违背一次定义原则 | 编译器会自动将多次的定义转换成一次
+
+
+
+
+
+
+
+
+
+****
 
 
 
@@ -90,6 +179,24 @@ https://www.zhihu.com/question/41103160
 
 
 lambda表达式
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
