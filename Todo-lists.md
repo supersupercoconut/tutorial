@@ -65,6 +65,7 @@ PS： taichi好像可以与mesh联动，但是不知道效果怎么样(反正效
 
 
 
+# Canny-VO: Visual Odometry with RGB-D Cameras based on Geometric 3D-2D Edge Alignment
 
 
 
@@ -76,8 +77,7 @@ PS： taichi好像可以与mesh联动，但是不知道效果怎么样(反正效
 
 
 
-
-
+![image-20240622192333745](./figure/image-20240622192333745.png)
 
 
 
