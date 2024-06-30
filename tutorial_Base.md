@@ -568,7 +568,7 @@ sh /opt/pycharm-2024.1/bin/pycharm.sh
 
 https://zhuanlan.zhihu.com/p/457328760
 
-
+这里又更换了一种安装pycharm的方法
 
 
 

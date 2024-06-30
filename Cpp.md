@@ -25,6 +25,8 @@
 
 ****
 
+## 多线程与mutex
+
 
 
 std::atomic 原子类型 适用于多线程的情况，可以不使用显式的互斥🔓。
@@ -69,6 +71,16 @@ int main() {
 在实际使用中多线程还需要注意的一个部分就是上锁 - 即对于需要重复读取的数据需要上锁进行限制, 我发现有时候锁是定义在全局变量中的,有时候这个锁是定义在类的成变量中的。 **但是不论怎么定义,对于同一个数据,其对应的锁就只能是同一个(即对应的mutex的变量应该是同一个)**。 对于类中的成员函数，其中可能使用多线程来并行加速计算，这样就会使用定义在类中的锁进行控制 | 正好可以在ImMesh中的程序来佐证
 
 
+
+对于两个不同的ROS回调函数使用相同的锁来保护自己的数据，感觉这种作用就是让互斥锁保护的数据量更多。**现在有一个疑惑，如果不使用多线程的时候，ros中在处理数据的时候遇到了数据的写入怎么办**
+
+- 是不是在不使用多线程的情况下，依然可以使用mutex来防止在同一线程里面读取与写入数据(但是在ros中不会使用这种方法)
+
+
+
+在ros中如果不使用多线程的情况下, 调用回调函数的部分是使用ros::spinOnce()或者ros::spin()进行处理的，即只有执行到这里才会去执行回调函数，其他时间都可以在进行数据的处理，所以不会出现同时读取与同时写入数据的烦恼。
+
+- 如果使用ros::spin()的就是一直在这里使用回调函数处理数据，调用其他线程来继续处理数据
 
 
 
@@ -122,15 +134,47 @@ int main() {
 
 ## 智能指针
 
-智能智能放在中一直出现问题
-
-首先全局的代码即不是放在堆上面，也不是放在栈上面的，其中声明变量的生命周期从程序开始到程序结束(这里还是很有可以看的部分)
+全局变量的生命周期是 从程序开始到程序结束(但是其他文件想使用这个变量需要extern)
 
 
 
+在C++中，全局变量既不是保存在堆上，也不是保存在栈上。全局变量是存储在静态存储区（有时也称为数据段或BSS段）中的。具体来说，C++中的变量可以根据它们的存储持续时间（storage duration）分类为以下几种类型：
+
+- 自动存储持续时间（Automatic Storage Duration）：通常是局部变量，保存在栈上。
+- 静态存储持续时间（Static Storage Duration）：包括全局变量、静态局部变量以及在文件范围内声明的静态变量。它们在程序的生命周期内存在，保存在静态存储区。
+- 动态存储持续时间（Dynamic Storage Duration）：由程序员在堆上动态分配，使用new或malloc等函数。
 
 
 
+智能指针在生命周期结束的时候会自动释放自身占据的空间(shared_ptr最后一个结束的时候释放) | 一般要是在函数中使用的话，函数结束之后就会停止使用
+
+
+
+
+
+unqiue_ptr与互斥锁一起使用: 可以防止使用者忘记开锁，这个函数执行完之后，unique_str指针自己进行析构的时候就可以结束锁 ( 注意其他部分想使用这部分的数据的时候也需要使用同一个mutex_image_callback变量来设置锁 )。
+
+```cpp
+std::mutex mutex_image_callback;
+void R3LIVE::image_callback( const sensor_msgs::ImageConstPtr &msg )
+{
+    std::unique_lock< std::mutex > lock( mutex_image_callback );
+    if ( sub_image_typed == 2 )
+    {
+        return; // Avoid subscribe the same image twice.
+    }
+    sub_image_typed = 1;
+
+    if ( g_flag_if_first_rec_img )
+    {
+        g_flag_if_first_rec_img = 0;
+        m_thread_pool_ptr->commit_task( &R3LIVE::service_process_img_buffer, this );
+    }
+
+    cv::Mat temp_img = cv_bridge::toCvCopy( msg, sensor_msgs::image_encodings::BGR8 )->image.clone();
+    process_image( temp_img, msg->header.stamp.toSec() );
+}
+```
 
 
 
@@ -258,9 +302,39 @@ Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 
 
 
+多线程里面如果每个线程里面都会使用ros中的回调函数接受数据，其对应的多个线程应该都要使用ros::spin()或者ros::spinOnce()来处理数据
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+关于ros句柄
+
+- ros::NodeHandle 是访问 ROS 参数服务器的接口。
+- 任何有效的 ros::NodeHandle 实例都可以读取和设置参数(这里可能就是说一个整个程序中可能有多个ros句柄或者ros节点——虽然可以设置多个，但是正常的设置一般都是只使用ros进行数据读取以及话题发布，其余部分都是最好不使用ros)。
+- 参数的命名空间和节点的命名空间会影响参数的解析。
 
 
 
