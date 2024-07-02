@@ -31,7 +31,7 @@
 
 std::atomic 原子类型 适用于多线程的情况，可以不使用显式的互斥🔓。
 
-其实就是定义的一个变量，多线程的时候，每一个线程都能去使用这个变量值，读数据或者更改数据的时候还不用加锁 | 或者是主线程中更改这个原子值，让其他子线程停止while循环，退出。
+- 其实就是定义的一个变量，多线程的时候，每一个线程都能去使用这个变量值，读数据或者更改数据的时候还不用加锁 | 或者是主线程中更改这个原子值，让其他子线程停止while循环，退出。
 
 PS: 使用的时候需要注意链接库文件Threads::Threads以及find_package(Threads REQUIRED)
 
@@ -68,19 +68,124 @@ int main() {
 }
 ```
 
-在实际使用中多线程还需要注意的一个部分就是上锁 - 即对于需要重复读取的数据需要上锁进行限制, 我发现有时候锁是定义在全局变量中的,有时候这个锁是定义在类的成变量中的。 **但是不论怎么定义,对于同一个数据,其对应的锁就只能是同一个(即对应的mutex的变量应该是同一个)**。 对于类中的成员函数，其中可能使用多线程来并行加速计算，这样就会使用定义在类中的锁进行控制 | 正好可以在ImMesh中的程序来佐证
+
+
+#### mutex
+
+​	多线程还需要注意的一个部分就是上锁 - 即对于需要重复读取的数据需要上锁进行限制(防止出现多个线程同时修改变量)。
+
+​	我发现有时候锁是定为全局变量,有时候定义为类的成员变量。 **但是不论怎么定义,对于同一个数据,其对应的锁就只能是同一个(即对应的mutex的变量是同一个)**。 对于类中的成员函数，其中可能使用多线程来并行加速计算，这样就会使用定义在类中的锁进行控制。
 
 
 
-对于两个不同的ROS回调函数使用相同的锁来保护自己的数据，感觉这种作用就是让互斥锁保护的数据量更多。**现在有一个疑惑，如果不使用多线程的时候，ros中在处理数据的时候遇到了数据的写入怎么办**
-
-- 是不是在不使用多线程的情况下，依然可以使用mutex来防止在同一线程里面读取与写入数据(但是在ros中不会使用这种方法)
 
 
+#### condition variable
 
-在ros中如果不使用多线程的情况下, 调用回调函数的部分是使用ros::spinOnce()或者ros::spin()进行处理的，即只有执行到这里才会去执行回调函数，其他时间都可以在进行数据的处理，所以不会出现同时读取与同时写入数据的烦恼。
+​	条件变量就是多线程中进行控制线程执行的变量，通过notify_one()以及notify_all()来让当前正在被wait()的函数继续执行。在wait()状态中的线程会释放其占用的锁
+
+- cv为条件变量，所有的wait() 以及 notify_one() notify_all() 都是针对这个条件变量操作的
+
+- cv.wait(lck, []{ return ready; }); 相当于是一种双重验证 即cv被通知之后，线程被唤醒之后就会取判断ready变量的值，只有这里返回true之后才会正常让线程工作，否则还是休眠状态
+
+```cpp
+#include <iostream>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+std::mutex mtx;
+std::condition_variable cv;
+bool ready = false;
+
+void print_id(int id) {
+    std::unique_lock<std::mutex> lck(mtx);
+    // 当ready为false时，wait将阻塞当前线程并释放锁，直到ready变为true
+    cv.wait(lck, []{ return ready; });
+    std::cout << "Thread " << id << '\n';
+}
+
+void go() {
+    std::unique_lock<std::mutex> lck(mtx);
+    ready = true;
+    cv.notify_all();  // 通知所有等待的线程
+}
+
+int main() {
+    std::thread threads[10];
+    for (int i = 0; i < 10; ++i)
+        threads[i] = std::thread(print_id, i);
+
+    std::cout << "10 threads ready to race...\n";
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    go();  // 开始通知
+
+    for (auto& th : threads) th.join();
+    return 0;
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+PS: 关于ros中的使用
+
+​	**现在有一个疑惑，如果不使用多线程的时候，ros中在处理数据的时候遇到了数据的写入怎么办 | 或者是ros中多个回调函数都会对同一个数据执行写入操作怎么办**
+
+​	在ros中调用回调函数的部分是使用ros::spinOnce()或者ros::spin()进行处理的，即只有执行到这里才会去执行回调函数，其他时间都可以在进行数据的处理，所以不会出现同时读取与同时写入数据的烦恼。ros自己肯定会回调函数的执行顺序进行整理，不会出现同时写入写出的情况。
 
 - 如果使用ros::spin()的就是一直在这里使用回调函数处理数据，调用其他线程来继续处理数据
+
+
+
+
+
+
+
+
+
+
+
+### 线程池
+
+为一些任务提前创建好线程，避免使用的时候重复创建以及销毁线程。一个线程池里面包含着提前创建好的线程，必然是为了执行多种任务来创建的(为了一种任务创建多线程显然不是那么划算)，所以线程池的封装比较好(一个比较简单的多线程的操作 : https://github.com/progschj/ThreadPool )
+
+
+
+
+
+
+
+
+
+### 异步操作
+
+异步操作是一种目的，C++中的多线程就是一种异步操作，还有异步操作的方法就是使用std::future<>来实现。
+
+https://yilingui.xyz/wiki/c++/cxx11_multi_thread_and_async.html
+
+
+
+opencv自己也有一个tbb进行多线程的计算
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

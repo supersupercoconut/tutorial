@@ -751,6 +751,10 @@ docker cp /home/supercoconut/groundfusion 6a961944a2b6:/home
 
 1. [docker的使用中配置clion的远程开发](https://blog.csdn.net/maogeweiwu/article/details/135818633?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-135818633-blog-116946321.235%5Ev43%5Epc_blog_bottom_relevance_base5&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-135818633-blog-116946321.235%5Ev43%5Epc_blog_bottom_relevance_base5&utm_relevant_index=6)
 
+PS：
+
+​	关于远程开发有人给了一个使用clion直接创建容器的来进行debug的方式，说是这样可以让clion自己创建与docker的通信什么的(一定要注意给docker创建的容器root权限 --privileged -it应该就可以获取到root权限) —— 但是现在比较喜欢glog的方式，不想折腾了
+
 
 
 ### **目前使用中的docker容器**

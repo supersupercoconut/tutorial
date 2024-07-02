@@ -178,7 +178,7 @@ PS:
 
 （6）LIVER: A Tightly Coupled LiDAR-Inertial-Visual State Estimator With High Robustness for Underground Environments (RAL)
 
-（7）DAMS-LIO: A Degeneration-Aware and Modular Sensor-Fusion LiDAR-inertial Odometry
+（7）DAMS-LIO: A Degeneration-Aware and Modular Sensor-Fusion LiDAR-inertial Odometry（这里我又重复的看到了这个）
 
 （8）Efficient LoFTR: Semi-Dense Local Feature Matching with Sparse-Like Speed (关系不是很大的部分) 
 
@@ -195,6 +195,46 @@ PS:
 KinectFusion
 
 TSDF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -215,6 +255,55 @@ openMVS的具体实现 | 主要使用四个部分来进行工作
 
 
 OpenMVS 的 TextureMesh 负责实现mesh上纹理信息的叠加，并且使用库也包含了CGAL库，所以我感觉这里的方法会跟Immesh中方法存在一个结合的可能性
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+****
+
+
+
+**DAMS-LIO (ICRA2023)** 退化环境下的激光SLAM 
+
+1. 出现lidar的退化环境之后才会使用其他里程计的Pose信息，其余部分应该都是直接使用正常的lidar里程计 (在多种传感器数据融合以及退化模块检测上存在改进)
+2. CRLB 量化里程计性能
+
+（这论文让人看的不是很懂 —— 就连怎么进行退化检测也没有写出来）
+
+![image-20240702145415285](figure/image-20240702145415285.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
