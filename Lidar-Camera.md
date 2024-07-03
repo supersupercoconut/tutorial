@@ -80,6 +80,320 @@ ImMesh中的上色部分可以直接基于height来实现，在加色彩信息�
 
 
 
+
+
+
+
+**1/2.  结果展示**
+
+pcd文件读取使用pcl, mesh文件使用meshlab读取
+
+- Immesh中 点云(pcd文件) mesh(ply文件)
+- r3live 保存成为pcd文件
+
+
+
+**plane色彩信息对应的为不确定性**
+
+**voxelmap:**
+
+- m2DGR walk.bag
+
+蓝色平面为确定性比较高的平面(生成的plane基本都在地面上，其他区域plane数量比较少)
+
+![image-20240603154338475](figure/image-20240603154338475.png)
+
+**完整一帧运行时间(ms)**
+
+feats size:39029, down size:7048
+[ Time ]: average undistort: 0.00733234 (没有使用imu，直接使用匀速模型)
+[ Time ]: average down sample: 1.60856
+[ Time ]: average calc cov: 0.48117
+[ Time ]: average scan match: 12.4769
+[ Time ]: average solve: 4.21935
+[ Time ]: average map incremental: 23.0096
+[ Time ]:  average total 41.803
+
+
+
+**voxelmap++**
+
+![image-20240603163228861](figure/image-20240603163228861.png)
+
+
+
+**完整一帧的运行时间(ms)**
+
+feats size:38777, down size:6441
+pos:197.299 42.9551 4.75867
+[ Time ]: average undistort: 2.80849 (使用imu去畸变)
+[ Time ]: average down sample: 1.69304
+[ Time ]: average calc cov: 0.409475
+[ Time ]: average scan match: 5.89106
+[ Time ]: average solve: 2.3585
+[ Time ]: average map incremental: 6.0728
+[ Time ]:  average total 19.2334
+
+
+
+**ImMesh**
+
+在ImMesh中的其中一个线程也使用了相同的平面生成过程, 相比于原版，其在匹配位姿以及地图更新上面的耗时增加
+
+(1) 位姿计算 ：6.54092 ms
+
+(2) 总时间(包含发布点云以及增加地图时间) : 9.95822 ms
+
+
+
+
+
+****
+
+
+
+**3. mesh重建**
+
+rqt中node关系: 说明发布的话题只会进行可视化，内部数据的交换都是经过线程来进行处理的，并且没有使用图像信息
+
+![image-20240604224034465](figure/image-20240604224034465.png)
+
+
+
+
+
+ImMesh(原版) hku_park_01.bag
+
+- 发布点云+plane平面
+
+![image-20240609191740277](figure/image-20240609191740277.png)
+
+- 最终生成的mesh图形
+
+![image-20240610201455606](figure/image-20240610201455606.png)
+
+
+
+ImMesh(lvi-sam做里程计) 
+
+- handheld.bag(lvisam自身提供数据集)| 完成一帧的运行速度在0.2ms处理 (i9-13900) 相当于只负责地图的更新
+
+![image-20240609193618783](figure/image-20240609193618783.png)
+
+- garden.bag(lvisam自身提供数据集)
+
+![image-20240609195716949](figure/image-20240609195716949.png)
+
+m2DGR walk01.bag
+
+- 开始部分
+
+![image-20240609194328612](figure/image-20240609194328612.png)
+
+- 结束部分
+
+![image-20240609194440701](figure/image-20240609194440701.png)
+
+在录制数据的时候将后面的人录制上去，导致在最后生成的mesh图中也包含了人的信息
+
+<img src="figure/image-20240609194621029.png" alt="image-20240609194621029" style="zoom:50%;" />
+
+
+
+
+
+**算法改动**
+
+- 增加cloudVoxel.msg文件 将lvisam中计算出来的 xyz+row/pitch/yaw + 原始的点云信息 + timestamp全部打包
+- ImMesh中获取数据之后，将数据赋值给voxelmap的类成员变量，以及位姿角度转换成位姿矩阵,  更新点的不确定度 
+
+```cpp
+     	// 获取位姿信息(其余部分不会使用协方差数据 所以只需要将对应的位姿信息输入到state中即可)
+            Eigen::Affine3f tmp = pcl::getTransformation(temp->x, temp->y, temp->z, temp->roll, temp->pitch, temp->yaw);
+            Eigen::Affine3d transCur = tmp.cast<double>();
+
+            state.pos_end = transCur.translation();
+            state.rot_end = transCur.rotation();
+
+            if(m_lidar_en)
+            {
+                m_euler_cur(0,0) = temp->roll;
+                m_euler_cur(0,1) = temp->pitch;
+                m_euler_cur(0,2) = temp->yaw;
+            }
+			
+			// 降采样
+            m_downSizeFilterSurf.setInputCloud( m_feats_undistort );
+            m_downSizeFilterSurf.filter( *m_feats_down_body );
+            m_feats_down_size = m_feats_down_body->points.size();
+            // 新建地图
+			if ( m_use_new_map )
+            {
+                if ( !m_init_map )
+                {
+                    // 进行voxelmap的建立 —— 这里没有使用将采样的点云数据 使用的是去畸变数据
+                    m_init_map = voxel_map_init();
+                    if ( m_is_pub_plane_map )
+                        pubPlaneMap( m_feat_map, voxel_pub, state.pos_end );
+                    frame_num++;
+                    LOG(INFO)<<"Build the voxelMap";
+                    continue;
+                }
+            }
+			// 地图增长
+           if ( m_lidar_en )
+               map_incremental();
+			// 发布信息
+            if ( m_is_pub_plane_map )
+                pubPlaneMap( m_feat_map, voxel_pub, state.pos_end );
+            t2 = omp_get_wtime();
+
+            frame_num++;
+            LOG(INFO) << "[service_lvisam_odometry]: " << (t2-t0)/frame_num;
+            cloud_Buffer.pop_front();
+        }
+
+        rate.sleep();
+    }
+```
+
+
+
+
+
+
+
+**数据结构**
+
+1. Voxel_mapping 与平面相关的类，管理一个八叉树地图 | 八叉树的第一层代表一个初始voxel_size，子结点对应着更加精细的空间，一个空间生成一个平面 | mesh重建中使用的数据与这里保存的数据没有关系(所以mesh重建可以相当于一个独立部分)
+
+2. RGB_Voxel 管理空间中一个体素中的数据
+
+   - voxel中的所有点云 ( 点位置直接对应grid的id )
+
+   - 二维平面(应该是用于mesh生成的部分)
+
+   - 以及三个向量来代表三个轴信息(short/mid/long)
+
+3. Global_map  管理所有的点云+RGB_Voxel+KD_tree
+
+   - 所有RGB_ptr(即所有的点云数据)
+
+   - 所有的RGB_Voxel索引
+
+   - Kd_tree 用于快速搜索最近点云数据
+
+   - Hash表 方便快速查找 点与voxel
+
+4. Triangle_manager 管理与三角平面相关的部分
+   - ImMesh中模仿了git中的commit/push/pull的过程，其中的push以及pull过程都是针对Triangle_manager而言。获取当前已经存在的triangle信息，补充新增的triangle信息，删除不再需要的triangle信息。
+
+
+
+
+
+
+
+**service_LiDAR_update 线程**
+
+地图的表示方式为: std::unordered_map< VOXEL_LOC, OctoTree * > 对于输入的点云信息按照自定义的hash函数映射到实际体素位置，使用OctoTree来管理这一块区域中的所有数据(点云+平面+更精细的区域信息)
+
+- voxel_map_init() 地图的建立
+  - 新建OctoTree| 生成平面 | 不能生成的点放到子结点中继续判断能不能生成平面
+
+- map_incremental_grow() 对应地图更新
+  - 开始mesh的线程
+  - updateVoxelMap() 为地图更新最重要的部分 | 设置条件来继续生成平面
+  - 将点云+位姿打包 输入到g_rec_mesh_data_package_list
+
+
+
+
+
+**service_reconstruct_mesh**
+
+调用线程池不断处理数据 
+
+- 在service_reconstruct_mesh这个子线程上启动线程池, 线程池中提交incremental_mesh_reconstruction()任务即调用线程池中的一个空闲线程来处理
+
+注意: 这里的global map不是上面说的OctoTree
+
+
+
+
+
+
+
+
+
+**incremental_mesh_reconstruction** 
+
+点云数据融入到Global map + 判断哪一个体素部分的triangle mesh需要被更新。
+
+- 计算新增点其对应的grid以及voxel | grid为更加精细的空间划分(系统中所有点云的位置信息都用其对应的grid表示)
+
+  - 查找grid有没有存在
+  - 查找voxel是否存在(这里获取voxel编号与voxelMap中获取voxel编号的方法不一样 —— 这里使用的方法更简单)。但无论这个voxel是新建/原来就有 ，这个voxel都会被认为是voxels_recent_visited (最近被新增点的体素——新增了点那么意味着对应的voxel也是需要被更新的)
+- 点云信息 补充到 RGB_ptr | RGB_voxel_ptr | Kd_tree | Hash(grid)等等一堆保存点云的部分
+
+```cpp
+	// 这里使用std::round() 将 xyz的值转换成为靠近的整数 -1.3为-1 -1.5为-2转换其靠近的整数范围内
+
+// m_minimum_pts_size对应的大小为0.05,即对应着grid中的大小划分为0.05(估计是滤波相关操作) | 相当于是把xyz转换是grid的编号
+        int  grid_x = std::round( pc_in.points[ pt_idx ].x / m_minimum_pts_size );
+        int  grid_y = std::round( pc_in.points[ pt_idx ].y / m_minimum_pts_size );
+        int  grid_z = std::round( pc_in.points[ pt_idx ].z / m_minimum_pts_size );
+        // 将xyz转换成voxel对应的编号
+        int  box_x = std::round( pc_in.points[ pt_idx ].x / m_voxel_resolution );
+        int  box_y = std::round( pc_in.points[ pt_idx ].y / m_voxel_resolution );
+        int  box_z = std::round( pc_in.points[ pt_idx ].z / m_voxel_resolution );
+        auto pt_ptr = m_hashmap_3d_pts.get_data( grid_x, grid_y, grid_z );
+```
+
+
+
+- 调用tbb并行计算
+
+  因为incremental_mesh_reconstruction函数本身就是在线程池中commit的任务，相当与是在线程池中的一个子线程里面又调用tbb开辟新的线程进行并行计算(加速这个线程的处理数据，防止这个线程占用数据的时间过长) 
+
+  - tbb并行处理: 自动将需要处理的voxel分配线程进行处理 (只处理一个voxel)
+
+    - 获取该voxel中的所有点 + 周围一定距离中的点(借助Global map中的KDtree)
+
+    - 投影计算 | 根据点云分布 - 按照点云的协方差矩阵对应的特征向量划分三个轴(long/short/mid)
+
+    - 计算三角形, 记录其对应的顶点
+
+    - 在 Triangle_manager 中获取当前点云对应的所有三角，与上一步中计算出来的三角形进行对比，确定需要增加/删除的三角以及
+
+    - 其对应的顶点
+
+        
+
+
+
+**service_refresh_and_synchronize_triangle**
+
+ImMesh中使用openGL设计的GUI界面的可视化部分有关
+
+- 主要是调用 synchronize_triangle_list_for_disp() 函数进行处理
+
+- 几何结构的表示主要使用CGAL库进行可视化
+
+
+
+PS：
+
+- 因为在线程池中提交的是相同的任务(都是对voxelmap中的线程进行处理)，说明线程池中的子线程需要访问相同的数据容器(vetor或者deque)进行处理(包括取数据以及储存的数据)，这里就需要上锁以及解锁。其次，在子线程中使用tbb可以加速数据处理，好处就是减小这个子线程上锁的时间，可以避免子线程运行时间过长，导致其他子线程都没有办法进行数据的读取以及运算结果的储存。并且在tbb调用过程中，因为也是多个线程处理数据，也需要存储结果，所以这里的处理过程也需要上锁解锁.
+
+- grid是比voxel中更精细的空间表示方式 - 设置为0.05m | 一个网格中只会有一个点(属于是变相滤波)
+
+
+
+
+
+
+
 ****
 
 
@@ -115,6 +429,37 @@ LIO(FAST-LIO)用于构造点云地图(也就是描述整个场景的几何形状
     ![image-20240408132810567](./figure/image-20240408132810567.png)
 
   - 对误差表达Taylor展开-因为其中包含了(1) 当前帧位姿 (2)地图点位置 (3)地图点颜色，所以最小化误差的时候可以将这三者进行一个联合优化。这样即实现了地图点颜色的更新，并且当前帧的位姿与地图点位置更加准确。被优化后的当前帧位姿作为下一帧VIO/LIO的起始状态。
+
+
+
+
+
+r3live以及imMesh中对于点云地图的管理方式 | 都是使用grid + voxel来进行处理的
+
+- 两个程序都维护了一个全局地图，这个全局地图中包含的点云数据都是经过grid来做降采样得到的
+
+- r3live中的更新思路也与ImMesh中更新mesh的思路类似，都是从新获得到的点云找最近被更新的voxel，然后会去更新这些voxel中的所有点的RGB信息(但是还不知道用于更新的颜色信息的协方差是如何得到的)
+
+- r3live的VIO部分使用了两步来实现功能:
+
+  - VIO中光流法 —— 光流跟踪 + PnP + IMU(使用ESIKF进行计算)
+  - VIO中使用观测到的点云RGB与全局地图中已经存在的RGB信息 —— 两者之间的光度误差可以被认为是更新位姿的依据 + 最后再加上IMU对位姿信息进行更新(这里对应的也是ESIKF)
+
+- r3live中的点云颜色获取 —— 都是使用点云在当前帧中的投影位置(周围RGB像素差值得到的)。除去第一帧之外的所有点的RGB更新都是利用贝叶斯公式进行的更新(render的部分倒是比较简单)。
+
+
+
+
+
+LIO部分在程序启动的时候就已经完成了启动，但是VIO是接受到图像信息之后才会直接使用(所以会在回调函数中使用)
+
+- 关于线程池的使用——同一个线程池中不断commit多种任务
+  - LIO更新
+  - VIO的更新 
+  - service_pub_rgb_maps RGB地图发布
+  - 对于点云信息投影的设置
+
+
 
 
 
