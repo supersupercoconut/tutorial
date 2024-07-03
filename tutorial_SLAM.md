@@ -291,7 +291,16 @@ OpenMVS 的 TextureMesh 负责实现mesh上纹理信息的叠加，并且使用�
 
 
 
+整理corner case detection的部分中发现的论文
 
+1. Map Management Approach for SLAM in Large-Scale Indoor and Outdoor Areas
+2. Test your slam! the subt-tunnel dataset and metric for mapping
+3. Description of corner cases in automated driving: Goals and challenges
+4. Rgb-d inertial odometry for a resource-restricted robot in dynamic environments
+5. Gvins: Tightly coupled gnss–visual–inertial fusion for smooth and consistent state estimation
+6. Fast-livo: Fast and tightly-coupled sparse-direct lidarinertial-visual odometry
+
+但是这几篇都不是corner case detection相关的部分
 
 
 
@@ -326,4 +335,146 @@ D455 RGBD是全局快门
 果冻效应: 在拍摄物体的时候会讲物体出现倾斜或者扭曲 —— 机桨应该是直直的而不是这种扭曲形状 | 在使用D435i的时候发现这种扭曲部分出现比较严重，但是D455不会出现这么严重的扭曲。拍摄物体高速运动的或者在拍摄时相机的晃动比较严重就容易出现这种果冻效应 —— 可以提高相机的帧率来减小这种情况的发生，或者使用D455这种全局快门的相机
 
 <img src="./figure/1280px-Jamtlands_Flyg_EC120B_Colibri.jpeg" alt="undefined" style="zoom:50%;" />
+
+
+
+
+
+# 方便使用的小tool
+
+- 直接从rosbag包获取pcd文件以及图像文件 - 只需要手动指定bag包以及话题名称即可
+
+```cpp
+// 直接从rosbag包中获取pcd文件以及其时间戳靠近的点云数据
+#include <ros/ros.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CompressedImage.h>
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <sensor_msgs/point_cloud2_iterator.h>
+#include <boost/filesystem.hpp>
+#include <vector>
+#include <fstream>
+
+// 保存图像到文件
+void saveImage(const cv::Mat& image, const std::string& filename)
+{
+    cv::imwrite(filename, image);
+}
+
+// 保存点云数据到PCD文件
+void savePointCloud(const sensor_msgs::PointCloud2::ConstPtr& pc_msg, const std::string& filename)
+{
+    std::ofstream ofs(filename);
+    ofs << "# .PCD v0.7 - Point Cloud Data file format\n";
+    ofs << "VERSION 0.7\n";
+    ofs << "FIELDS x y z intensity normal_x normal_y normal_z curvature\n";
+    ofs << "SIZE 4 4 4 4 4 4 4 4\n";
+    ofs << "TYPE F F F F F F F F\n";
+    ofs << "COUNT 1 1 1 1 1 1 1 1\n";
+    ofs << "WIDTH " << pc_msg->width << "\n";
+    ofs << "HEIGHT " << pc_msg->height << "\n";
+    ofs << "VIEWPOINT 0 0 0 1 0 0 0\n";
+    ofs << "POINTS " << pc_msg->width * pc_msg->height << "\n";
+    ofs << "DATA ascii\n";
+
+    sensor_msgs::PointCloud2ConstIterator<float> iter_x(*pc_msg, "x");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_y(*pc_msg, "y");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_z(*pc_msg, "z");
+    sensor_msgs::PointCloud2ConstIterator<float> iter_intensity(*pc_msg, "intensity");
+
+    for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z, ++iter_intensity)
+    {
+        // 读取xyzi，normal_x, normal_y, normal_z, curvature都设为0
+        ofs << *iter_x << " " << *iter_y << " " << *iter_z << " "
+            << *iter_intensity << " 0 0 0 0\n";
+    }
+
+    ofs.close();
+}
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "read_bag");
+    ros::NodeHandle nh;
+
+    std::string bag_file = "/home/supercoconut/Myfile/datasets/m2DGR/walk_01.bag";
+    std::string output_dir = "/home/supercoconut/Myfile/datasets/m2DGR/output";
+
+    if (!boost::filesystem::exists(output_dir))
+    {
+        boost::filesystem::create_directories(output_dir);
+    }
+
+    rosbag::Bag bag;
+    bag.open(bag_file, rosbag::bagmode::Read);
+
+    std::vector<std::string> topics;
+    topics.push_back("/camera/color/image_raw/compressed");
+    topics.push_back("/velodyne_points");
+
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+    sensor_msgs::CompressedImage::ConstPtr last_image_msg = nullptr;
+    sensor_msgs::PointCloud2::ConstPtr last_pc_msg = nullptr;
+
+    int index = 0;
+
+    for (const rosbag::MessageInstance& m : view)
+    {
+        sensor_msgs::CompressedImage::ConstPtr img_msg = m.instantiate<sensor_msgs::CompressedImage>();
+        if (img_msg != nullptr)
+        {
+            last_image_msg = img_msg;
+            continue;
+        }
+
+        sensor_msgs::PointCloud2::ConstPtr pc_msg = m.instantiate<sensor_msgs::PointCloud2>();
+        if (pc_msg != nullptr)
+        {
+            last_pc_msg = pc_msg;
+        }
+
+        // 如果同时存在图像和点云数据，且时间间隔小于或等于0.1秒，则保存
+        if (last_image_msg != nullptr && last_pc_msg != nullptr)
+        {
+            ros::Time img_time = last_image_msg->header.stamp;
+            ros::Time pc_time = last_pc_msg->header.stamp;
+            double time_diff = fabs((img_time - pc_time).toSec());
+
+            if (time_diff <= 0.1)
+            {
+                try
+                {
+                    cv_bridge::CvImagePtr cv_ptr = cv_bridge::toCvCopy(last_image_msg, sensor_msgs::image_encodings::BGR8);
+
+                    std::string img_filename = output_dir + "/image_" + std::to_string(index) + ".jpg";
+                    saveImage(cv_ptr->image, img_filename);
+                    ROS_INFO("Saved image %s", img_filename.c_str());
+
+                    std::string pc_filename = output_dir + "/pointcloud_" + std::to_string(index) + ".pcd";
+                    savePointCloud(last_pc_msg, pc_filename);
+                    ROS_INFO("Saved point cloud %s", pc_filename.c_str());
+
+                    // 增加index
+                    index++;
+                }
+                catch (cv_bridge::Exception& e)
+                {
+                    ROS_ERROR("cv_bridge exception: %s", e.what());
+                }
+
+                // 重置消息指针，确保不会重复使用相同的消息
+                last_image_msg = nullptr;
+                last_pc_msg = nullptr;
+            }
+        }
+    }
+
+    bag.close();
+    return 0;
+}
+```
 
