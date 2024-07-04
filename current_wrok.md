@@ -153,6 +153,12 @@ https://blog.csdn.net/m0_47163076/article/details/121698677
 
 
 
+被连续跟踪到特征点次数 —— setMask的时候先给跟踪次数比较多的部分进行设置mask
+
+
+
+
+
 
 
 

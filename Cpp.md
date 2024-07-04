@@ -454,5 +454,21 @@ Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 
 
 
+指针常量以及常量指针
+
+const T* ptr = &a 这种是常量指针 指向的对象a的数值不可以被修改ia
+
+
+
+T* const ptr = &a 指针常量 a的数值是可以修改的, 但是指向的对象不能被修改
+
+
+
+
+
+
+
+
+
 
 
