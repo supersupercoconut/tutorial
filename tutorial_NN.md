@@ -1,4 +1,4 @@
-# tutorial_NN（南同）
+# tutorial_NN
 
 整理网络部分的内容(现在最重要的可能是CNN以及transformer)
 

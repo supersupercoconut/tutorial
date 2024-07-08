@@ -77,10 +77,10 @@ Canny-VO: Visual Odometry with RGB-D Cameras based on Geometric 3D-2D Edge Align
 
 1. 匿名命名空间的使用
 2. boost库的使用会存在什么好处
-3. lambda表达式
+3. lambda表达式 (完成)
 4. 第四章(从0开始vio的那个)
 5. r3live实现mesh的输入，以及实现
-6. mm-line怎么将轨迹对齐到一起
+6. mm-line怎么将轨迹对齐到一起 （给作者发了gmail以及github上的提问 | 论文看完了但是不是很懂）
 
 
 
