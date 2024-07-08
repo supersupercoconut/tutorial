@@ -63,21 +63,7 @@ PS： taichi好像可以与mesh联动，但是不知道效果怎么样(反正效
 
 
 
-
-
-# Canny-VO: Visual Odometry with RGB-D Cameras based on Geometric 3D-2D Edge Alignment
-
-
-
-
-
-
-
-
-
-
-
-
+Canny-VO: Visual Odometry with RGB-D Cameras based on Geometric 3D-2D Edge Alignment
 
 
 
@@ -91,9 +77,10 @@ PS： taichi好像可以与mesh联动，但是不知道效果怎么样(反正效
 
 1. 匿名命名空间的使用
 2. boost库的使用会存在什么好处
-3. 第四章(从0开始vio的那个)
-4. r3live实现mesh的输入，以及实现
-5. mm-line怎么将轨迹对齐到一起
+3. lambda表达式
+4. 第四章(从0开始vio的那个)
+5. r3live实现mesh的输入，以及实现
+6. mm-line怎么将轨迹对齐到一起
 
 
 

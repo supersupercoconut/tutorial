@@ -340,18 +340,6 @@ https://www.zhihu.com/question/41103160
 
 
 
-lambda表达式
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -464,17 +452,26 @@ Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 
 const T* ptr = &a 这种是常量指针 指向的对象a的数值不可以被修改ia
 
-
-
 T* const ptr = &a 指针常量 a的数值是可以修改的, 但是指向的对象不能被修改
 
 
 
 
 
+## lambda表达式
+
+lambda表达式又可以称为lambda函数，获取作用域中变量的匿名函数。
+
+lambda表达化自动获取函数中的变量，或者是自动定义形参，然后在函数体中完成计算返回 
+
+```cpp
+[函数对象参数] (操作符重载函数参数) mutable 或 exception 声明 -> 返回值类型 {函数体}
+```
+
+- 获取函数对象参数有两种方法 1. 值传递(相当于重新copy一份，类似于C++函数中常规定义的形参与实参之间的关系) 2. 引用传递( 就是引用 )
 
 
 
+https://www.cnblogs.com/jimodetiantang/p/9016826.html
 
-
-
+https://blog.csdn.net/gongjianbo1992/article/details/105128849
