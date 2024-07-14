@@ -183,7 +183,11 @@ https://www.limerence2017.com/2023/09/17/concpp07/
 
 opencv自己也有一个tbb进行多线程的计算
 
+我感觉这里对应的tbb库中lambda表达式对应形参应该就是前面指定的范围 即对应每一个RGB_Voxel
 
+```cpp
+tbb::parallel_for_each( voxels_recent_visited->begin(), voxels_recent_visited->end(), [ & ]( const std::shared_ptr< RGB_Voxel > &voxel )
+```
 
 
 
@@ -475,3 +479,23 @@ lambda表达化自动获取函数中的变量，或者是自动定义形参，�
 https://www.cnblogs.com/jimodetiantang/p/9016826.html
 
 https://blog.csdn.net/gongjianbo1992/article/details/105128849
+
+
+
+
+
+
+
+## 其他
+
+1. 匿名命名空间
+
+​	匿名空间主要是为了防止在多个cpp文件中设置全局变量之后，不同cpp中的全局变量可能命名相同，导致命名冲突。匿名空间相当于是在整个cpp中定义了一个只属于这个cpp中的变量/函数/结构体等等。这种方法比直接使用static的效果要更好一些。
+
+
+
+2. boost库
+
+    boost库的主要作用就是为C++标准库开发更多的功能，也有很多在boost的内容不断地被选到c++标准库中，所以只需要查看一些boost的内容添加到c++标准库中即可。
+
+    https://blog.csdn.net/qq_41868108/article/details/105778022

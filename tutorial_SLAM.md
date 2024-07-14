@@ -140,10 +140,6 @@ MCD 数据集 —— 用于解决不同区域特征不相同的情况 —— 提
 
 
 
-
-
-
-
 PS:
 
 （1）SLAM交流会里面关于三维重建的时候 有人提到了用realsense信息标定的效果不好，使用colmap这种自己可以估计出来相机外参的效果会更好一些。（2）关于d435i转换得到的深度图是不是精准的问题 —— 可以先直接观察一些是不是稳定的，如果depth图像本身就抖动比较大的话，应该怎么处理这方面。
@@ -206,6 +202,93 @@ TSDF
 
 
 
+整理corner case detection的部分中发现的论文
+
+1. Map Management Approach for SLAM in Large-Scale Indoor and Outdoor Areas
+2. Test your slam! the subt-tunnel dataset and metric for mapping
+3. Description of corner cases in automated driving: Goals and challenges
+4. Rgb-d inertial odometry for a resource-restricted robot in dynamic environments
+5. Gvins: Tightly coupled gnss–visual–inertial fusion for smooth and consistent state estimation
+6. Fast-livo: Fast and tightly-coupled sparse-direct lidarinertial-visual odometry
+
+7. Radio SLAM: A Review on Radio-Based Simultaneous Localization and Mapping
+8. X-icp: Localizability-aware lidar registration for robust localization in extreme environments
+
+但是这几篇都不是corner case detection相关的部分
+
+
+
+
+
+剩余部分
+
+1. Laser–visual–inertial odometry and mapping with high robustness and low drift
+2. Resilient and Distributed Multi-Robot Visual SLAM: Datasets, Experiments, and Lessons Learned
+3. Swarm-SLAM: Sparse Decentralized Collaborative Simultaneous Localization and Mapping Framework for Multi-Robot Systems
+4. LIVER: A Tightly Coupled LiDAR-Inertial-Visual State Estimator With High Robustness for Underground Environments
+
+5. mVLINS: A Multilevel Visual-LiDAR-Inertial Navigation System with Completely Decoupled Odometry and Adaptive Environmental Mapping
+6. Locus: A multi-sensor lidar-centric solution for highprecision odometry and 3d mapping in real-time
+
+
+
+GroundFusion中没有lidar出现异常状态下的检测
+
+退化场景相关的部分 : 
+
+1. Degeneration-Aware Localization with Arbitrary Global-Local Sensor Fusion （不是好的期刊文章，看起来很烂）
+2. Single-Line LiDAR Localization via Contribution Sampling and Map Update Technology
+3. Camera Localization with Heterogeneous Sensor Aided Lidar Mapping
+4. A Robust LiDAR SLAM Method for Underground Coal Mine Robot with Degenerated Scene Compensation
+5. Lidar/UWB fusion based SLAM with anti-degeneration capability
+6. Range-Aided LiDAR-Inertial Multi-Vehicle Localization and Mapping in Degenerate Environments
+7. Dense normal based degeneration-aware 2-D lidar odometry for correlative scan matching
+8. Adaptive Denoising-Enhanced LiDAR Odometry for Degeneration Resilience in Diverse Terrains
+9. An intensity-augmented LiDAR-inertial SLAM for solid-state LiDARs in degenerated environments
+10. UV-SLAM: Unconstrained line-based SLAM using vanishing points for structural mapping
+11. An adaptive scheme for degradation suppression in Lidar based SLAM
+12. LiDAR SLAM based multivehicle cooperative localization using iterated split CIF
+13. Degeneration-aware outlier mitigation for visual inertial integrated navigation system in urban canyons
+14. MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments <font color='blue'>24年的trans, 谢老师组里面做出来的，开源了代码以及数据集，第一作者相当nice, 在github上回复问题回复的相当快</font>
+15. MM-Gaussian: 3D Gaussian-based Multi-modal Fusion for Localization and Reconstruction in Unbounded Scenes
+16. Mimosa: A multi-modal slam framework for resilient autonomy against sensor degradation
+17. LVIO-Fusion: Tightly-Coupled LiDAR-Visual-Inertial Odometry and Mapping in Degenerate Environments (RAL 2024 貌似跟我们做的部分完全一样...fuck，先看这篇论文) <font color='blue'>已经看完，没开源，思路非常简单，对于我的影响不大</font>
+18. Degradation Resilient LiDAR-Radar-Inertial Odometry  <font color='blue'>(ICRA) 2024 没有退化检测的部分，但是实验结果给了视频，没有开源代码，实现的步骤是使用GTSAM做的因子图的优化</font>
+19. Ct-LVI: A Framework Towards Continuous-time Laser-Visual-Inertial Odometry and Mapping
+20. LIC-Fusion
+
+21. Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments (这个才是真撞大车了, hhhh, 要死了，需要赶紧推进度了)
+
+
+
+
+
+- 关于可视化的部分有找到了一种方法 Voxblox: Incremental 3D Euclidean Signed Distance Fields for On-Board MAV Planning(IROS 2017),以及其的改进版本Voxblox++
+
+
+
+- 这里也提到了一种 openMVG与openMVS一起实时处理数据的部分
+
+https://blog.csdn.net/weixin_51580530/article/details/132448588
+
+
+
+**MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments**
+
+IEEE Transactions on Intelligent Vehicles | 开源 | 谢老师组里面的工作，开源数据集使用的m2DGR(还有一些其他的数据集)。关于lidar点云退化场景，这里是直接设计出一种塑料袋包裹lidar的场景来进行模拟退化场景。右侧图中给出的轨迹应该是目前lidar数据中有一段数据缺失之后，目前开源的程序会出现的问题。
+
+![image-20240704114517379](./figure/image-20240704114517379.png)
+
+遇到退化场景之前生成的地图在检测到lidar退化之后转换sleep map, 然后不断地进行动态初始化在出退化场景之后生成重新建图，即active map。使用Scan Context描述子去判断sleep与active map之间地相似性，认为两者之间存在重复场景就进行场景地拼接
+
+- 在保留之前地图（sleep map）与生成新地图（active map）之间是退化场景，根据原作者的思路，退化场景的地图是没有办法生成的，里程计部分应该是直接使用imu来做退化场景的过度。
+
+- LIO: 基于fast-lio2进行改进，加入了退化检测以及动态初始化
+    - 退化检测 
+        - 基于状态的协方差进行判断(特征向量什么的)
+    - 动态初始化 
+        - 出现退化场景之后对系统进行重新初始化(相比于静态初始化的方法，这里初始化的部分也初始化了速度信息)，方便脱离退化场景之后直接生成新地图(新的active map)
+        - 是直接用的vins mono的初始化部分，但是忽略掉了vins mono里面的scale initialization部分
 
 
 
@@ -217,26 +300,7 @@ TSDF
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+****
 
 ### 关于openMVS的整理
 
@@ -284,83 +348,6 @@ OpenMVS 的 TextureMesh 负责实现mesh上纹理信息的叠加，并且使用�
 （这论文让人看的不是很懂 —— 就连怎么进行退化检测也没有写出来）
 
 ![image-20240702145415285](figure/image-20240702145415285.png)
-
-
-
-
-
-
-
-整理corner case detection的部分中发现的论文
-
-1. Map Management Approach for SLAM in Large-Scale Indoor and Outdoor Areas
-2. Test your slam! the subt-tunnel dataset and metric for mapping
-3. Description of corner cases in automated driving: Goals and challenges
-4. Rgb-d inertial odometry for a resource-restricted robot in dynamic environments
-5. Gvins: Tightly coupled gnss–visual–inertial fusion for smooth and consistent state estimation
-6. Fast-livo: Fast and tightly-coupled sparse-direct lidarinertial-visual odometry
-
-7. Radio SLAM: A Review on Radio-Based Simultaneous Localization and Mapping
-8. X-icp: Localizability-aware lidar registration for robust localization in extreme environments
-
-但是这几篇都不是corner case detection相关的部分
-
-
-
-
-
-剩余部分
-
-1. Laser–visual–inertial odometry and mapping with high robustness and low drift
-2. Resilient and Distributed Multi-Robot Visual SLAM: Datasets, Experiments, and Lessons Learned
-3. Swarm-SLAM: Sparse Decentralized Collaborative Simultaneous Localization and Mapping Framework for Multi-Robot Systems
-4. LIVER: A Tightly Coupled LiDAR-Inertial-Visual State Estimator With High Robustness for Underground Environments
-
-5. mVLINS: A Multilevel Visual-LiDAR-Inertial Navigation System with Completely Decoupled Odometry and Adaptive Environmental Mapping
-6. Locus: A multi-sensor lidar-centric solution for highprecision odometry and 3d mapping in real-time
-
-
-
-
-
-GroundFusion中没有lidar出现异常状态下的检测
-
-退化场景相关的部分 : 
-
-1. Degeneration-Aware Localization with Arbitrary Global-Local Sensor Fusion （不是好的期刊文章，看起来很烂）
-2. Single-Line LiDAR Localization via Contribution Sampling and Map Update Technology
-3. Camera Localization with Heterogeneous Sensor Aided Lidar Mapping
-4. A Robust LiDAR SLAM Method for Underground Coal Mine Robot with Degenerated Scene Compensation
-5. Lidar/UWB fusion based SLAM with anti-degeneration capability
-6. Range-Aided LiDAR-Inertial Multi-Vehicle Localization and Mapping in Degenerate Environments
-7. Dense normal based degeneration-aware 2-D lidar odometry for correlative scan matching
-8. Adaptive Denoising-Enhanced LiDAR Odometry for Degeneration Resilience in Diverse Terrains
-9. An intensity-augmented LiDAR-inertial SLAM for solid-state LiDARs in degenerated environments
-10. UV-SLAM: Unconstrained line-based SLAM using vanishing points for structural mapping
-11. An adaptive scheme for degradation suppression in Lidar based SLAM
-12. LiDAR SLAM based multivehicle cooperative localization using iterated split CIF
-13. Degeneration-aware outlier mitigation for visual inertial integrated navigation system in urban canyons
-14. MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments (24年的trans, 谢老师组里面做出来的)
-15. MM-Gaussian: 3D Gaussian-based Multi-modal Fusion for Localization and Reconstruction in Unbounded Scenes
-16. Mimosa: A multi-modal slam framework for resilient autonomy against sensor degradation
-17. LVIO-Fusion: Tightly-Coupled LiDAR-Visual-Inertial Odometry and Mapping in Degenerate Environments (RAL 2024 貌似跟我们做的部分完全一样...fuck，先看这篇论文) <font color='blue'>已经看完，没开源，思路非常简单，对于我的影响不大</font>
-18. Degradation Resilient LiDAR-Radar-Inertial Odometry  <font color='blue'>(ICRA) 2024 没有退化检测的部分，但是实验结果给了视频，没有开源代码，实现的步骤是使用GTSAM做的因子图的优化</font>
-19. Ct-LVI: A Framework Towards Continuous-time Laser-Visual-Inertial Odometry and Mapping
-20. LIC-Fusion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -523,4 +510,12 @@ int main(int argc, char** argv)
     return 0;
 }
 ```
+
+
+
+
+
+
+
+
 

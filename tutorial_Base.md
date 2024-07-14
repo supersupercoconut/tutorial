@@ -402,6 +402,10 @@ roslaunch package_name  launch_file_name
 
 
 
+关于roslaunch中的group使用以及全局命名空间
+
+在roslaunch中使用group想给这个node中的所有的话题都加上一个前缀，但是实际使用时发现并没有正常起作用，后来发现是在cpp中创建话题的发布器的时候，使用的/xxx_topic 我怀疑是这里对应的全局话题不受group中的私有命名空间的影响。
+
 
 
 
@@ -884,7 +888,25 @@ https://blog.csdn.net/m0_47163076/article/details/121698677
 
 
 
+关于pcd中保存的数据，这里对应的xyz rgb信息，其中的rgb对应的是一个无符号整数类型，然后对应的是整个部分的rgb信息。
 
+```
+# .PCD v0.7 - Point Cloud Data file format
+VERSION 0.7
+FIELDS x y z rgb
+SIZE 4 4 4 4
+TYPE F F F U
+COUNT 1 1 1 1
+WIDTH 3925315
+HEIGHT 1
+VIEWPOINT 0 0 0 1 0 0 0
+POINTS 3925315
+DATA ascii
+6.4672627 78.574593 -0.25317496 4282730555
+10.256534 77.851814 1.1185876 4283524917
+2.9052517 79.031265 0.20551738 4278453252
+2.9047186 79.014641 -1.6342744 4281545532
+```
 
 
 

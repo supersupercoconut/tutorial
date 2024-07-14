@@ -275,6 +275,8 @@ m2DGR walk01.bag
 
    - 以及三个向量来代表三个轴信息(short/mid/long)
 
+   - <font color='blue'>在RGB_Voxel中都没有保存其对应的triangle信息 - 因为每一次voxel中的triangle都是被重新生成的，所以不需要在voxel中保留信息</font>
+
 3. Global_map  管理所有的点云+RGB_Voxel+KD_tree
 
    - 所有RGB_ptr(即所有的点云数据)
@@ -356,29 +358,55 @@ m2DGR walk01.bag
 
   因为incremental_mesh_reconstruction函数本身就是在线程池中commit的任务，相当与是在线程池中的一个子线程里面又调用tbb开辟新的线程进行并行计算(加速这个线程的处理数据，防止这个线程占用数据的时间过长) 
 
-  - tbb并行处理: 自动将需要处理的voxel分配线程进行处理 (只处理一个voxel)
+  - tbb并行处理: 自动将需要处理的voxel分配线程进行处理 (一次只处理一个voxel，但是会使用多个线程进行处理)
 
-    - 获取该voxel中的所有点 + 周围一定距离中的点(借助Global map中的KDtree)
-
+    - 获取该voxel中的所有点 ( retrieve_pts_in_voxels直接获取voxel中的m_pts_in_grid输入数据 ) + 周围一定距离中的点(借助Global map中的KDtree | retrieve_neighbor_pts_kdtree )
     - 投影计算 | 根据点云分布 - 按照点云的协方差矩阵对应的特征向量划分三个轴(long/short/mid)
-
     - 计算三角形, 记录其对应的顶点
-
     - 在 Triangle_manager 中获取当前点云对应的所有三角，与上一步中计算出来的三角形进行对比，确定需要增加/删除的三角以及
+    - 其对应的顶点  
 
-    - 其对应的顶点
 
-        
+
+- 数据打包 - 用于可视化部分  - 这些数据会在GUI mesh展示的时候表现
+
+    
+
+每一个voxel中并没有保留其中对应triangle数据 - 所有的triangle都使用Triangle_manager自己来管理的
+
+
+
+
+
+
 
 
 
 **service_refresh_and_synchronize_triangle**
 
-ImMesh中使用openGL设计的GUI界面的可视化部分有关
+ImMesh中使用openGL+ImGUI界面的可视化部分有关
 
-- 主要是调用 synchronize_triangle_list_for_disp() 函数进行处理
+- 主要是调用 synchronize_triangle_list_for_disp() 函数进行数据转换 | 将需要同步的triangle的顶点数据拿到之后，然后进行渲染
 
 - 几何结构的表示主要使用CGAL库进行可视化
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
