@@ -674,11 +674,109 @@ https://arxiv.org/pdf/2403.11367v1.pdf 3DGS使用在重定位上
 
 
 
+## Else 剩余资料
 
 
 
 
 
+
+
+##  7.01~7.07
+
+### Immesh+r3live 可视化
+
+
+
+### 文献阅读
+
+
+
+**DAMS-LIO (ICRA2023)** 退化环境下的激光SLAM 
+
+1. 出现lidar的退化环境之后才会使用其他里程计的Pose信息，其余部分应该都是直接使用正常的lidar里程计 (在多种传感器数据融合以及退化模块检测上存在改进)
+2. CRLB 量化里程计性能
+
+直接使用海塞矩阵来检测LIO是否碰上了退化场景
+
+![image-20240702145415285](figure/image-20240702145415285.png)
+
+
+
+
+
+**LVIO-Fusion (RAL 2024)**
+
+Tightly-Coupled LiDAR-Visual-Inertial Odometry and Mapping in Degenerate Environments
+
+- LIO: 完全是voxelmap，甚至生成平面以及点云配准的过程都没有修改...
+- VIO: 点云信息投影到image平面进行光流(使用PnP计算出位姿信息)，计算光度误差(相当于2次修正位姿) —— 在r3live中都有类似的操作 | 光度误差上使用的是radiance辐射度，代表是实际上亮度信息(这里还增加了对于每一帧图像亮度的修正)。 
+- 借鉴了 LVI-SAM 的方法，使用一个滑动窗口对imu的bias进行修正
+
+
+
+整体框架: 
+
+<img src="./figure/image-20240703204842936.png" alt="image-20240703204842936" style="zoom: 25%;" />
+
+光度误差：
+
+<img src="./figure/image-20240703221255705.png" alt="image-20240703221255705" style="zoom: 67%;" />
+
+
+
+ 目前问题
+
+1. 什么情况可以认为是Tightly-coupled 什么是loosely-coupled | r3live这种可以认为是紧耦合的么?
+
+2. 点云没有颜色信息
+
+3. 对比实验并不是SOTA的算法
+
+4. 关于退化场景 都没有退化环境检测、只是在实验里面自己想象了一个退化场景
+5. 没有消融实验
+6. 为什么lidar里程计在长直道容易出现问题
+
+
+
+**Degradation Resilient LiDAR-Radar-Inertial Odometry(ICRA 2024)**
+
+使用的传感器有些不一致，但是这里对于退化场景也没有专门的detection用来检测，使用GTSAM做了因子图的优化。没有开源。很迷惑的操作，感觉就是直接使用了GTSAM把lidar + imu + radar的因子项全部融合进去，最终输出的结果就是一个优化之后的对象。
+
+![image-20240704110438482](./figure/image-20240704110438482.png)
+
+
+
+
+
+- - -
+
+
+
+
+
+#### 目前进度
+
+- 图像+lidar数据的同步 
+    -  图像的帧率要比lidar快，这里就直接删除了多余的图像数据，一帧点云对应一帧图像。 图像 15HZ | 点云 10HZ | IMU 200HZ
+
+- 连续帧的点云上色已经完成
+
+
+
+问题:
+
+- 没有考虑到image与lidar数据之间小的位姿变换
+
+- 使用纯lidar点云进行处理(效果还是可以的)  | 因为immesh里程计(也就是voxelmap)没有对velodyne雷达提供imu的里程计，为了方便直接没有修改直接使用了。
+
+- 尝试使用室内数据集，纯lidar的稳定性效果很差，直接出现了漂移(因为velodyne的雷达只设置了这一种纯lidar的里程计信息，所以这里需要改变里程计进行处理——在github上有直接使用lidar+imu的voxelmap版本，voxelmap++以及pv-lio都提供了velodyne雷达+imu的里程计设置)
+
+![image-20240625215929613](figure/image-20240625215929613.png)
+
+- 图像fov大小太小了，一帧雷达的点只有1/6左右的点能投影到图像上进行上色
+
+![image-20240704172101220](./figure/image-20240704172101220.png)
 
 
 

@@ -153,6 +153,12 @@ tinycolormap 用于颜色映射的库,其作用应该是可以按照一定的原
 
 
 
+glad库的作用 - 不同厂家对于openGL的支持是不一样的(即相同功能在不同的显卡里面可能需要使用不同的openGL函数)，所以为了简化使用，即使用glad库自行管理这种对应关系。而且关于glad的使用一般是直接使用 glad.c+glad.h 文件直接使用的
+
+ 
+
+在openGL上面怎么还要定义一个VBO 即vertice buffer object —— 主要不太懂这里的buffer是如何设置的
+
 
 
 
