@@ -377,8 +377,13 @@ find_package(catkin REQUIRED COMPONENTS
   ```
   
   ![image-20240522105342280](figure/image-20240522105342280.png)
-  
-    
+
+- <font color=blue>遇到了clion与roslaunch的一个小bug</font> | 一开始使用clion运行代码的时候程序不能正常运行，但是如果先使用roslaunch运行一次程序，程序就可以正常运行了。这是在clion中是使用ros读取ros参数服务器里面的参数的时候，没有读取到合适值。但是roslaunch启动，加载了一次yaml文件，这些参数被成功加载到了参数服务器中(服务器中的参数不会自动清楚，被保留下来了 —— 估计重起一次roscore可能会解决)
+    - 读取参数文件不如直接使用opencv中读取yaml, 用ros那一套调试起来还是不太方便。
+
+
+
+
 
 ### rosrun | roslaunch
 
