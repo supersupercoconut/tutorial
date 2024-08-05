@@ -241,6 +241,7 @@ GroundFusion中没有lidar出现异常状态下的检测
 3. Camera Localization with Heterogeneous Sensor Aided Lidar Mapping
 4. A Robust LiDAR SLAM Method for Underground Coal Mine Robot with Degenerated Scene Compensation
 5. Lidar/UWB fusion based SLAM with anti-degeneration capability
+   - DEALING WITH DEGENERATION(TIV的论文，其中一个章节就是用于介绍这部分的内容) —— 使用FIM来进行corner case的数据
 6. Range-Aided LiDAR-Inertial Multi-Vehicle Localization and Mapping in Degenerate Environments
 7. Dense normal based degeneration-aware 2-D lidar odometry for correlative scan matching
 8. Adaptive Denoising-Enhanced LiDAR Odometry for Degeneration Resilience in Diverse Terrains
@@ -256,7 +257,6 @@ GroundFusion中没有lidar出现异常状态下的检测
 18. Degradation Resilient LiDAR-Radar-Inertial Odometry  <font color='blue'>(ICRA) 2024 没有退化检测的部分，但是实验结果给了视频，没有开源代码，实现的步骤是使用GTSAM做的因子图的优化</font>
 19. Ct-LVI: A Framework Towards Continuous-time Laser-Visual-Inertial Odometry and Mapping
 20. LIC-Fusion
-
 21. Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments (这个才是真撞大车了, hhhh, 要死了，需要赶紧推进度了)
 
 
