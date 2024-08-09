@@ -46,6 +46,13 @@ normal 应该说的是法线贴图 —— 就是XYZ方向的法线颜色各不�
 
 
 
+**PVG**
+
+- 3D高斯重建整个static scene
+- periodic vibration-based temporal dynamics 周期性 基于振动的动力学模型
+
+- temporal smoothing mechanism
+- position-aware adaptive control
 
 
 
@@ -53,6 +60,6 @@ normal 应该说的是法线贴图 —— 就是XYZ方向的法线颜色各不�
 
 
 
+3D Gaussian Splatting 是用于渲染RGB信息出来还是mesh的重建
 
-
-
+lidar获取到的点云量应该比image更加稀疏
