@@ -208,6 +208,8 @@ TSDF
 2. Test your slam! the subt-tunnel dataset and metric for mapping
 3. Description of corner cases in automated driving: Goals and challenges
 4. Rgb-d inertial odometry for a resource-restricted robot in dynamic environments
+    - 关于动态物体的剔除 —— 使用的是object detection and depth information
+    - 在nvidia AGX部署的算法
 5. Gvins: Tightly coupled gnss–visual–inertial fusion for smooth and consistent state estimation
 6. Fast-livo: Fast and tightly-coupled sparse-direct lidarinertial-visual odometry
 
@@ -257,7 +259,7 @@ GroundFusion中没有lidar出现异常状态下的检测
 18. Degradation Resilient LiDAR-Radar-Inertial Odometry  <font color='blue'>(ICRA) 2024 没有退化检测的部分，但是实验结果给了视频，没有开源代码，实现的步骤是使用GTSAM做的因子图的优化</font>
 19. Ct-LVI: A Framework Towards Continuous-time Laser-Visual-Inertial Odometry and Mapping
 20. LIC-Fusion
-21. Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments (这个才是真撞大车了, hhhh, 要死了，需要赶紧推进度了)
+21. Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments (这个才是真撞大车了, hhhh, 要死了，需要赶紧推进度了，但是其没有开源，所以问题不是那么严重)
 
 
 
@@ -289,6 +291,16 @@ IEEE Transactions on Intelligent Vehicles | 开源 | 谢老师组里面的工作
     - 动态初始化 
         - 出现退化场景之后对系统进行重新初始化(相比于静态初始化的方法，这里初始化的部分也初始化了速度信息)，方便脱离退化场景之后直接生成新地图(新的active map)
         - 是直接用的vins mono的初始化部分，但是忽略掉了vins mono里面的scale initialization部分
+
+
+
+ 做关于退化检测的处理 —— 判断在什么时候会出现退化场景
+
+
+
+
+
+
 
 
 
