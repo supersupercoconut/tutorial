@@ -142,3 +142,53 @@ PS: 为什么感觉这篇文章里面，即使用了image又使用了lidar来处
 
 3D Gaussian Splatting 是用于渲染RGB信息出来还是mesh的重建
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+****
+
+剩余几篇GS相关文章的整理
+
+重点的四篇文章 scence dreamer， citydreamer，citygaussion，gaussioncity 
+
+
+
+**SceneDreamer: Unbounded 3D Scene Generation from 2D Image Collections**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
