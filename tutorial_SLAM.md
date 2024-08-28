@@ -275,6 +275,28 @@ https://blog.csdn.net/weixin_51580530/article/details/132448588
 
 
 
+
+
+- 虽然这个地方使用了高斯部分的内容，但是我感觉感觉这里只是使用GS做了mesh重建部分的内容，后面的操作好像都与GS没有关系，变成了纯优化部分的内容
+
+![image-20240819121433118](./figure/image-20240819121433118.png)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 **MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments**
 
 IEEE Transactions on Intelligent Vehicles | 开源 | 谢老师组里面的工作，开源数据集使用的m2DGR(还有一些其他的数据集)。关于lidar点云退化场景，这里是直接设计出一种塑料袋包裹lidar的场景来进行模拟退化场景。右侧图中给出的轨迹应该是目前lidar数据中有一段数据缺失之后，目前开源的程序会出现的问题。
