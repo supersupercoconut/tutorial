@@ -69,54 +69,11 @@ Canny-VO: Visual Odometry with RGB-D Cameras based on Geometric 3D-2D Edge Align
 
 
 
-
-
-
-
-周一
-
-- [x] 匿名命名空间的使用
-- [x] boost库的使用会存在什么好处
-- [x] lambda表达式
-- [ ] 第四章(从0开始vio的那个)
-- [x] r3live实现mesh的生成，以及实现(通过单独的launch文件进行启动) | 再验证一下publish部分是正常工作的
-- [x] mm-line怎么将轨迹对齐到一起 （给作者发了gmail以及github上的提问）
-- [x] 盖章(新购买的设备也是重新弄了单子进行了投递) 
-
-
-
 r3live中关于mesh部分应该有两步，一步是打包数据部分，另一种就是生成mesh部分，但生成mesh部分是不太正常的（主要是感觉是r3live这个算法本身地效果不太好导致mesh重建的效果不好，或者是因为r3live里面生成mesh的时候一些clean操作导致最终地展示效果不好，或者是直接将整体地点云全部给mesh重建的话会导致问题）
 
 
 
-
-
-周二
-
-- [ ] r3live本身在mesh重建上的pipeline 包含里程计部分数据的打包以及mesh重建中的数据处理 | mesh重建上面如果想贴图的话，感觉数据定义什么的都得按照openMVS里面的定义来弄(这样是不是容易正常使用)
-- [x] 找一个openGL的tutorial来看看其是如何生成mesh的 | 基本不懂的部分都可以查找到，剩下的就直接看immesh里面的代码，哪里有问题查找哪里
-- [ ] 重新看immesh里面关于mesh重建的实现逻辑 | 主要是immesh + r3live + openGL是如何一起使用的，总感觉openGL中定义的数据结构与immesh里面生成的mesh结构有一些区别
-
-
-
-周三
-
-- [ ] r3live里面虽然自己实现了offline的mesh生成方式，但是其还没有移植到immesh里面 | 也就是保存数据以及读取数据进行处理(这部分主要是简单的移植)
-- [ ] 想继续周二没有完成的部分 | 感觉immesh里面自己实现gui的部分刚开始有些起色
-
-
-
-
-
 OpenGL 不提供和 GUI 相关的 API，所以 OpenGL 不能处理诸如创建窗口、处理用户的键盘鼠标输入这样的任务。这时，我们需要 GLFW。使用 GLFW 库，我们可以简化搭建 OpenGL 程序框架的任务，同时还可以轻松获得跨平台的功能。
-
-
-
-
-
-
-
-
 
 
 
@@ -202,26 +159,59 @@ Immesh里面处理数据
 
 - 关于传感器之间的内外参矩阵 - 目前是在voxelmap里面写死了 即在 init_ros_node()函数中
 
-    
-
-
-
-
-
-周三：
-
-1. 研究上锁(这部分根据claund来分析 —— 2个小时)
-2. 创建一帧数据(带颜色)出来用于Mesh重建 看看那这种方法到底会不会work 完成 还听轻松的
-3. 学不下去看论文
-
-确定一下在immesh里面，这里对应的texture.fs/vs以及顶点与片元(或者教片段)着色器有没有按照openGL中写好的方式进行输出
-
-
-
-
-
-
+   
 
 
 
 ![image-20240819121413414](./figure/image-20240819121413414.png)
+
+
+
+
+
+
+
+
+
+新学期Todo
+
+1. 作业部分:
+   - [x] 图像融合 9.4 截止
+   - [ ] DSP实验 9.11
+   - [ ] 压缩感知
+
+2. 综测认定 9.15
+
+3. 实验部分
+
+   - imu测试 —— 由于imu获取到的数据波动较大，imu递推获取到的轨迹还是不对
+     - [ ] vins中的初始化方法
+     - [ ] fastlio中的初始化方法
+
+   - 测试录制的传感器数据
+     - [ ] 测试 GVINS 
+     - [x] 测试 fastlio 
+     - [ ] 测试 viw-fusion
+     - [ ] 测试 vinsrgbd
+
+   - [x] 确定轮趣底盘中的话题数据都有什么作用
+
+   - [ ] Switch-SLAM 论文
+
+   - [ ] 确定odom中的内参数据都有什么
+
+     
+
+目前存在的一些可以进行标定的方案:
+
+1. https://github.com/TouchDeeper/VIW-Fusion/tree/master 这个star最多
+2. 直接使用evo进行计算 | 但是这种方法是无法标定出相机内参的 | 后续在ROS论坛上找到了与我相似的问题 https://answers.ros.org/question/360302/imu-and-wheel-encoder-calibration/
+3. https://github.com/TakuOkawara/full_linear_wheel_odometry_factor 这个使用上 
+4. 殷哥给的部分论文里面不少都是在线外参标定数据（groundfusion内部应该有在线的外参标定，所以在实际使用的时候，我只需要考虑给定一个大致外参就OK了）
+
+
+
+avia imu的单位为g 所以对于这些数据都需要乘以一个g值，在linear_acceleration的取值方面，其对应的数据值的模长之和的根号结果基本都是0.996左右，即基本为1。这里说明imu对应的z轴上的重力加速度G在另外两个轴上都有分布, 但对于这种mems的陀螺仪数据，得使用SLAM里面自己定义的初始化方法进行z轴重力加速度的对齐。
+
+![image-20240901190217597](./figure/image-20240901190217597.png)
+
