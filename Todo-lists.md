@@ -211,7 +211,66 @@ Immesh里面处理数据
 
 
 
+
+
+wheeltec 中 odom话题中的position的z 单位为rad而不是m。 其对应的四元数信息为绕z轴的旋转变换 (只有orientation对应的z,w有数据，xy没有数据波动)
+
+![image-20240902144759132](./figure/image-20240902144759132.png)
+
 avia imu的单位为g 所以对于这些数据都需要乘以一个g值，在linear_acceleration的取值方面，其对应的数据值的模长之和的根号结果基本都是0.996左右，即基本为1。这里说明imu对应的z轴上的重力加速度G在另外两个轴上都有分布, 但对于这种mems的陀螺仪数据，得使用SLAM里面自己定义的初始化方法进行z轴重力加速度的对齐。
 
 ![image-20240901190217597](./figure/image-20240901190217597.png)
 
+
+
+
+
+
+
+采集数据集的过程
+
+- 尺寸 坐标系 以及传感器位置、以及配置（类型、具体型号以及频率）
+
+![fd7d5e45013868a773286374b2bb589](./figure/fd7d5e45013868a773286374b2bb589.png)
+
+![b2cdc52a74a64da6538f0dec1fd5b2c](./figure/b2cdc52a74a64da6538f0dec1fd5b2c.png)
+
+- 传感器可视化 + 介绍场景
+  - lidar点云 —— 可以直接使用点云显示
+  - 侧重点也可以放到corner case部分，比如第二张图，把所有的corner case都展示一下(比较关键)
+  - 第三章图 我们的表现应该是各种corner case都包含，比如轮式计打滑等等什么
+
+![d9a70775f6a232c98a3ec66dd9476b5](./figure/d9a70775f6a232c98a3ec66dd9476b5.png)
+
+![c6186da5f57a6e56f52c1612337789f](./figure/c6186da5f57a6e56f52c1612337789f.png)
+
+![6cdd5d8fc17946b5ae6c478af2f71a5](./figure/6cdd5d8fc17946b5ae6c478af2f71a5.png)
+
+- 对不同数据集序列的分别介绍 + 传感器真值的提供方式 | 第二张图是直接展示自己轨迹
+
+  ![810a1cc98f18fb57fd07cec1b381f9c](./figure/810a1cc98f18fb57fd07cec1b381f9c.png)
+
+![da726c474d4230ca705520a74e05c2e](./figure/da726c474d4230ca705520a74e05c2e.png)
+
+
+
+- 算法结果的绘制 —— 主要是使用绘制
+
+![b44c90925002cac50d81e176ebe6bdf](./figure/b44c90925002cac50d81e176ebe6bdf.png)
+
+录制数据的时候　rosbag record xxtopioc -b 0 防止数据丢失
+
+ubuntu USB的传输限制需要设置  来防止掉帧
+
+https://blog.csdn.net/qq_42928559/article/details/121717914?spm=1001.2014.3001.5502
+
+
+
+
+
+目前问题
+
+1. 参数标定
+   - 运行一次设置一次的内参
+2. GPS数据转换话题失败
+   - ucenter中设置数据出现问题  ——  ubox中的数据缺少一部分
