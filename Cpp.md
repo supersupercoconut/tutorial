@@ -452,8 +452,6 @@ Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 
 
 
-
-
 关于ros句柄
 
 - ros::NodeHandle 是访问 ROS 参数服务器的接口。
@@ -471,6 +469,16 @@ Hash_map_3d< int, Triangle_ptr >        m_triangle_hash;
 const T* ptr = &a 这种是常量指针 指向的对象a的数值不可以被修改ia
 
 T* const ptr = &a 指针常量 a的数值是可以修改的, 但是指向的对象不能被修改
+
+
+
+
+
+## 栈与队列
+
+这里注意一下，deque为双端队列，即两端都是即可以出也可以写。但是对于qeque来说，其对应的是先入先出，前端只能入，后面只能出。
+
+deque中可以有 pop_back() 这种操作
 
 
 
