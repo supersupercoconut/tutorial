@@ -44,3 +44,38 @@ GPS协议有 NMEA 和 UBlox
 1. https://www.bilibili.com/read/cv13336033/?from=search&spm_id_from=333.337.0.0
 
 2. https://www.cnblogs.com/zoneofmine/p/10853096.html
+
+
+
+
+
+fastlio直接使用第一帧的imu做为world系，但是在vins-fusion中，处理过程就还有做重力与z轴对齐的过程
+
+- fastlio中是不管初始状态的Imu是如何放置的，只让后续帧的Imu能对应转换到第一帧上来就行
+- vins-fusion中不仅做了重力与z轴的对齐，并且在这里过程中旋转关系不应该牵扯到z轴的旋转(因为重力对齐只有xy轴旋转即可，即不需要yaw角有变换——这个yaw角说的是旋转矩阵对应的yaw角)，所以后续对这个yaw值又进行量修正
+
+
+
+
+
+PS：在惯性导航中存在着双矢量定姿的方法，但是在slam中感觉都没有类似的操作
+
+1. https://blog.csdn.net/weixin_42918498/article/details/124826651?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-5-124826651-blog-134489622.235v43pc_blog_bottom_relevance_base5&spm=1001.2101.3001.4242.4&utm_relevant_index=8
+
+
+
+在写递推过程中的时候考虑这个blog  https://blog.csdn.net/u011341856/article/details/114262451
+
+
+
+基于流型的kalman https://blog.csdn.net/woyaomaishu2/article/details/132912533
+
+
+
+### IMU坐标系
+
+- imu对准ENU坐标系 —— 实际上使用的就是双矢量定姿方法(其对应的是计算两个固定坐标系之间的变换关系)
+    - 双矢量对准的意思应该是使用两个量来进行对准
+    - 解析双矢量方法 —— 使用重力加速度以及地球自转角速度来处计算 | 间接双矢量方法 —— 只使用重力加速度测量值 ( 两个时刻 ) 来计算, 感觉其更适合mems imu，因为对于这种imu，静止下的角速度值不知道是测量出来的地球自转角速度或者是角度值测量噪声
+
+先考虑其是静基座对准的方法
