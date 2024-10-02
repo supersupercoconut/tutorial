@@ -79,3 +79,49 @@ PS：在惯性导航中存在着双矢量定姿的方法，但是在slam中感�
     - 解析双矢量方法 —— 使用重力加速度以及地球自转角速度来处计算 | 间接双矢量方法 —— 只使用重力加速度测量值 ( 两个时刻 ) 来计算, 感觉其更适合mems imu，因为对于这种imu，静止下的角速度值不知道是测量出来的地球自转角速度或者是角度值测量噪声
 
 先考虑其是静基座对准的方法
+
+
+
+### 变量定义
+
+- 分析功率谱密度(PSD)/频谱。随机信号从时域转换成为频率过程中，其傅里叶变换不收敛，所以不能用频谱来表示。
+
+https://zhuanlan.zhihu.com/p/417454806
+
+
+
+
+
+### 误差
+
+imu中误差中bias一般值的是零偏不稳定性，是Imu在使用过程中其对应的零偏随时间变化的情况(零偏的类型有很多，常值零偏即imu初始刻度的那种偏差基本上imu出场的时候就会被处理掉)
+
+- slam中的bias即一种随机游走信号，其对应的导数是一个白噪声。slam中另外一个考虑的噪声就是白噪声。
+
+参考：
+
+1. https://blog.csdn.net/xiaoyaolangwj/article/details/141471130?spm=1001.2101.3001.6650.2&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-2-141471130-blog-94571517.235%5Ev43%5Epc_blog_bottom_relevance_base7&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-2-141471130-blog-94571517.235%5Ev43%5Epc_blog_bottom_relevance_base7&utm_relevant_index=5
+2. https://blog.csdn.net/u014430081/article/details/127163426
+
+
+
+### ROS
+
+ros中的imu消息类型主要是sensor_msgs/imu, 其中的orinetation暂时不知道其实基于哪一个坐标系计算出来的姿态
+
+```cpp
+Header header
+# 四元数[x,y,z,w]
+geometry_msgs/Quaternion orientation
+# 为什么是 [9] 而不是 [16] 对应的协方差矩阵，自由度为 3?
+float64[9] orientation_covariance
+# 角速度[x,y,z]轴
+geometry_msgs/Vector3 angular_velocity
+# 对应协方差矩阵，Row major(行主序) about x, y, z axes
+float64[9] angular_velocity_covariance
+# 线性加速度[x,y,z]
+geometry_msgs/Vector3 linear_acceleration
+# 对应协方差矩阵 Row major x, y z 
+float64[9] linear_acceleration_covariance
+```
+
