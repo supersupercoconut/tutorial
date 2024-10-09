@@ -367,6 +367,17 @@ tbb::parallel_for_each( voxels_recent_visited->begin(), voxels_recent_visited->e
 
 
 
+## string
+
+- 注意在C++中对于一个string数据进行遍历，遍历得到的数据实际上是char类型的数据
+- 字符串转换成int类型的数据可以使用 stoi以及stoll，分别是转换成为int或者long long int类型的数据
+
+**回文字符串**: 对应的是正读反读都是一样的字符串
+
+
+
+
+
 ## 智能指针
 
 全局变量的生命周期是 从程序开始到程序结束(但是其他文件想使用这个变量需要extern)
@@ -482,6 +493,34 @@ https://www.zhihu.com/question/41103160
 
 
 ## hash
+
+**C++中封装好的hash**
+
+- C++中的unorder_map就是基于hash表实现的，map是基于红黑树实现的(也就是二叉搜索树)
+
+1. 对于unorder_map
+
+```cpp
+    map<string, int> dict;
+    // 插入数据的三种方式
+    dict.insert(pair<string,int>("apple",2));
+    dict.insert(map<string, int>::value_type("orange",3));
+    dict["banana"] = 6;
+```
+
+
+
+2. 对于map初始化 (由于其底层使用的是红黑树，其实际对应的数据保存的时候可以实现有顺序的保存)
+
+```cpp
+	unordered_map<string, int>  dict; // 声明unordered_map对象
+	// 插入数据的三种方式
+	dict.insert(pair<string,int>("apple",2));
+	dict.insert(unordered_map<string, int>::value_type("orange",3));
+	dict["banana"] = 6;
+```
+
+
 
 
 
