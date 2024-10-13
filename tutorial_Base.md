@@ -798,7 +798,9 @@ PS：
 
 ****
 
+## Github
 
+fork与clone的方式还是不一样的，fork是直接copy到自己的github仓库里面，我们自己的提交并不会影响原仓库。clone就是直接copy到本地计算机上。
 
 
 

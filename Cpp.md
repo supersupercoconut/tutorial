@@ -28,6 +28,23 @@ C++中的对应的变量最好还是给一个初始值最好 (无论其是一些
 
 
 
+## 向量与链表
+
+初始化的一个小区别
+
+vector<vector<int>> res  = {};     这个二维数组是一个空数组
+
+vector<vector<int>> res = {{}};   这个二维数组的size = 1，但是其第一个元素却是一个空的一维数组
+
+```cpp
+// resize影响的是一个vector中的size, 于captity无关
+now_level.resize(path[0].size());
+// assign会vector中的部分分配值，并不需要手动resize大小 | assign如果captity不够会自动分配新的空间
+now_level.assign(path[0].size(),0);
+```
+
+
+
 ## 栈与队列
 
 - 栈一般不认为是一种基础的数据结构，**栈是以底层容器完成其所有的工作，对外提供统一的接口，底层容器是可插拔的（也就是说我们可以控制使用哪种容器来实现栈的功能）。**stack栈可以由双向队列deque或者vector来实现。

@@ -1,24 +1,40 @@
-# Multi-SLAM
+# SLAM
 
-## initalization
+整理看到的Paper思路
 
-首先是多机系统联合进行的初始化部分，需要确定出一个共同的坐标系出来进行处理。
+## corner case detection
 
-> Swarm-SLAM: Sparse Decentralized Collaborative Simultaneous Localization and Mapping Framework for Multi-Robot Systems | RAL2024 | 回环检测 +  图优化
+整理各种传感器的退化场景的检测方法 ——主要整理开源算法，相当于找到多种传感器失灵的情况。定性分析各种传感器失效比较简单，定量分析比较复杂
 
-- 没有进行多机相互的初始化操作 |  **回环检测完成整个逻辑**
-  - 回环检测计算出来确实是一个转换的R,t，应该能用于多机之间互相的坐标系计算上面
+### lidar
 
-> Kimera-Multi: Robust, Distributed, Dense Metric-Semantic SLAM for Multi-Robot Systems | TRO 2022 | 
+主要由于insufficient geometric constraint(可能是某一个方向上的几何约束)
 
-- **多机之间进行初始化(定义了统一坐标系), 并且代码开源**
-  - 初始化 —— 假设A，B两个坐标系，利用多次的回环检测，计算两个坐标系之间的关系（具体涉及到了GNC以及截断最小二乘法、PGO) | 看起来比较简单，可以直接看源码了
-    - 回环节点 即在一个坐标系下表示的坐标[x_1,y_1,z_1] = [R,t] [x_2,y_2,z_2]，这些xyz坐标虽然在不同的坐标系但是其表示的应该是相同点，所以找到足够的点(即足够的回环)，就能计算两个坐标系之间的转换关系
+ **数据集**
+
+1. Heterogeneous LiDAR Dataset for Benchmarking Robust Localization in Diverse Degenerate Scenarios | **将退化分成了平移退化以及旋转退化，但是没有定量分析一个场景是不是退化场景（都是强制指定一个场景中导致的退化形式）**
+   - Waterways 水路 : 针对水面反射产生退化
+   - Flat ground ：直接将lidar对应地面，这样其在平面足够大的情况，xy平移或者绕z轴旋转lidar会导致退化
+2. 
+
+**检测方法**
+
+1. MM-LINS
+
+   ![image-20241002221931525](./figure/image-20241002221931525.png)
+
+2. 
 
 
 
-PS: 
 
-(1) 为什么清华那个项目需要不断地计算当前位姿与动补之间的区别来着
 
-(2) 在多机系统中大家比较的指标一般是什么 —— 都没有去说单独一个agent的定位精度的提升
+### multi-sensor calibration
+
+1. Heterogeneous LiDAR Dataset中包含了livox lidar以及 Ouster lidar与相机、imu进行了标定
+   - **joint-lidar-camera-calib ：标定livox 与 camera** 
+   - imu_utils 标定imu
+2. 
+
+
+
