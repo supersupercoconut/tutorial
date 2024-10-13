@@ -147,6 +147,221 @@ struct TreeNode {
 
 
 
+
+
+## 回溯
+
+- 回溯就是使用递归方法，用于解决组合、切割、排列、棋盘等问题。回溯问题本质上就是一种暴力地穷举方法，其对应地就是不断地更换取值，直接获取符合题目条件的方法。
+- 回溯算法可以抽象成为树形结构进行分析（n叉树）
+- 既然回溯是一种递归操作，所以记得一些操作需要进行退回操作
+
+```cpp
+/* 函数模板(也存在有返回值的回溯函数, 需要看整个算法是需要将所有的情况全部分析一遍, 还是找到其中一种情况就可以返回)
+	对于找到一种情况就可以返回的情况，其只需要将函数提前返回，不断退回直接退出整个递归
+*/
+void backtracking(参数) {
+    if (终止条件) {
+        存放结果;
+        return;
+    }
+
+    for (选择：本层集合中元素（树中节点孩子的数量就是集合的大小）) {
+        处理节点;
+        backtracking(路径，选择列表); // 递归
+        回溯，撤销处理结果
+    }
+}
+```
+
+
+
+**后续部分分别讨论针对不同问题的套路**
+
+### 组合
+
+- 组合由于不能重复，需要给定一个start_index参数，让下一次递归不能使用前面使用过的参数。并且对于一些不太方便的选取问题，可以使用排序的方法简化流程 | **使用start_index主要是让后续选择数只能往大不能取小 (排列中前后不一致是新情况，但是组合不是，相当于要少了一半的取值可能)**
+- 对于去重问题的结果：如果设计到重复的可能性，基本上有两种去重方式 
+  - sort排序 —— 这样如果当前元素于前一个元素相同，就可以跳过，实现同一层元素的去重
+  - 不能改变元素顺序，可以设计unordered_set，确定当前这一层中已经使用了那些元素，unordered_set中能find到这个变量，则跳过 
+
+```cpp
+/**给定两个整数 n 和 k，返回 1 ... n 中所有可能的 k 个数的组合。
+示例: 输入: n = 4, k = 2 输出: [ [2,4], [3,4], [2,3], [1,2], [1,3], [1,4], ] **/
+
+// 使用回溯处理(回溯等效成为二叉树,输入参数中加入path,记录当前路径) | 处理组合逻辑并不能在时间复杂度上获取到提升，只是在使用逻辑上获取到优化(只可能在一些处理中加入剪枝操作)
+vector<vector<int>> res = {};
+vector<int> path = {};
+void backtracking(int n, int k, int start_index)
+{
+    // 判断终止条件
+    if(path.size() == k)
+    {
+        res.push_back(path);
+        return;
+    }
+    // 从start_index开始，遍历到n | 增加剪枝操作 —— 这样整个算法的时间复杂度为 k* (C_n)^k 与需要遍历二叉树的深度有关(k也是整个问题中定义的k值)
+    for(int i = start_index; i <= n; ++i)
+    {
+        // 判断 当前剩余元素 + 当前元素量(也就是1) + 已元素量(path.size()) 要大于等于k, 才说明后面还必要继续去遍历元素
+        if( (n - i + path.size() + 1) >= k )
+        {
+            path.push_back(i);
+            backtracking(n,k,i+1);
+            path.pop_back();    // 增加这里部分的主要作用就是满足下一次循环开始的时候, path去除上一次的影响
+        }
+    }
+}
+```
+
+
+
+### 分割
+
+对于分割问题，经常遇到的就是分割字符串，则需要每一层中从start_index处不断改变切割字符串的长度，实现对所有切割方法的遍历
+
+```cpp
+    /*** 这里复杂的部分主要有:
+     *   1. 遍历切割方案(使用回溯) —— 这里的切割方法相当于对每次输入进来的字符串都判断到底切割几个字符(从少到多所有的切割方案都确定一下)
+     *   2. 关于string的使用 —— 如何使用string中的substr方法
+     *   3. 判断回溯
+     * ***/
+    vector<vector<string>> res = {};
+    vector<string> path = {};
+//    string temp = {};           // 保存临时结果
+
+    bool isValid(string& s)
+    {
+        if(s.empty()) return false;
+        int left = 0;
+        int right = s.size()-1;
+        while(left <= right)
+        {
+            if(s[left] != s[right])
+                return false;
+            left++;
+            right--;
+        }
+        // 说明遍历完成, 都是正常
+        if(left > right) return true;
+        return false;
+    }
+
+    /** 我一开始的思路是将整个字符串无脑切割了,然后从切割结果中判断其是不是回文串然后返回 —— 但这个实际使用应该要处理每一套切割方案中的所有字符串, 要求其必要全部都是子字符串 **/
+    // substr() 两个参数 开始位置以及截止长度
+    void backtracking(string& s, int start_index)
+    {
+        // 全部字符串都已经判断完成了, 这里才会将结果放置进去
+        if(start_index >= s.size())
+        {
+            res.push_back(path);
+            return;
+        }
+
+        for(int i = 0; (start_index+i) < s.size() ;i++)
+        {
+            // start_index为本次字符串开始的位置 | i+1表示开始copy从start_index位置的字符(包含start_index)
+            auto b = s.substr(start_index,i+1);
+            if(isValid(b))
+            {
+                path.push_back(b);
+                backtracking(s, start_index+i+1);
+                path.pop_back();
+            }
+        }
+    }
+```
+
+
+
+
+
+### 子集
+
+子集问题与组合问题很类似，组合问题可能需要遍历到n叉树的叶子节点上，但是对于子集问题需要在每一层上都进行结果输出
+
+- 对于集合中有相同元素处理手段与组合问题相同 （1）unordered_set （2）sort排序
+
+```cpp
+    vector<vector<int>> res = {};
+    vector<int> path ={};
+    /*** 1.个人方法(与随想录中的方法类似), 之前忽略的一点是 —— 由于这里不能将原始数组进行排序，这就导致了之前的去重方法不能再次使用，现在使用的去重方法只能对每一层设置一个数组或者哈希表来处理
+     *  PS: {1,2,3,4,5,6,7,8,9,10,1,1,1,1,1} 之前就是再这个数组上出了错
+     *
+     *
+     * ***/
+    void backtracking(vector<int>& nums, int start_index)
+    {
+        unordered_set<int> used = {};
+        for(int i = start_index; i<nums.size() ;++i)
+        {
+            // 这里没有想到可以写的这么简洁，只需要path中的前一个永远小于新来的数就可以了 | 而且只需要这个nums[i]数据没有进入path, 那么路径中其余与nums[i]相同的元素也不需要放进来
+            if((path.size() != 0 && path.back() > nums[i]) || used.find(nums[i]) != used.end()) continue;
+            else
+            {
+                used.insert(nums[i]);
+                path.push_back(nums[i]);
+                if(path.size() >= 2) res.push_back(path);
+                backtracking(nums, i+1);
+                path.pop_back();
+            }
+        }
+    }
+```
+
+
+
+### 排列
+
+排列问题不需要start_index，毕竟start_index只是一种防止往前取值导致结果重复的手段。**这里出现了另一种去重需求，同一层上不能相同，同一列上也不能相同，需要使用两个unordered_set或者一个vector一个unordered_set等等的这种方式来进行去重**
+
+```cpp
+// 这里需要同层之间也进行去重 | 在46(nums中没有重复元素的情况中), used数组可以表示整条路线上有什么数据被使用
+vector<vector<int>> res = {};
+vector<int> used = {};
+vector<int> path = {};
+
+/** 这里的解决思路就是设置两个used,用于分析同层的相同性以及同一树枝上的取值 **/
+void backtracking(vector<int>& nums)
+{
+    if(path.size() == nums.size())
+    {
+        res.push_back(path);
+        return;
+    }
+
+    unordered_set<int> level_use = {};
+    for(int i = 0; i < nums.size(); ++i)
+    {
+        // used 判断当前位置其是否已经被使用
+        if( used[i] == 0 )
+        {
+            used[i] = 1;
+            // 判断同一层中是否有相同元素
+            if(level_use.find(nums[i]) == level_use.end())
+            {
+                path.push_back(nums[i]);
+                level_use.insert(nums[i]);
+                backtracking(nums);
+                path.pop_back();
+            }
+            used[i] = 0;
+        }
+    }
+
+}
+```
+
+
+
+### 棋盘问题
+
+都是先确定一行，再去确定列。
+
+- N皇后就是常规的递归，第一行确定皇后Q的位置，再去找下一行的Q的位置，不断递归。
+- 解数独为二维递归，每一行都需要调用递归，处理完一行的取值再去确定下一行的递归。
+
+
+
 ****
 
 ## 多线程与mutex
