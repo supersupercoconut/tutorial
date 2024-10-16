@@ -2,7 +2,7 @@
 
 
 
-# Tutorial of mySLAM
+# Tutorial of basic setting
 
 
 ​    从零构建一个SLAM系统。具体的流程肯定是仿造OpenVins的框架来进行的，因为他们的代码框架比较清晰，而且在看一个关于SuperPoint+SuperGlue+OpenVins的report中发现OpenVins的可修改性比较高，所以这里使用OpenVins开始研究。
@@ -33,7 +33,29 @@
 
 
 
+### 语言设置
 
+- 一般在ubuntu中使用的还是ibus, 但是这个输入法在切换中英文输入的时候卡死，而且这种情况下对应的clion软件也会导致卡死，现在这里可以尝试安装ibus-rime这个包，使用起来可能会比ibus本身好一些（在clion ubuntu ibus相关的话题下看到的解决方案）
+- ibus-rime默认是使用的繁体中文，所以这里也需要修改成为简体中文
+
+```yaml
+# 将~/.config/ibus/rime/build/中的luna_pinyin.schema.yaml修改其中的一段
+# encoding: utf-8
+patch:
+  switches:
+    - name: ascii_mode
+      reset: 0
+      states: ["中文", "西文"]
+    - name: full_shape
+      states: ["半角", "全角"]
+    - name: simplification
+      reset: 1
+      states: ["漢字", "汉字"]
+    - name: ascii_punct
+      states: ["。，", "．，"]
+```
+
+PS：参考链接 https://miaostay.com/2018/11/rime%E8%AE%BE%E7%BD%AE%E4%B8%BA%E9%BB%98%E8%AE%A4%E7%AE%80%E4%BD%93/
 
 ****
 
