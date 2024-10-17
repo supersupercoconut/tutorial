@@ -338,3 +338,58 @@ https://blog.csdn.net/qq_42928559/article/details/121717914?spm=1001.2014.3001.5
   - [ ] 视觉/轮计 corner case退化场景
   - [ ] m2DGR | groundchallenge论文
   - [ ] 下下周汇报的多机论文 | 尽量把代码也阅读完成
+
+
+
+**corner case**
+
+- 视觉:
+  - 灯光闪烁 室内(动补)，室外
+  - 
+- wheel（得查一下工作原理）
+  - 松软草地
+  - 光滑地板
+
+
+
+github搜索词 vins, 到31页
+
+PS：关于vins改进
+
+- ic-gvins 2023 以ins为中心的 GNSS-visual-imu系统
+
+- [SchurVINS](https://github.com/bytedance/SchurVINS) CVPR 2024
+
+- DynaVINS RAL 2022  动态环境改进vins
+
+- **VINS-GPS-Wheel 2021**  | Visual-Inertial Odometry Coupled with Wheel Encoder and GNSS
+
+- Dynamic-VINS 
+
+- **[VINS-RGBD-FAST ](https://github.com/jianhengLiu/VINS-RGBD-FAST)**2023 主要是做一些加速处理的工作
+
+- VINS_Lite_GPU 融合GPU处理
+
+- Tightly Coupled GNSS-Visual-Inertial Positioning System Using GTSAM 一个实验相性质的工作，主要应对有些传感器失效之后使用其他传感器顶上(这里与我之前想在跨越险阻中使用的方法有些相似)
+
+- SuperVINS 2023 axciv 融合深度学习提取体征来进行处理
+
+- EPLF-VINS  2023开源 Real-Time Monocular Visual-Inertial SLAM With Efficient Point-Line Flow Features
+
+- VINS-Fusion for For Vehicle dense mapping and navigation 融入建图
+
+- LE-VINS
+
+- **MINS** 重点看这个（这里使用的传感器跟车上的传感器一摸一样）有论文 有代码 感觉不错
+
+- RAFT-VINS 又是一种关于动态光照变换下的处理过程
+
+- Mono-VINS-DenseMapping Public 稠密重建
+
+- UVINS: An Ultra-Wideband assisted VIO Correction System 结合UWB提升vins
+
+- mrs_vins_imu_filter 第一次看到有人可以给imu数据做过滤
+
+  
+
+ 
