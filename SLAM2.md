@@ -38,3 +38,39 @@
 
 
 
+
+
+
+
+## Paper reading
+
+目前就看到一个开源了比较多传感器数据集的dataset论文
+
+### Ground-challenge
+
+(1) 主要在于传感器的数据录制上，其实并没有严格证明一个corner case就一定对定位算法产生多少影响
+
+
+
+当前关于ground robot的数据集分析
+
+- M2DGR
+
+- M2DGR-plus
+
+- OpenLORIS
+
+- groundchallenge: 使用fastlio2充当真实值数据 | 关于录制的数据集按照场景进行划分（正常场景以及一些corner case下录制的数据集）
+
+    - office/room 对应的是正常场景，用于测试在正常环境中的SLAM算法
+    - Visual Challenge: 亮度较低｜不同程序下的遮挡（甚至出现了全遮挡）| 快速运动（拍摄到的图像有一些模糊）
+    - Wheel Odometer Challenge:  光滑平面 | rough road 运动路径出现震动
+    - Motion Challenge:  提供了一些只旋转或者是之字形向前运动的场景，即认定整个运动变得困难
+
+    ![image-20241018205332924](figure/image-20241018205332924.png)
+
+    在groundchallenge中展示视觉上的障碍(**可以将室内室外录制出来的数据集都进行一种整理, 视觉上是最容易进行展示的情况**) 
+
+<img src="figure/image-20241018210033493.png" alt="image-20241018210033493" style="zoom:50%;" />
+
+- Task(在手机上已经保存了一部分数据)
