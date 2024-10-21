@@ -73,4 +73,7 @@
 
 <img src="figure/image-20241018210033493.png" alt="image-20241018210033493" style="zoom:50%;" />
 
-- Task(在手机上已经保存了一部分数据)
+- Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —— 这里也提到了一些其他的benckmark是如何实现的
+  - Task-driven
+  - 自身录制了数据集进行处理
+
