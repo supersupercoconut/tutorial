@@ -44,6 +44,14 @@ vector<vector<int>> res  = {};     这个二维数组是一个空数组
 
 vector<vector<int>> res = {{}};   这个二维数组的size = 1，但是其第一个元素却是一个空的一维数组
 
+
+
+**reserve | resize | assign**
+
+- reserve处理的是capcity本身，与当前vector的size没有关系
+- resize是调整size的大小，可能会截断或者增加size的大小
+- assign是改变当前vector中的元素的值，如果当前元素的数量不够(size大小不够)，其也会改变size的大小应应对需求
+
 ```cpp
 // resize影响的是一个vector中的size, 于captity无关
 now_level.resize(path[0].size());

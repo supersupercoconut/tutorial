@@ -360,12 +360,16 @@ https://blog.csdn.net/qq_42928559/article/details/121717914?spm=1001.2014.3001.5
 ## 本周安排
 
 - [ ] leetcode 贪心问题刷完
+
+  - 周二 134 加油站
+
+  - 周二 135 分发糖果
 - [ ] 查资料/阅读代码
   - [ ] vins (主要是vins-fusion以及groundfusion的代码逻辑哦 —— 至少一天看一小时)
   - [ ] mins 学习一下其中的KF逻辑
   - [ ] faslio 有一个从零开始的fastlio逻辑，这个可以学习（https://zhuanlan.zhihu.com/p/635702243 这里介绍的就是从零开始fastlio）
   - [ ] tartonVO 这个配置跟实际使用都是不错的
-  
+
 - [ ] 论文
   - [ ] 下周汇报的多机SLAM论文
   - [ ] 继续找corner case处理相关的论文
