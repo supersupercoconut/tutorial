@@ -2,9 +2,7 @@
 
 专门找一个写Todo的文档，省的写在其他地方不够清晰。
 
-## corner case
 
-- [ ] 对于传感器故障的情况，一般是怎么检测出来的？是不是跟师兄说的一样，要上升到信号处理的程度。
 
 ### wheel
 
@@ -403,7 +401,13 @@ PS 后续补充任务...
 
 
 
+## 本周安排
 
+- [ ] leetcode 20道动态规划即可
+- [ ] 确定《大话数据结构》以及《大话设计模式》
+- [ ] vinsfusion以及groundfusion逻辑
+- [ ] 上周没有实现出来的一些小问题
+- [ ] 录制室外数据（两周之内要完成所有数据集的录制工作，这样可以保留足够的时间冲刺算法改进）
 
 
 
@@ -476,6 +480,49 @@ PS 后续补充任务...
 
       
 
+
+
+目前录制的场景
+
+室内正常场景 
+
+<img src="figure/image-20241027202415367.png" alt="image-20241027202415367" style="zoom:67%;" />
+
+1. 视觉(室内，共6组) 
+
+    - dynamic_person_1.bag | dynamic_person_2.bag 人不断出现在图像中，并且占据半个画幅
+    - over_exposure_normal_light.zip  过曝，场地中是正常光 | over_exposure_slight_light.zip 过曝，场地中是微光环境
+    - sharp_turn_1.bag | sharp_turn_2.bag 运动较为剧烈
+    - turn_light_night_3.bag  3s更换一次开关灯 | turn_light_night_5.bag 5s更换一次开关灯
+    - slight_light.zip | slight_light_2.zip 微弱灯光
+    - normal_need_process.bag | normal_need_process_2.bag 准备模拟全闭塞 即更换其中的图像数据变成全黑
+
+2. wheel(室内，共1组)
+
+    <img src="figure/image-20241027202705092.png" alt="image-20241027202705092" style="zoom: 67%;" />
+
+    - indoor_wheel_occlusion.bag | indoor_wheel_occlusion_2.bag 车辆前进过程中，突然遭遇不能正常前进的障碍，导致车轮打滑以及车辆颠簸。相当于是面前又一个辅助上坡的部分
+
+
+
+单一场景3条，室内1~3 | 室外5分钟
+
+接触面突然移动，类似于履带
+
+
+
+运行一下，需要判断是否真的打换 | wheel 
+
+(1) 初始化出现的问题(鲁班初始化)
+
+(2) wheel的故障检测 是不是在这些场景中都能检测出来呢 | 借助其他传感器去分析wheel上出现的故障方案 | 碰到
+
+
+
+
+
+
+
 RTK能不能输出可信度 | groundchallenge 真值不准 m2DGR plus GNSS 帧率太低 1HZ  | 基于RTK原始报文信息的SLAM算法，GPT或者github | RTK与GPS对应的ｒｏｓ话题格式是否一样？
 
 （１）ＧＰＳ
@@ -484,11 +531,31 @@ RTK能不能输出可信度 | groundchallenge 真值不准 m2DGR plus GNSS 帧�
 
  
 
-pinni
-
 
 
 - imu(感觉这种传感器很难出现异常状态)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
