@@ -483,7 +483,7 @@ void backtracking(vector<int>& nums)
 
 
 
-### 背包问题
+### 背包问题 
 
 背包问题中主要分析的是01背包，完全背包，对于更困难的多重背包问题，leetcode上面还没有类似的问题。
 

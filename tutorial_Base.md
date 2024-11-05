@@ -33,7 +33,7 @@
 
 
 
-### 语言设置
+### Ubuntu 语言设置
 
 - 一般在ubuntu中使用的还是ibus, 但是这个输入法在切换中英文输入的时候卡死，而且这种情况下对应的clion软件也会导致卡死，现在这里可以尝试安装ibus-rime这个包，使用起来可能会比ibus本身好一些（在clion ubuntu ibus相关的话题下看到的解决方案）
 - ibus-rime默认是使用的繁体中文，所以这里也需要修改成为简体中文
@@ -54,6 +54,29 @@ patch:
     - name: ascii_punct
       states: ["。，", "．，"]
 ```
+
+在使用ibus-rime使用的时候不小心设置成来台湾输入法，处理思路是:
+
+```yaml
+nano ~/.config/ibus/rime/default.custom.yaml    
+```
+
+在文件中加入
+
+```yaml
+patch:
+  schema_list:
+    - schema: luna_pinyin_simp  # 使用简体拼音输入方案
+
+  simplifier:
+    option_name: 'simplification'  # 启用简化字输出
+```
+
+最后重新部署 ibus-daemon -drx
+
+
+
+
 
 PS：参考链接 https://miaostay.com/2018/11/rime%E8%AE%BE%E7%BD%AE%E4%B8%BA%E9%BB%98%E8%AE%A4%E7%AE%80%E4%BD%93/
 
@@ -920,9 +943,7 @@ fork与clone的方式还是不一样的，fork是直接copy到自己的github仓
 
 
 
-**在windows中使用cloudnet**
-
-这种需要注意一下
+**在windows中使用cloudnet**，第一次成功配置但是在后续使用中都没有配置成功。
 
 
 
