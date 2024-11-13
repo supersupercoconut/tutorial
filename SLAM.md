@@ -31,17 +31,25 @@
 
 ## multi-sensor calibration(标定)
 
-1. Heterogeneous LiDAR Dataset中包含了livox lidar以及 Ouster lidar与相机、imu进行了标定
-   - **joint-lidar-camera-calib ：标定livox 与 camera**
-   - imu_utils 标定imu
+### lidar camera标定
+
+1. joint-lidar-camera-calib
+    - 需要给定大致外参
+    - 录制数据需要短暂移动 (不能出现纯平移，每一帧数据需要一定的旋转(yaw角移动)以及平移)
+
+2. livox_camera_calib
+
+    - 环境中不能存在太多平行线条 | 具体标定结果需要观察lidar扫描到的点云与camera的对应情况
+
+    - mid360雷达需要先累积然后再使用(单帧mid360点云过于稀疏)
 
 
 
 
 
+### multi-lidar标定
 
-
-
+ [https://github.com/Livox-SDK/Livox_automatic_calibration](https://link.zhihu.com/?target=https%3A//github.com/Livox-SDK/Livox_automatic_calibration)
 
 
 
@@ -165,32 +173,6 @@ Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### Coco-lic阅读
 
 
@@ -213,35 +195,59 @@ Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —
 
 
 
-
-
-### MINS代码阅读
-
-已经在MINS上配置完成来自己的数据集，并且简单测试来定位精度，感觉还可以但是没有非线性优化的方法好。
-
-TODO：
-
-(1) 录制一版 包含joint_state的odom数据 | 测试算法精度
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ***
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

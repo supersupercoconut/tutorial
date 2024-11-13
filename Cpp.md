@@ -46,6 +46,8 @@ vector<vector<int>> res  = {};     这个二维数组是一个空数组
 
 vector<vector<int>> res = {{}};   这个二维数组的size = 1，但是其第一个元素却是一个空的一维数组
 
+vector<vector<int>> arr(3, vector<int>(4, 0));  二维数组的初始化方案
+
 
 
 **reserve | resize | assign**
