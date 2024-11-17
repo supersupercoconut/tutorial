@@ -25,7 +25,7 @@
 
 ### 3. 雷达
 
-
+**[LiDAR_IMU_Init](https://github.com/hku-mars/LiDAR_IMU_Init)** IROS 2022 一种直接使用lidar imu进行初始化的方法
 
 ### 4. GPS
 
@@ -41,7 +41,9 @@
 
 
 
-## 数据集
+## 评价指标
+
+### 室内数据集
 
 室内数据集: 利用aruco marker进行室内数据集真实值的比较。aruco属于一种用黑白块生成的标志，又很多type类型(比如 DICT_6X6_250 属于是6*6的黑白块形成这个aruco标志，一种有250中排列)。一般以左下角为aruco板的坐标系原点，往右x，往上y，从纸面向外射出为z。每一个aurco都是唯一的
 
@@ -203,9 +205,7 @@ retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, board, cameraMatr
 
  
 
-
-
-
-
 ##　思路整理
+
+### 评价指标
 
