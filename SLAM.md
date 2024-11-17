@@ -29,54 +29,6 @@
 
 
 
-## multi-sensor calibration(标定)
-
-### lidar camera标定
-
-1. joint-lidar-camera-calib
-    - 需要给定大致外参
-    - 录制数据需要短暂移动 (不能出现纯平移，每一帧数据需要一定的旋转(yaw角移动)以及平移)
-
-2. livox_camera_calib
-
-    - 标定最后结果是lidar到相机的变换关系
-
-    - 环境中不能存在太多平行线条（最好是在室外中录制数据集，整个场景的结构信息足够明确）
-
-    - 可以使用单一场景点云，也可以使用多种场景下的点云
-
-    - mid360雷达需要先累积然后再使用(单帧mid360点云过于稀疏)，**github issue中存在不少关于Mid360标定的问题**
-    
-    - 对于纹理与几何信息比较明确的场景，在标定前后可以发现几何关系上存在一个对齐关系，即可以在最后的结果中比较标定结果，很直观地判断标定结果是否合理。**但是在实际使用中感觉投影结果比较差，计算出来的位姿也是不准确的**
-
-![single_calib_case](figure/single_calib_case.png)
-
-
-
-PS: 可以先使用livox_camera_calib标定一次，得到一种大致的变换关系，最后将得到的参数再次输入到该算法中，得到最后的收敛结果
-
-录制相机数据，关于了录制mid360雷达数据的时候可以中录制msg文件，最后导入fastlio，然后再输出累积之后的pcd文件进行标定
-
-
-
-
-
-
-
-3. direct_visual_lidar_calibration 
-    - 直接使用docker中安装的方式进行使用，因为算法本身需要ceres-solver的版本在2.10，但是本机中安装的ceres一般在1.14。而且不同版本的ceres对于glog版本的需求也是不一样的，弄起来特别麻烦，直接在docker中使用是最简单的方法了。
-    - 本方法相当于是将lidar点云累积出来形成一张图像，相机获取的图像与点云图像上选择对应点，使用对应点计算变换关系。**可以拖动三个轴上面的取值去裁剪点云（即下图黑色区域就是被裁剪的点云）**
-
-![image-20241115231844288](figure/image-20241115231844288.png)
-
-
-
-
-
-### multi-lidar标定
-
- [https://github.com/Livox-SDK/Livox_automatic_calibration](https://link.zhihu.com/?target=https%3A//github.com/Livox-SDK/Livox_automatic_calibration)
-
 
 
 

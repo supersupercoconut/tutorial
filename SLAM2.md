@@ -41,7 +41,41 @@
 
 
 
-## 评价指标
+## 标定
+
+### lidar camera标定
+
+一共就尝试了两种方法,后面那种方法使用起来特别方便,而且计算出来的结果也是比较准确的
+
+1. livox_camera_calib
+
+    - 标定最后结果是lidar到相机的变换关系
+
+    - 环境中不能存在太多平行线条（最好是在室外中录制数据集，整个场景的结构信息足够明确）
+
+    - 可以使用单一场景点云，也可以使用多种场景下的点云
+
+    - mid360雷达需要先累积然后再使用(单帧mid360点云过于稀疏)，**github issue中存在不少关于Mid360标定的问题**
+
+    - 对于纹理与几何信息比较明确的场景，在标定前后可以发现几何关系上存在一个对齐关系，即可以在最后的结果中比较标定结果，很直观地判断标定结果是否合理。**但是在实际使用中感觉投影结果比较差，计算出来的位姿也是不准确的**
+
+![single_calib_case](figure/single_calib_case.png)
+
+2. direct_visual_lidar_calibration 
+
+    - 直接使用docker中安装的方式进行使用，因为算法本身需要ceres-solver的版本在2.10，但是本机中安装的ceres一般在1.14。而且不同版本的ceres对于glog版本的需求也是不一样的，弄起来特别麻烦，直接在docker中使用是最简单的方法了。
+
+    - 本方法相当于是将lidar点云累积出来形成一张图像，相机获取的图像与点云图像上选择对应点，使用对应点计算变换关系。**可以拖动三个轴上面的取值去裁剪点云（即下图黑色区域就是被裁剪的点云）**
+
+![image-20241115231844288](figure/image-20241115231844288.png)
+
+
+
+
+
+
+
+##　评价指标
 
 ### 室内数据集
 
@@ -205,7 +239,70 @@ retval, rvec, tvec = cv2.aruco.estimatePoseBoard(corners, ids, board, cameraMatr
 
  
 
-##　思路整理
+## 常用脚本
 
-### 评价指标
+### 获取图像数据
+
+```cpp
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/opencv.hpp>
+#include <sstream>  // 用于生成文件名
+#include <iomanip>  // 用于格式化文件名中的时间戳
+
+// 用于跟踪接收到的图像数量
+int image_count = 0;
+
+void imageCallback(const sensor_msgs::ImageConstPtr& msg)
+{
+    // try
+    // {
+        // 打印接收到的图像信息
+        ROS_INFO("Received image with encoding: %s, width: %d, height: %d",
+                 msg->encoding.c_str(), msg->width, msg->height);
+
+        // 将ROS图像消息转换为OpenCV格式
+        cv_bridge::CvImagePtr cv_ptr;
+        cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+
+        // 获取当前时间作为时间戳
+        ros::Time current_time = ros::Time::now();
+        std::stringstream ss;
+        ss << "image_" << std::setfill('0') << std::setw(4) << image_count << "_"
+           << current_time.sec << "_" << current_time.nsec << ".png";
+
+        // 保存图像到本地
+        cv::imwrite(ss.str(), cv_ptr->image);
+        ROS_INFO("Saved image to %s", ss.str().c_str());
+
+        // 增加图像计数
+        image_count++;
+    // }
+    // catch (cv_bridge::Exception& e)
+    // {
+    //     ROS_ERROR("cv_bridge exception: %s", e.what());
+    //     return;
+    // }
+}
+int main(int argc, char** argv)
+{
+    // 初始化ROS节点
+    ros::init(argc, argv, "image_saver");
+    ros::NodeHandle nh;
+
+    // 使用image_transport来订阅图像话题
+    image_transport::ImageTransport it(nh);
+    image_transport::Subscriber sub = it.subscribe("/camera/color/image_raw", 1, imageCallback);
+
+    // 进入ROS事件循环
+    ros::spin();
+
+    return 0;
+}
+
+```
+
+
 
