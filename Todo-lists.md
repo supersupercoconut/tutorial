@@ -457,8 +457,20 @@ PS 额外部分：
 
 - [x] 培养方案 等待设置
 - [ ] leetcode 三道
-- [ ] 晚上录制一版本夜晚视觉数据集(看一下现在进入RTK模式是不是还跟之前一样那么困难)
+- [x] 晚上录制一版本夜晚视觉数据集(看一下现在进入RTK模式是不是还跟之前一样那么困难 —— 进入RTK模式确实简单，马上就进入RTK模式但是卫星数量很少)
 - [ ] fastlio出现问题的原因是什么
+
+
+
+周四
+
+- [ ] groundfusion中能使用compress的depth数据 - RGB图像使用已经解决，如果有可能最好还是做一个独立的node节点来处理
+- [ ] /mavros/global_position/raw/fix的频率能不能提升
+- [ ] 修改lidar话题驱动，将两个话题修改成为/livox/mid360/lidar 与 /livox/avia/lidar
+- [ ] 培养方案 转换学分
+- [ ] leetcode 三道
+- [ ] 录制室外数据集
+
 
 
 
