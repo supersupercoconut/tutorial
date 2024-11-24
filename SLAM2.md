@@ -805,4 +805,55 @@ if __name__ == '__main__':
 
 
 
-### 经纬高转换kml | 卫星云图可视化 | 经纬高转换xyz数据
+### 经纬高转换kml | 卫星云图可视化
+
+- 利用中科图像中的LocaSpaceViewer4.exe显示，将打包好的gps(xlsx文件)转换成为kml文件，再将该文件转换到google earth或者在图新地球中显示出来
+
+  - 选择excel转kml文件
+
+  ![image-20241124122253224](./figure/image-20241124122253224.png)
+
+  - 这里的高度模式需要紧贴地表才能在云图上显示，生成kml文件后可以直接在google earth上直接读取并显示
+
+  ![image-20241124121815334](./figure/image-20241124121815334.png)
+
+  - Google earth中并且可以选择需要显示的
+
+  ![image-20241124122100839](./figure/image-20241124122100839.png)
+
+
+
+###  经纬高转换xyz数据
+
+经纬高转换xyz数据以及转换到百度地图中的表示方式主要借助psins工具箱实现
+
+- 首先利用psinsinit.m 执行完之后显示一些地球数据的基本信息
+- 执行脚本，但是不能使用clear命令清空之前执行完的数据
+
+```matlab
+% Step 1: 读取 Excel 文件中的经纬度数据
+input_filename = 'RTK2.xlsx';
+data = readmatrix(input_filename);
+% filename = 'rtk_data.xlsx';   % Excel 文件名称
+% data = readmatrix(filename);  % 读取整个文件
+% 
+% % Step 2: 提取经度、纬度数据
+time = data(:, 1);
+longitude = data(:, 2);  % 第一列是经度
+latitude = data(:, 3);   % 第二列是纬度
+height = data(:, 4);   % 第三列是高度
+ 
+% % Step 3: 将经纬度数据组合成 pos 格式 (纬度, 经度)
+pos = [latitude,longitude, height,time];
+pos(:,1:2) = deg2rad(pos(:,1:2));
+
+html_filename = 'Map_from_Excel.html';
+pos2bd(pos, html_filename, 0.1);
+[dxyz,ddxyz,od] = pos2dxyz(pos);
+
+pos2dplot(pos);
+```
+
+- pos2dxyz直接读取xyz数据
+
+![image-20241124122629470](./figure/image-20241124122629470.png)
