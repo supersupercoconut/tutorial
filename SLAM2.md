@@ -43,6 +43,21 @@
 
 记录数据集录制的相关信息
 
+
+
+### color/depth处理
+
+- 注意这里的color需要录制的数据是image_raw数据格式，depth需要录制compressDepth数据格式，在launch函数中可以直接使用两个node启动整个程序 (需要手动安装compress对应包 sudo apt install ros-noetic-compressed-depth-image-transport) :
+
+```cpp
+<node name="image_transport_1" pkg="image_transport" type="republish" args="compressed in:=/camera/color/image_raw raw out:=/camera/color/image_raw" />
+<node name="image_transport_2" pkg="image_transport" type="republish" args="compressedDepth in:=/camera/aligned_depth_to_color/image_raw raw out:=/camera/aligned_depth_to_color/image_raw" />
+```
+
+
+
+### wheel分析
+
 - wheel odometer 话题为 /odom 对应的消息类型为nav_msgs/Odometry，其分别对应了pose以及twist信息(即速度)
     - pose中对应的xyz分别代表 前后位移，左右位移，以及绕z轴的旋转 | **这里是基于阿卡曼模型计算出来的**
     - orientation只有zw部分有数据 | **不知道这里是如何计算得到的...可能是直接利用角速度计算累积出来的，只有绕z轴上的姿态变换**
@@ -89,11 +104,29 @@ twist:
 - 第一张图对应wheel退化场景，分析当前录制的wheel与真实值vrpn之间的区别，可以发现这个轨迹差别非常大
 - 第二张对应的是wheel应该正常的场景，但是轨迹差别同样差别很大，在第一次转弯之后整个wheel就直接漂移了
 
-![wheel](figure/wheel.png)
+<img src="figure/image-20241124194755395.png" alt="image-20241124194755395" style="zoom: 80%;" />		
 
-![visual](figure/visual.png)
+虽然说是正常场景，但是wheel同样出现偏移，只能说wheel本身就不够准确
+
+<img src="figure/image-20241124194244143.png" alt="image-20241124194244143" style="zoom:80%;" />
 
 
+
+### RTK分析
+
+目前在使用RTK数据上遇到了两个问题 (1)RTK数据的协方差很大 (2) RTK数据在录制的时候卫星数量很少，只有20~25颗
+
+- RTK数据对应的都是浮点解状态，精度没有那么高，只有当RTK模式进入到固定解状态下，精度才能到cm级别
+
+    - RTK浮点解 对应着 fix_type = 4
+
+    - RTK固定解 对应着fix_type = 5
+
+    飞控输出话题(即RTK数据话题)
+
+现在来看，RTK数据误差应该没有那么大，首先在高度上的差别就很小，出发位置与起始位置的高度差距也就只有0.02m，从经纬度上来看也是正常的，在楼下虽然卫星数量比较多，但是录制出来的经纬度数据存在一个基本的偏差，在开阔地区使用上就没有问题，有一段估计能直接使用。
+
+- 
 
 
 
@@ -105,7 +138,11 @@ twist:
 
 **wheel**
 
-- 空转的第一个数据明显出现丢帧问题，在分析vrpn数据中明显有一个波动
+
+
+
+
+
 
 
 
@@ -150,12 +187,6 @@ twist:
 ##　评价指标
 
 ### evo使用
-
-- 原点对齐
-
-    ```cpp
-    evo_ape tum pose_output_tum.txt odom_output_tum.txt  --plot --plot_mode xyz --align_origin
-    ```
 
 - 输出对齐中使用的旋转平移关系 —— 输出的旋转矩阵一定是相似变换。**这里感觉在对齐中计算出来的R矩阵应该是让两个轨迹整体的误差最小，所以对于轨迹相差非常大的情况下，计算出来的R成为两个轨迹之间的变换关系**
 
@@ -428,7 +459,11 @@ int main(int argc, char** argv)
 
 ### 绘制轨迹
 
-将vrpn轨迹转换到wheel坐标系下(转换关系从转换evo轨迹的脚本，读取前面一段误差比较小的轨迹中计算出来的转换矩阵获取)，转换完轨迹之后将两个轨迹在原点对齐，并绘制轨迹
+将vrpn轨迹转换到wheel坐标系下(转换关系从转换evo轨迹的脚本，读取前面一段误差比较小的轨迹中计算出来的转换矩阵获取)，转换完轨迹之后将两个轨迹在原点对齐，并绘制轨迹。对应evo话题为：
+
+```
+evo_traj tum pose_output_tum.txt --ref odom_output_tum.txt -vap  --save_as_tum
+```
 
 ```python
 #!/usr/bin/env python3
@@ -597,7 +632,7 @@ if __name__ == '__main__':
 
 从ros中直接接受话题，然后转换成为能直接使用的evo轨迹进行对比
 
-- 读取ros话题并且转换成为evo中能直接使用的tum格式，其中z轴直接赋值为0处理
+- 读取ros话题并且转换成为evo中能直接使用的tum格式，其中z轴直接赋值为0处理(因为这里的z代表的不是z轴上的位置变换而是旋转角速度，是由底盘数据决定的)
 
 ```python
 #!/usr/bin/env python3
@@ -768,3 +803,6 @@ if __name__ == '__main__':
     plotter.spin()
 ```
 
+
+
+### 经纬高转换kml | 卫星云图可视化 | 经纬高转换xyz数据

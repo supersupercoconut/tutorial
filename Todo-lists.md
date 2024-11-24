@@ -464,14 +464,29 @@ PS 额外部分：
 
 周四
 
-- [ ] groundfusion中能使用compress的depth数据 - RGB图像使用已经解决，如果有可能最好还是做一个独立的node节点来处理
-- [ ] /mavros/global_position/raw/fix的频率能不能提升
-- [ ] 修改lidar话题驱动，将两个话题修改成为/livox/mid360/lidar 与 /livox/avia/lidar
-- [ ] 培养方案 转换学分
+- [x] groundfusion中能使用compress的depth数据 - RGB图像使用已经解决，如果有可能最好还是做一个独立的node节点来处理
+- [x] /mavros/global_position/raw/fix的频率能不能提升
+    - 技术售后表示没有尝试过，需要自行研究
+- [x] 修改lidar话题驱动，将两个话题修改成为/livox/mid360/lidar 与 /livox/avia/lidar
+- [x] 培养方案 转换学分 (胡还是没有给我审核通过... 服了)
+    - 记得先保证培养方案审核之后才能去转换学分
+- [x] leetcode 三道
+    - 139 单词拆分
+    - 198 打家劫舍
+    - 213 打家劫舍2
+- [x] 录制室外数据集
+    - 发现昨天晚上的GPS数据不能使用(不知道是不是天线的问题，更换天线就没有问题了)
+    - 并且解决了之前飞控没有办法正常连接的问题 - 就是当前这个端口被mavros读取了，但是另一端实际上不是飞控设备导致了问题
+
+
+
+周五
+
 - [ ] leetcode 三道
-- [ ] 录制室外数据集
-
-
+- [x] 测试GPS是否正常(使用之前的天线是否正常)
+- [x] 解决压缩的depth图像问题 —— 对于压缩图像数据应该录制为compressDepth数据
+- [ ] 解决动补输出话题 —— 不应该输出uav1
+- [ ] 如果测试完一切正常则录制夜晚环境下的所有的视觉包
 
 
 
