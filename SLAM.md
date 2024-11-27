@@ -53,7 +53,11 @@
 
 
 
-### MINS 
+### MINS
+
+mins支持的传感器数量很多，竟然还可以支持延迟测量以及在线标定(就是不明确这里的延迟测量表示什么含义)
+
+![image-20241127225837456](./figure/image-20241127225837456.png)
 
 - 多传感器的思路，并且已经开源。其使用imu作为核心部分，其他传感器作为测量值，并且加入了传感器的时空标定。整体的**状态估计使用连续时间的状态模型**。算法使用基于流型的状态估计，并且使用动态克隆方法平衡精度以及计算负载(这个并不明白) | 在coco-lic中也是使用了B样条的插值方法来实现连续时间的状态估计。
 
@@ -145,7 +149,9 @@ Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —
 
 
 
+### PO-VINS: An Efficient and Robust Pose-Only Visual-Inertial State Estimator With LiDAR Enhancement
 
+武大这里提供了开源代码将livox雷达融合到了vins中，但是具体的实现逻辑还不太清楚
 
 
 
@@ -159,6 +165,9 @@ Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —
 
 
 
+### Research on Multi-sensor Fusion Localization of Mobile  Robot Based on ROS 
+
+viw-fusion对应的硕士论文
 
 
 
@@ -166,8 +175,7 @@ Task-driven SLAM Benchmarking(主要是针对benchmark文章结构的整理) —
 
 
 
-
-
+https://github.com/botlowhao/vwio_eskf 这部分描述的也可以，但是
 
 
 

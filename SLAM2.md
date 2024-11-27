@@ -15,19 +15,37 @@
 
 ### 2. 轮计
 
-在groundfusion涉及到了两种wheel odometer的缺点 —— 1. 其测量的角速度不准确 2. 打滑状态
+在groundfusion涉及到了两种wheel odometer的缺点 —— 1. 其测量的角速度不准确  2. 打滑状态
 
-- 对于角速度不准确，就直接使用相邻的IMU测量结果对于wheel测量结果进行插值
+- 对于角速度不准确，就直接使用相邻的IMU测量结果对于wheel测量结果进行插值。因为这里使用的wheel
 
     ![image-20241106142110197](figure/image-20241106142110197.png)
 
 - 并且通过比较IMU预积分与wheel预积分之间的区别解决打滑问题
+
+
+
+
+
+- 但是在mins中也支持wheel-imu的KF定位方法(应该可以直接提取出来使用)
+
+- ESKFbased IMU-wheel fusion odometry 这里实现基本逻辑，并且使用ESKF模型，计算起来更简单 (ESKF方法其实主要是想清楚这里对应状态方程是什么，主要就是测量值与预测值的实现逻辑) | fastlio在知乎上也有使用ESKF模型实现的情况
+
+
+
+
 
 ### 3. 雷达
 
 **[LiDAR_IMU_Init](https://github.com/hku-mars/LiDAR_IMU_Init)** IROS 2022 一种直接使用lidar imu进行初始化的方法
 
 ### 4. GPS
+
+录制一些终点RTK正常，评估GPS算法终点的误差(去除GPS/RTK不准的轨迹)
+
+
+
+
 
 
 
@@ -36,6 +54,46 @@
 ## 后端
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 录制数据
 
 
 
@@ -60,7 +118,7 @@
 
 - wheel odometer 话题为 /odom 对应的消息类型为nav_msgs/Odometry，其分别对应了pose以及twist信息(即速度)
     - pose中对应的xyz分别代表 前后位移，左右位移，以及绕z轴的旋转 | **这里是基于阿卡曼模型计算出来的**
-    - orientation只有zw部分有数据 | **不知道这里是如何计算得到的...可能是直接利用角速度计算累积出来的，只有绕z轴上的姿态变换**
+    - orientation只有zw部分有数据 | **可能是直接利用角速度计算累积出来的，只有绕z轴上的姿态变换**
     - twist中只有后轮驱动轮，因为其固连到车体上，故只有x方向上的速度。从xy平面的角度，可以得知其只有z轴上的角速度。
 
 ```
@@ -110,6 +168,14 @@ twist:
 
 <img src="figure/image-20241124194244143.png" alt="image-20241124194244143" style="zoom:80%;" />
 
+基本原理： 对于一个四元数而言，这里测量到的(0,0,xx,xx) - 对应四元数的基本结构为(x,y,z,w) : 表明其只有绕z轴上的旋转，并没有绕x以及y轴上的旋转。同理绕x或者y上的旋转，对应的四元数的结构也与此类似。
+
+1. https://blog.csdn.net/HHB791829200/article/details/128840810?spm=1001.2101.3001.6650.5&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ECtr-5-128840810-blog-100395692.235%5Ev43%5Epc_blog_bottom_relevance_base7&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ECtr-5-128840810-blog-100395692.235%5Ev43%5Epc_blog_bottom_relevance_base7&utm_relevant_index=9
+
+2. https://blog.csdn.net/KYJL888/article/details/100395692
+
+
+
 
 
 ### RTK分析
@@ -125,6 +191,8 @@ twist:
     飞控输出话题(即RTK数据话题)
 
 现在来看，RTK数据误差应该没有那么大，首先在高度上的差别就很小，出发位置与起始位置的高度差距也就只有0.02m，从经纬度上来看也是正常的，在楼下虽然卫星数量比较多，但是录制出来的经纬度数据存在一个基本的偏差。通过绘制出来的卫星云图可以发现数据上是没有任何问题的，轨迹正确
+
+Aloam激光
 
 
 
@@ -142,7 +210,7 @@ lidar竖线对称
 
 
 
-
+lidar 动态物体很多 | 录制RTCM数据(确认一下)
 
 
 
@@ -194,7 +262,7 @@ lidar竖线对称
     - --save_as_tum: 将两个对齐之后的轨迹转换成为tum格式输出
 
     ```cpp
-    evo_traj tum odom_output_tum.txt --ref pose_output_tum.txt-vap  --save_as_tum
+    evo_traj tum odom_output_tum.txt --ref pose_output_tum.txt -vap  --save_as_tum
     ```
 
     
@@ -624,7 +692,7 @@ if __name__ == '__main__':
 
 ```
 
-
+尝试GPT实现评议原点对齐，旋转坐标系对齐 - 方便评估指标(openloris指标需要看)
 
 ### 转换evo轨迹
 
@@ -718,6 +786,8 @@ if __name__ == '__main__':
 这里看到了两种方法，一种是直接调用opencv中的ORB特征点提取函数，另一种方法是直接利用orb-slam2/3中的特征点提取方法，直接利用图像金字塔与八叉树将整张图像分割，设置掩码之后再提取特征点。
 
 
+
+使用vins mono那种提取特征点的方法，找指标
 
 
 
