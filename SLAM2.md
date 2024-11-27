@@ -45,9 +45,9 @@
 
 
 
-### color/depth处理
+### color/depth分析
 
-- 注意这里的color需要录制的数据是image_raw数据格式，depth需要录制compressDepth数据格式，在launch函数中可以直接使用两个node启动整个程序 (需要手动安装compress对应包 sudo apt install ros-noetic-compressed-depth-image-transport) :
+- 注意这里的color需要录制的数据是image_raw数据格式，depth需要录制compressDepth数据格式。在launch函数中可以直接使用两个node启动整个程序 (需要手动安装compress对应包 sudo apt install ros-noetic-compressed-depth-image-transport) :
 
 ```cpp
 <node name="image_transport_1" pkg="image_transport" type="republish" args="compressed in:=/camera/color/image_raw raw out:=/camera/color/image_raw" />
@@ -124,9 +124,7 @@ twist:
 
     飞控输出话题(即RTK数据话题)
 
-现在来看，RTK数据误差应该没有那么大，首先在高度上的差别就很小，出发位置与起始位置的高度差距也就只有0.02m，从经纬度上来看也是正常的，在楼下虽然卫星数量比较多，但是录制出来的经纬度数据存在一个基本的偏差，在开阔地区使用上就没有问题，有一段估计能直接使用。
-
-- 
+现在来看，RTK数据误差应该没有那么大，首先在高度上的差别就很小，出发位置与起始位置的高度差距也就只有0.02m，从经纬度上来看也是正常的，在楼下虽然卫星数量比较多，但是录制出来的经纬度数据存在一个基本的偏差。通过绘制出来的卫星云图可以发现数据上是没有任何问题的，轨迹正确
 
 
 
