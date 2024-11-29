@@ -8,6 +8,50 @@
 
 ### lidar
 
+整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
+
+- A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models
+
+- Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments
+
+- Probabilistic Degeneracy Detection for Point-to-Plane Error Minimization
+
+- AdaLIO: Robust adaptive LiDAR-inertial odometry in degenerate indoor environments
+
+- DARE-SLAM: Degeneracy-Aware and Resilient Loop Closing in Perceptually-Degraded Environments
+
+- GenZ-ICP: Generalizable and Degeneracy-Robust LiDAR Odometry Using an Adaptive Weighting(算法开源)
+
+- Informed, constrained, aligned: A field analysis on degeneracy-aware point cloud registration in the wild
+
+- An intensity-augmented LiDAR-inertial SLAM for solid-state LiDARs in degenerated environments
+
+- DR-SLAM: Vision-Inertial-Aided Degenerate-Robust LiDAR SLAM Based on Dual Confidence Ellipsoid Oblateness
+
+- Range-Aided LiDAR-Inertial Multi-Vehicle Localization and Mapping in Degenerate Environments
+
+- Adaptive Denoising-Enhanced LiDAR Odometry for Degeneration Resilience in Diverse Terrains
+
+- Dams-lio: A degeneration-aware and modular sensor-fusion lidar-inertial odometry
+
+- Relead: Resilient localization with enhanced lidar odometry in adverse environments
+
+- X-icp: Localizability-aware lidar registration for robust localization in extreme environments
+
+- Complementary Intensity-Augmented LiDAR Inertial Odometry
+
+- ### [Complementary multi–modal sensor fusion for resilient robot pose estimation in subterranean environments](https://ieeexplore.ieee.org/abstract/document/9213865/)(这个主要是名字起的很好，我觉得可以用在我的小论文名字上)
+
+- LVIO-Fusion: Tightly-Coupled LiDAR-Visual-Inertial Odometry and Mapping in Degenerate Environments
+
+- NV-LIOM: LiDAR-Inertial Odometry and Mapping Using Normal Vectors Towards Robust SLAM in Multifloor Environments
+
+- Fast and Accurate Deep Loop Closing and Relocalization for Reliable LiDAR SLAM(貌似跟退化环境没有关系)
+
+- RA-LIO: A Robust Adaptive Tightly-Coupled Lidar-Inertial Odometry
+
+- [PV-LIO](https://github.com/HViktorTsoi/PV-LIO) 这种方法是基于voxelmap的改进工作
+
 主要由于insufficient geometric constraint(可能是某一个方向上的几何约束)
 
  **数据集**
@@ -39,7 +83,9 @@
 
 
 
-## Paper reading with code
+
+
+## Paper reading
 
 ### VINS-fusion
 
@@ -175,7 +221,27 @@ viw-fusion对应的硕士论文
 
 
 
-https://github.com/botlowhao/vwio_eskf 这部分描述的也可以，但是
+https://github.com/botlowhao/vwio_eskf 这部分表示的就是eskf实现定位方法
+
+
+
+
+
+### Are We Ready for Service Robots? The OpenLORIS-Scene Datasets for Lifelong SLAM
+
+
+
+
+
+
+
+### Heterogeneous LiDAR Dataset for Benchmarking Robust Localization in Diverse Degenerate Scenarios
+
+多种lidar传感器
+
+
+
+
 
 
 
