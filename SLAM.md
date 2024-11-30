@@ -8,15 +8,23 @@
 
 ### lidar
 
+lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退化。scan-to-scan退化但是对于scan-to-local/global map未必是会出现退化的
+
 整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
 
-- A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models
+- A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models(部分开源，自适应改变voxel尺寸部分在整理中)
+
+    - 数据集为m2DGR
 
 - Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments
 
-- Probabilistic Degeneracy Detection for Point-to-Plane Error Minimization
+- Probabilistic Degeneracy Detection for Point-to-Plane Error Minimization(开源)
 
 - AdaLIO: Robust adaptive LiDAR-inertial odometry in degenerate indoor environments
+
+    - 检测退化环境后修改参数
+
+    - 
 
 - DARE-SLAM: Degeneracy-Aware and Resilient Loop Closing in Perceptually-Degraded Environments
 
@@ -50,16 +58,19 @@
 
 - RA-LIO: A Robust Adaptive Tightly-Coupled Lidar-Inertial Odometry
 
-- [PV-LIO](https://github.com/HViktorTsoi/PV-LIO) 这种方法是基于voxelmap的改进工作
+- [PV-LIO](https://github.com/HViktorTsoi/PV-LIO) 这种方法是基于voxelmap的改进工作Graph-MSF: Graph-based Multi-sensor Fusion for Consistent Localization and State Estimation
 
 主要由于insufficient geometric constraint(可能是某一个方向上的几何约束)
+
+最好是实现几种lidar退化的判断方法 - 玻璃水面这种场景还是不确定是不是属于退化..至少建图上是没有分析出来
+
+![image-20241130001757481](figure/image-20241130001757481.png)
 
  **数据集**
 
 1. Heterogeneous LiDAR Dataset for Benchmarking Robust Localization in Diverse Degenerate Scenarios | **将退化分成了平移退化以及旋转退化，但是没有定量分析一个场景是不是退化场景（都是强制指定一个场景中导致的退化形式）**
    - Waterways 水路 : 针对水面反射产生退化
    - Flat ground ：直接将lidar对应地面，这样其在平面足够大的情况，xy平移或者绕z轴旋转lidar会导致退化
-2. 
 
 **检测方法**
 
@@ -67,17 +78,144 @@
 
    ![image-20241002221931525](./figure/image-20241002221931525.png)
 
-2. 
+
+
+
+
+退化检测 —— 整体来看有一些复杂，主要感觉这里不应该出现camera这个坐标系
+
+```cpp
+bool LMOptimization(int iterCount)
+    {
+        // This optimization is from the original loam_velodyne by Ji Zhang, need to cope with coordinate transformation
+        // lidar <- camera      ---     camera <- lidar
+        // x = z                ---     x = y
+        // y = x                ---     y = z
+        // z = y                ---     z = x
+        // roll = yaw           ---     roll = pitch
+        // pitch = roll         ---     pitch = yaw
+        // yaw = pitch          ---     yaw = roll
+
+        // lidar -> camera
+        float srx = sin(transformTobeMapped[1]);
+        float crx = cos(transformTobeMapped[1]);
+        float sry = sin(transformTobeMapped[2]);
+        float cry = cos(transformTobeMapped[2]);
+        float srz = sin(transformTobeMapped[0]);
+        float crz = cos(transformTobeMapped[0]);
+
+        int laserCloudSelNum = laserCloudOri->size();
+        if (laserCloudSelNum < 50) {
+            return false;
+        }
+
+        cv::Mat matA(laserCloudSelNum, 6, CV_32F, cv::Scalar::all(0));
+        cv::Mat matAt(6, laserCloudSelNum, CV_32F, cv::Scalar::all(0));
+        cv::Mat matAtA(6, 6, CV_32F, cv::Scalar::all(0));
+        cv::Mat matB(laserCloudSelNum, 1, CV_32F, cv::Scalar::all(0));
+        cv::Mat matAtB(6, 1, CV_32F, cv::Scalar::all(0));
+        cv::Mat matX(6, 1, CV_32F, cv::Scalar::all(0));
+
+        PointType pointOri, coeff;
+
+        for (int i = 0; i < laserCloudSelNum; i++) {
+            // lidar -> camera
+            pointOri.x = laserCloudOri->points[i].y;
+            pointOri.y = laserCloudOri->points[i].z;
+            pointOri.z = laserCloudOri->points[i].x;
+            // lidar -> camera
+            coeff.x = coeffSel->points[i].y;
+            coeff.y = coeffSel->points[i].z;
+            coeff.z = coeffSel->points[i].x;
+            coeff.intensity = coeffSel->points[i].intensity;
+            // in camera
+            float arx = (crx*sry*srz*pointOri.x + crx*crz*sry*pointOri.y - srx*sry*pointOri.z) * coeff.x
+                      + (-srx*srz*pointOri.x - crz*srx*pointOri.y - crx*pointOri.z) * coeff.y
+                      + (crx*cry*srz*pointOri.x + crx*cry*crz*pointOri.y - cry*srx*pointOri.z) * coeff.z;
+
+            float ary = ((cry*srx*srz - crz*sry)*pointOri.x 
+                      + (sry*srz + cry*crz*srx)*pointOri.y + crx*cry*pointOri.z) * coeff.x
+                      + ((-cry*crz - srx*sry*srz)*pointOri.x 
+                      + (cry*srz - crz*srx*sry)*pointOri.y - crx*sry*pointOri.z) * coeff.z;
+
+            float arz = ((crz*srx*sry - cry*srz)*pointOri.x + (-cry*crz-srx*sry*srz)*pointOri.y)*coeff.x
+                      + (crx*crz*pointOri.x - crx*srz*pointOri.y) * coeff.y
+                      + ((sry*srz + cry*crz*srx)*pointOri.x + (crz*sry-cry*srx*srz)*pointOri.y)*coeff.z;
+            // camera -> lidar
+            matA.at<float>(i, 0) = arz;
+            matA.at<float>(i, 1) = arx;
+            matA.at<float>(i, 2) = ary;
+            matA.at<float>(i, 3) = coeff.z;
+            matA.at<float>(i, 4) = coeff.x;
+            matA.at<float>(i, 5) = coeff.y;
+            matB.at<float>(i, 0) = -coeff.intensity;
+        }
+
+        cv::transpose(matA, matAt);
+        matAtA = matAt * matA;
+        matAtB = matAt * matB;
+        cv::solve(matAtA, matAtB, matX, cv::DECOMP_QR);
+
+        if (iterCount == 0) {
+
+            cv::Mat matE(1, 6, CV_32F, cv::Scalar::all(0));
+            cv::Mat matV(6, 6, CV_32F, cv::Scalar::all(0));
+            cv::Mat matV2(6, 6, CV_32F, cv::Scalar::all(0));
+
+            cv::eigen(matAtA, matE, matV);
+            matV.copyTo(matV2);
+
+            isDegenerate = false;
+            float eignThre[6] = {100, 100, 100, 100, 100, 100};
+            for (int i = 5; i >= 0; i--) {
+                if (matE.at<float>(0, i) < eignThre[i]) {
+                    for (int j = 0; j < 6; j++) {
+                        matV2.at<float>(i, j) = 0;
+                    }
+                    isDegenerate = true;
+                } else {
+                    break;
+                }
+            }
+            matP = matV.inv() * matV2;
+        }
+
+        if (isDegenerate)
+        {
+            cv::Mat matX2(6, 1, CV_32F, cv::Scalar::all(0));
+            matX.copyTo(matX2);
+            matX = matP * matX2;
+        }
+
+        transformTobeMapped[0] += matX.at<float>(0, 0);
+        transformTobeMapped[1] += matX.at<float>(1, 0);
+        transformTobeMapped[2] += matX.at<float>(2, 0);
+        transformTobeMapped[3] += matX.at<float>(3, 0);
+        transformTobeMapped[4] += matX.at<float>(4, 0);
+        transformTobeMapped[5] += matX.at<float>(5, 0);
+
+        float deltaR = sqrt(
+                            pow(pcl::rad2deg(matX.at<float>(0, 0)), 2) +
+                            pow(pcl::rad2deg(matX.at<float>(1, 0)), 2) +
+                            pow(pcl::rad2deg(matX.at<float>(2, 0)), 2));
+        float deltaT = sqrt(
+                            pow(matX.at<float>(3, 0) * 100, 2) +
+                            pow(matX.at<float>(4, 0) * 100, 2) +
+                            pow(matX.at<float>(5, 0) * 100, 2));
+
+        if (deltaR < 0.05 && deltaT < 0.05) {
+            return true; // converged
+        }
+        return false; // keep optimizing
+    }
+
+```
 
 
 
 
 
-
-
-
-
-
+### multi-sensor fusion
 
 
 
