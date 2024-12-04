@@ -4,11 +4,11 @@
 
 ## corner case detection
 
-整理各种传感器的退化场景的检测方法 ——主要整理开源算法，相当于找到多种传感器失灵的情况。定性分析各种传感器失效比较简单，定量分析比较复杂
+整理各种传感器的退化场景的检测方法 ——主要整理开源算法，相当于找到多种传感器失灵的情况。定性分析各种传感器失效比较简单，定量分析比较复杂。
 
 ### lidar
 
-lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退化。scan-to-scan退化但是对于scan-to-local/global map未必是会出现退化的
+lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退化。scan-to-scan退化但是对于scan-to-local/global map未必是退化的
 
 整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
 
@@ -239,37 +239,28 @@ bool LMOptimization(int iterCount)
 
 ### MINS
 
-mins支持的传感器数量很多，竟然还可以支持延迟测量以及在线标定 (就是不明确这里的延迟测量表示什么含义)
+mins支持的传感器数量很多，并支持延迟测量以及在线标定
 
 ![image-20241127225837456](./figure/image-20241127225837456.png)
 
-- 多传感器的思路，并且已经开源。其使用imu作为核心部分，其他传感器作为测量值，并且加入了传感器的时空标定。整体的**状态估计使用连续时间的状态模型**。算法使用基于流型的状态估计，并且使用动态克隆方法平衡精度以及计算负载(这个并不明白) | 在coco-lic中也是使用了B样条的插值方法来实现连续时间的状态估计。
+- 多传感器的思路，并且已经开源。其使用imu作为核心部分，其他传感器作为测量值，并且加入了传感器的时空标定。**状态估计部分有些复杂**
+  - **该算法的lidar部分并没有使用livox的lidar...目前本算法是只支持了机械式的lidar算法**
 
-- **该算法的lidar部分并没有直接使用livox的lidar...并且修改这部分并不容易 | coco-lic是支持livox的算法，不知道其是否可以在这里借鉴**
-
-- 因为是使用的open_vins的标准，所以这里的四元数是JPL格式的四元数，VINS（Visual Inertial Navigation System） 中通常使用的是 Hamilton 四元数标准。这里会存在一定的区别！！
-
-
-
-
-
-**pipeline**
+- 因为是使用的open_vins的标准，所以这里的四元数是JPL格式的四元数，VINS（Visual Inertial Navigation System） 中通常使用的是 Hamilton 四元数标准。这里会存在一定的区别。
+- 初始化： 静态初始化 (IMU only) + 动态初始化  (IMU+wheel)
+- 坐标系：一开始没有GNSS的时候，在初始化确定下来的world系中进行处理。当存在GNSS的时候，world系直接转移到东北天坐标系中。
 
 ![image-20241028160925306](figure/image-20241028160925306.png)
 
-整理算法的实现思路
 
-- 基于流型的插值—— 在没有传感器硬同步的时候使用该方法进行多种传感器的同步
 
-- 初始化： 静态初始化 (IMU only) + 动态初始化  (IMU+wheel)
-
-- 坐标系：一开始没有GNSS的时候，在初始化确定下来的world系中进行处理。当存在GNSS的时候，world系直接转移到东北天坐标系中。
+**插值计算**
 
 
 
-**ros话题**
 
-整理算法发布出来的rostopic以及实现自身数据集的整理部分
+
+
 
 
 
@@ -393,11 +384,19 @@ https://github.com/botlowhao/vwio_eskf 这部分表示的就是eskf实现定位�
 
 
 
+## Basic 
 
+整理一些比较基础的内容
 
+### JPL |Hamilton
 
+- 两者都是四元数的表示方法，在vins中使用的都是Hamilton格式的四元数，但是在MSCKF以及openvins中使用的都是JPL格式的四元数。不过目前来看，Eigen 这种通用线性代数运算库用的是 Hamilton，Matlab 使用的是 Hamilton（[MathWorks: Quaternion](https://www.mathworks.com/discovery/quaternion.html)），ROS、Google Ceres Solver 也用的是 Hamilton。两者区别如下，一种是左手系一种是右手系(导致状态更新存在左乘与右乘的区别)，四元数中的w的位置还有所区别。
 
+![在这里插入图片描述](./figure/c1a1d117aade3f63125b4082b6afd125.png)
 
+https://blog.csdn.net/cg129054036/article/details/119703694
+
+https://zhuanlan.zhihu.com/p/76793847
 
 
 
