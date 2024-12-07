@@ -926,3 +926,34 @@ pos2dplot(pos);
 - pos2dxyz直接读取xyz数据
 
 ![image-20241124122629470](./figure/image-20241124122629470.png)
+
+
+
+
+
+
+
+## 补充
+
+补充一些传感器在实际使用中的调试步骤以及方法
+
+### UWB
+
+- uwb主要使用的是nooploop中的LTP-BS2, 一共存在8个。因为主要使用其中的分布式测距模式，所以在厂家提供的交互软件中选择其中的DR_NOED0模式即可(NODE1模式应该也可以，但是没有手动调试)。8个UWB模块的的system ID选择成一种，CH通道一般选择2(手册中说2通道对于该型号的UWB通讯比较好)。role后面对应的NODE值一般默认是0, 8个全部设置成0即可, ID从0设置到7(这个要保证不相同)，对应的容量设置成为20，发送频率50HZ
+
+![image-20241205171903315](figure/image-20241205171903315.png)
+
+- ros软件包需要安装nooploop自带的串口库以及自身的ros代码
+    - https://github.com/nooploop-dev/serial 直接make, 程序自动创建build文件不需要手动创建，最后直接sudo make install即可
+    - https://github.com/nooploop-dev/nlink_parser?tab=readme-ov-file 按教程安装，最后执行roslaunch nlink_parser linktrack.launch后会提示 rostopic echo /nlink_linktrack_nodeframe ，如果配置正常，则其会输出其他UWB模块输送的数据。
+
+<img src="figure/image-20241205172333747.png" alt="image-20241205172333747" style="zoom: 67%;" />
+
+​	查看后续对应的数据，可以观察到其他id发送过来的数据, dis对应的距离信息。
+
+<img src="figure/image-20241205172548161.png" alt="image-20241205172548161" style="zoom: 80%;" />
+
+### bug整理
+
+1. 运行 `rostopic echo ...` 查看话题数据，提示"ERROR: Cannot load message class for ... Are your messages built。这里很神奇的需要新开终端source {$ros_workspace}/devel/setup.bash 之后才能取观察到话题数据
+2. 对于ubuntu20.04发现另一个很神奇的问题 —— rostopic echo /nlink_linktrack_nodeframe提示数据没有显示出来，只需要重新拔插一下，再执行就正常了

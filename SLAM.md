@@ -247,20 +247,23 @@ mins支持的传感器数量很多，并支持延迟测量以及在线标定
   - **该算法的lidar部分并没有使用livox的lidar...目前本算法是只支持了机械式的lidar算法**
 
 - 因为是使用的open_vins的标准，所以这里的四元数是JPL格式的四元数，VINS（Visual Inertial Navigation System） 中通常使用的是 Hamilton 四元数标准。这里会存在一定的区别。
-- 初始化： 静态初始化 (IMU only) + 动态初始化  (IMU+wheel)
-- 坐标系：一开始没有GNSS的时候，在初始化确定下来的world系中进行处理。当存在GNSS的时候，world系直接转移到东北天坐标系中。
+    - 初始化： 静态初始化 (IMU only) + 动态初始化  (IMU+wheel)
+    - 坐标系：一开始没有GNSS的时候，在初始化确定下来的world系中进行处理。当存在GNSS的时候，world系直接转移到东北天坐标系中。
+
 
 ![image-20241028160925306](figure/image-20241028160925306.png)
 
 
 
-**插值计算**
+关于其中clone策略: 需要被clone的数据只会是imu数据，其他传感器数据并不会执行clone。本文中的clone频率是动态改变的一种过程中，所支持的最高频率在20HZ(慢速运动的时候会降低clone频率，高速运动提高clone频率)。
 
+- 这里最复杂的地方是如何取判断clone_time | clone_time对应的数据
 
+- 期望clone_time与上一次使用的clone_time之间如果没有测量值的话是不会加入clone的
 
+获取clone时间的函数为get_next_clone_time() 返回clone_time 正常情况下输出的是其他传感器对应的sensor_time(考虑到传感器上的时间延迟)应该作为下一次的clone_time(保证传感器测量时刻应该对应着imu数据保留时间)
 
-
-
+- 主要得分析一下什么时候clone这个数组中加入新的元素...这部分比较重要
 
 
 
