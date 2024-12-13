@@ -80,6 +80,21 @@ lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退�
 
 
 
+补充几篇关于激光雷达的退化检测方法（主要是A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models这篇文章中进行分析整理的方法）
+
+- Estimating the localizability in tunnel-like environments using lidar and uwb
+- Uwb/lidar coordinate matching method with anti-degeneration capability
+- Detection and compensation of degeneracy cases for imu-kinect integrated continuous slam with plane features
+- Robust localization and localizability estimation with a rotating laser scanner
+- A localizability estimation method for mobile robots based on 3d point cloud feature
+- Localizability estimation based on occupancy grid maps
+
+
+
+看到了一种退化检测方法 VGICP 这个在GICP对应的方法中在之前使用的direct_visual_lidar_calib这个代码包的原作者中也被整理了
+
+
+
 
 
 退化检测 —— 整体来看有一些复杂，主要感觉这里不应该出现camera这个坐标系
