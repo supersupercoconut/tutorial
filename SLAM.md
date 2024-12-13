@@ -215,6 +215,26 @@ bool LMOptimization(int iterCount)
 
 
 
+## wheel
+
+直接使用小组中分享的论文来解决问题。大部分时候wheel出现问题都是由打滑(即空转，wheel前进距离大于实际距离)
+
+- Pose Estimation Based on Wheel Speed Anomaly Detection in Monocular Visual-Inertial SLAM : wheel的detection方案 + 指定wheel失灵的场景进行测试
+
+- 
+
+
+
+
+
+
+
+## GPS
+
+- [A high-precision vehicle navigation system based on tightly coupled PPP-RTK/INS/odometer integration](https://ieeexplore.ieee.org/abstract/document/9946857/)
+
+- 
+
 ### multi-sensor fusion
 
 
