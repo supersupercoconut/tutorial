@@ -8,27 +8,34 @@
 
 ### lidar
 
-lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退化。scan-to-scan退化但是对于scan-to-local/global map未必是退化的
+关于lidar匹配方法主要有两种：scan-to-scan的以及scan-to-local_map。不过由于scan一帧对应的点云量比较少，所以这里主要研究的是后者。整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
 
-整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
+- 2016年的开山之作(这里可以直接充当baseline) On degeneracy of optimization-based state estimation problems，目前在lvisam上可以运行m3DGR，这说明可以直接打印其对应的矩阵特征值指标进行分析.
 
-- A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models(部分开源，自适应改变voxel尺寸部分在整理中)
+- MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments
+  - 开源 - 整体的处理逻辑以及复现都很简单，即检测fastlio中的关于旋转与平移的协方差矩阵，若其对应的
 
-    - 数据集为m2DGR
+- A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models
+
+    - 部分开源 - 自适应变换voxel尺寸没有开源
+
+    - **方法针对scan-to-scan的退化检测，但是在实际运行的过程中出错 (使用原始程序给定的数据集都会出错)**
 
 - Switch-SLAM: Switching-Based LiDAR-Inertial-Visual SLAM for Degenerate Environments
 
-- Probabilistic Degeneracy Detection for Point-to-Plane Error Minimization(开源)
+- Probabilistic Degeneracy Detection for Point-to-Plane Error Minimization
+
+    - 开源
 
 - AdaLIO: Robust adaptive LiDAR-inertial odometry in degenerate indoor environments
 
-    - 检测退化环境后修改参数
-
-    - 
+    - 检测退化环境后修改参数 | **检测voxel在自身周边即认为退化，处理过于草率**
 
 - DARE-SLAM: Degeneracy-Aware and Resilient Loop Closing in Perceptually-Degraded Environments
 
-- GenZ-ICP: Generalizable and Degeneracy-Robust LiDAR Odometry Using an Adaptive Weighting(算法开源)
+- GenZ-ICP: Generalizable and Degeneracy-Robust LiDAR Odometry Using an Adaptive Weighting
+
+    - 算法开源
 
 - Informed, constrained, aligned: A field analysis on degeneracy-aware point cloud registration in the wild
 
@@ -72,15 +79,11 @@ lidar退化应该可以分成两种即scan-to-scan以及scan-to-local-map的退�
    - Waterways 水路 : 针对水面反射产生退化
    - Flat ground ：直接将lidar对应地面，这样其在平面足够大的情况，xy平移或者绕z轴旋转lidar会导致退化
 
+
+
 **检测方法**
 
-1. MM-LINS
-
-   ![image-20241002221931525](./figure/image-20241002221931525.png)
-
-
-
-补充几篇关于激光雷达的退化检测方法（主要是A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models这篇文章中进行分析整理的方法）
+补充几篇关于激光雷达的退化检测方法（主要是A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models这篇文章中进行分析整理的方法
 
 - Estimating the localizability in tunnel-like environments using lidar and uwb
 - Uwb/lidar coordinate matching method with anti-degeneration capability
