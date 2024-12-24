@@ -13,7 +13,7 @@
 - 2016年的开山之作(这里可以直接充当baseline) On degeneracy of optimization-based state estimation problems，目前在lvisam上可以运行m3DGR，这说明可以直接打印其对应的矩阵特征值指标进行分析.
 
 - MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments
-  - 开源 - 整体的处理逻辑以及复现都很简单，即检测fastlio中的关于旋转与平移的协方差矩阵，若其对应的
+  - 开源 - 整体的处理逻辑以及复现都很简单，即检测fastlio中的关于旋转与平移的协方差矩阵，若其对应的特征值小于之前设置的阈值，即认为发生了退化
 
 - A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models
 
@@ -53,6 +53,8 @@
 
 - X-icp: Localizability-aware lidar registration for robust localization in extreme environments
 
+    - 将lidar的定位判定为三类 (1) 完全可定位 (2) 部分可定位 (3) 不可定位
+
 - Complementary Intensity-Augmented LiDAR Inertial Odometry
 
 - ### [Complementary multi–modal sensor fusion for resilient robot pose estimation in subterranean environments](https://ieeexplore.ieee.org/abstract/document/9213865/)(这个主要是名字起的很好，我觉得可以用在我的小论文名字上)
@@ -65,7 +67,15 @@
 
 - RA-LIO: A Robust Adaptive Tightly-Coupled Lidar-Inertial Odometry
 
-- [PV-LIO](https://github.com/HViktorTsoi/PV-LIO) 这种方法是基于voxelmap的改进工作Graph-MSF: Graph-based Multi-sensor Fusion for Consistent Localization and State Estimation
+- [PV-LIO](https://github.com/HViktorTsoi/PV-LIO) 这种方法是基于voxelmap的改进工作
+
+- Graph-MSF: Graph-based Multi-sensor Fusion for Consistent Localization and State Estimation
+
+
+
+
+
+
 
 主要由于insufficient geometric constraint(可能是某一个方向上的几何约束)
 

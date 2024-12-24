@@ -36,67 +36,191 @@ C++中的对应的变量最好还是给一个初始值最好 (无论其是一些
 
 
 
-## 向量与链表
+## Vector向量
 
-### vector向量
+- 向量严格来说是一种容器，其底层实现使用的array(即数组），数据在内存上是顺序排列的。
 
-初始化的一个小区别
-
-vector<vector<int>> res  = {};     这个二维数组是一个空数组
-
-vector<vector<int>> res = {{}};   这个二维数组的size = 1，但是其第一个元素却是一个空的一维数组
-
-vector<vector<int>> arr(3, vector<int>(4, 0));  二维数组的初始化方案
-
-
-
-**关于vector清空当前元素快速方法**
-
-生成一个与当前vector大小相同的vector，然后交换两个向量之间的元素(使用swap) | 因为vector中内存在整个数据没有被释放的时候是不会减小自己的内存的，也就是clear只能清理掉当前的元素，即改变size()取值，但是对于整个vector的capcity，其是无法清除的
-
-
-
-
-
-**reserve | resize | assign**
-
-- reserve处理的是capcity本身，与当前vector的size没有关系
-- resize是调整size的大小，可能会截断或者增加size的大小
-- assign是改变当前vector中的元素的值，如果当前元素的数量不够(size大小不够)，其也会改变size的大小应应对需求
+### 初始化
 
 ```cpp
-// resize影响的是一个vector中的size, 于captity无关
-now_level.resize(path[0].size());
-// assign会vector中的部分分配值，并不需要手动resize大小 | assign如果captity不够会自动分配新的空间
-now_level.assign(path[0].size(),0);
+vector<vector<int>> res  = {};     // 这个二维数组是一个空数组
+
+vector<vector<int>> res = {{}};   // 这个二维数组的size = 1，其第一个元素却是一个空的一维数组
+
+vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方案
 ```
 
 
 
-void resize(size_type n, value_type val = value_type());
+### 函数方法
 
-- 如果n<当前容器的size，则将元素减少到前n个，移除多余的元素(并销毁）
-- 如果n>当前容器的size，则在容器中追加元素，如果val指定了，则追加的元素为val的拷贝，否则，默认初始化
-- 如果n>当前容器容量，内存会自动重新分配
+- **reserve | resize | assign**
+
+    - reserve处理的是capcity本身，与当前vector的size没有关系
+
+    - resize是调整size的大小，可能会截断或者增加size的大小
+
+    - assign是改变当前vector中的元素的值，如果当前元素的数量不够(size大小不够)，其也会改变size的大小应对需求
+
+    ```cpp
+    // resize影响的是一个vector中的size, 只有在需要扩容的时候才会取改变当前vector对应的容量
+    now_level.resize(path[0].size());
+    // assign会vector中的部分分配值，并不需要手动resize大小 | assign如果captity不够会自动分配新的空间
+    now_level.assign(path[0].size(),0);
+    ```
+
+    补充 :
+
+    ```
+    void resize(size_type n, value_type val = value_type());
+    
+    - 如果n<当前容器的size，则将元素减少到前n个，移除多余的元素(并销毁）
+    - 如果n>当前容器的size，则在容器中追加元素，如果val指定了，则追加的元素为val的拷贝，否则，默认初始化
+    - 如果n>当前容器容量，内存会自动重新分配
+    (其中指定的val是可以给扩容之后的新数据进行赋值)
+    
+    void reserve(size_type n)
+    
+    - 如果n>容器的当前capacity，该函数会使得容器重新分配内存使capacity达到n
+    
+    - 任何其他情况，该函数调用不会导致内存重新分配，并且容器的capacity不会改变
+    
+    - 该函数不会影响向量的size而且不会改变任何元素
+    ```
 
 
-void reserve(size_type n)
 
-- 如果n>容器的当前capacity，该函数会使得容器重新分配内存使capacity达到n
-
-- 任何其他情况，该函数调用不会导致内存重新分配，并且容器的capacity不会改变
-
-- 该函数不会影响向量的size而且不会改变任何元素
-
-  
-
-**insert**
-
-- insert部分在使用的时候为指定插入位置后直接插入元素,但是其可能导致后续元素都往后移动一位, 即O(n)操作, 以及vector中的capcity需要扩容（这种操作比较消耗时间，谨慎使用）
+- **insert**
+    - insert部分在使用的时候为指定插入位置后直接插入元素,但是其可能导致后续元素都往后移动一位, 即O(n)操作, 以及vector中的capcity需要扩容（这种操作比较消耗时间，谨慎使用）
 
 
 
-### List 列表
+### 补充
+
+- **关于vector清空当前元素快速方法** | 生成一个与当前vector大小相同的vector，然后交换两个向量之间的元素(使用swap)
+    - 因为vector中内存在整个数据没有被释放的时候是不会减小自己的内存的，也就是clear只能清理掉当前的元素，即改变size()的取值，但是对于整个vector的capcity，其是无法清除的。
+
+
+
+
+
+### 常见问题
+
+#### 二分查找
+
+- 二分查找可以使用迭代或者递归来实现，其应用条件主要是**数组中元素是顺序排列的，并且其中无重复元素！！**，实际实现时需要对区间定义明确一下，是左闭右闭还是左闭右开。
+
+    ```cpp
+    class Solution {
+    public:
+        // 左闭右闭
+        int binary(vector<int>& nums, int left, int right, int target)
+        {
+            int res = 0;
+    
+            // 判断单个元素 - 因为这里还没有对单个元素单不等于target的情况进行判断
+            if(left == right)
+            {
+                if(target == nums[left]) return left;
+                else
+                    return -1;
+            }
+    		// 对于数据可能出现的越界情况进行处理 也可以写成 left + (right-left)/2
+            unsigned mid = (left + right)/2;
+            if(target == nums[mid])
+                return mid;
+            else if(target < nums[mid])
+                res = binary(nums, left,mid, target);
+            else
+                // 注意这里要写成 mid+1
+                res = binary(nums, mid + 1, right, target);
+            return res;
+        }
+    
+    
+        int search(vector<int>& nums, int target)
+        {
+            int res = 0;
+            int left = 0;
+            int right = nums.size() - 1;
+            res = binary(nums, left, right, target);
+            return res;
+        }
+    };
+    }
+    ```
+
+    
+
+#### 移除元素
+
+- 借助快慢指针来处理数据。fast指针寻找不等于val值的元素，slow在fast指针不等于val的时候一起前进。
+
+    - fast与slow在没有找到val的时候一起移动
+    - fast与slow之间的元素都是val
+
+    ```cpp
+    class Solution {
+    public:
+        // 移除元素 - 利用双指针处理
+        int removeElement(vector<int>& nums, int val)
+        {
+            int slow = 0;
+            // 使用fast指针搜索所有不等于val的值
+            for(int fast = 0; fast < nums.size(); ++fast)
+            {
+                if(nums[fast] != val)
+                    nums[slow++] = nums[fast];
+            }
+            // 由于返回的是数组的size，故可以直接返回
+            return slow;
+        }
+    };
+    ```
+
+    
+
+#### 元素平方排序
+
+- 主要是利用给定的数组元素是排序好，其最大值出现的位置是已知的。虽然额外利用了空间，但是其对应的时间复杂度从暴力的O(n+n*log(n))降低到O(n)。暴力方法主要是在使用排序的时候比较复杂
+
+    ```cpp
+    vector<int> sortedSquares(vector<int>& nums)
+    {
+        vector<int> result(nums.size(), 0);
+        int i = 0;
+        int j = nums.size() - 1;
+        int k = nums.size() - 1;
+        while(i <= j && k >= 0)
+        {
+            if(nums[i]*nums[i] < nums[j]*nums[j])
+            {
+                result[k--] = nums[j]*nums[j];
+                j--;
+            }
+            else
+            {
+                result[k--] = nums[i]*nums[i];
+                i++;
+            }
+        }
+        return result;
+    }
+    ```
+
+    
+
+
+
+参考:
+
+- https://blog.csdn.net/L2489754250/article/details/132892922?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-1-132892922-blog-22104421.235v43pc_blog_bottom_relevance_base9&spm=1001.2101.3001.4242.2&utm_relevant_index=4
+
+
+
+
+
+## List 列表
 
 list的优势主要在于插入以及删除元素比较方法，但是想找一个元素的时候，需要使用按值索引的for循环或者是迭代器进行搜索。**一定要注意其在删除元素或者插入元素的时候，迭代器是否还能正常工作** | 一定注意List并不是没有办法进行迭代！！！
 
@@ -613,77 +737,42 @@ void join(int u, int v) {
 
 ### 最小生成树
 
-主要分为prim与kruskal方法两种
+- 最小生成树的方法主要有prim以及Kruskal方法。前者主要是从点的角度，后者是从边的角度。其与最短路径的区别是**最小生成树**要求是整个树的边的权值和最小，而最短路径是要求从start到end的距离最小。
 
-- prim 从点的角度进行分析
+#### prim
 
-- kruskal 从边的角度进行分析
+- 其主要是维护**每一个点到当前最小生成树的距离**，所以实际计算时只需要比较到当前点的边权值
 
-  
+
 
 ### 最短路径
 
-主要使用dijkstra方法，不断分析其他点到出发点之间的距离，利用minDistance[]数组保存距离值
+- 主要使用的方法为Dijkstra与Bellman_ford，其都是分析单出发点的方法，针对其计算性能/是否出现负权回路/是否对经过的顶点数量有限制，都有改进版本。
+
+#### Dijstra
+
+- 其解决的是非负权值图中的最短路径问题，主要是维护一个**从start开始到其余各个顶点**的距离值数组minDistance[] 
+
+#### Bellman_ford
+
+- 其可以解决非负权值的问题，并且是从边的角度来处理问题
+- **"松弛"**的概念主要是分析每一个点从出发点到当前点的距离，不断地取最小值
+
+- 该方法本身就可以解决**负权值**问题，但如果其出现负权值回环的话，可以通过增加松弛次数的方法来判断
+
+- 对于限制经过的顶点次数的问题，可以通过严格限制收敛次数的方法来解决
 
 
 
+#### floyd
+
+- 主要用于解决多开始点的分析，其利用动态规划的思想，借助来一个dp [i] [j] [k]的三维数组表示从i到j中间可能经历1...k点后对应的最短路径。
 
 
 
+#### Astar
 
-
-
-
-
-## 大/小顶堆
-
-大小顶堆都是完全二叉树，不同的地方在于左右子节点是大于还是小于父节点。
-
-<img src="./figure/min_heap_and_max_heap.png" alt="小顶堆与大顶堆" style="zoom:50%;" />
-
-一般来说大小顶堆是为了优先级队列的。所谓优先级队列，即利用大小顶堆“模拟”出一个队列，其中的元素顺序是递增或者递减的。大顶堆就是大的元素在队列的前面，小顶堆是小的元素在队列前面。
-
-- 堆中放入一个元素与弹出一个元素，实际上都是一个O(logn)的操作，即数据弹出/放入时，堆都要自动进行一种维护处理，继续保证整体的二叉树结构 https://www.hello-algo.com/chapter_heap/heap/ 
-
-- 若使用自定义的数据结构，需要自定义堆中元素的排序方法 | **整体元素的定义方法为: **priority_queue<Typename, Container, Functional> typename为其中的元素类型(即自定义的数据结构或者基本数据结构)。container对应的是实现这个大小顶堆的数据结构，一般都是vector（因为一个完全二叉树是可以直接用一个一维数组来表示的），functional对应的是排序函数，其返回true的时候表示优先级的先后顺序，如func(a,b)返回true的时候表示b的优先级高于a
-
-  - 默认结构 
-
-    ```cpp
-    //小顶堆
-    priority_queue <int,vector<int>,greater<int>> pri_que;
-    //大顶堆
-    priority_queue <int,vector<int>,less<int>> pri_que;
-    //默认大顶堆
-    priority_queue<int> pri_que;
-    ```
-
-  - 自定义结构
-
-    ```cpp
-    class student
-    {
-    public:
-    	string name;
-    	int score;
-    };
-    
-    //大顶堆
-    class myComparison
-    {
-    public:
-    	bool operator () (student s1, student s2)
-    	{
-            // s2大于s1返回true，表明这里是谁大谁的优先级高
-    		return s1.score < s2.score;
-    	}
-    };
-    
-    //此时优先队列的定义应该如下
-    priority_queue<student, vector<student>, myComparison> pri_que;
-    ```
-
-    
+- 使用一个启发函数，计算当前到起始点已经走过的距离以及到终点的预估距离。借助优先级队列优先读取启发函数中得分较低的元素作为下一步的可能出发点。**需要注意并不是从队列中弹出一个元素其对应的路径就+1，而是从一个出发点对应的所有方向上的可能到达的下一个位置都属于是+1的路径位置**
 
 
 
