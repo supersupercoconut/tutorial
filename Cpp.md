@@ -776,6 +776,60 @@ void join(int u, int v) {
 
 
 
+
+
+
+
+
+
+## 大/小顶堆
+
+大小顶堆都是完全二叉树，不同的地方在于左右子节点是大于还是小于父节点。
+
+<img src="./figure/min_heap_and_max_heap.png" alt="小顶堆与大顶堆" style="zoom:50%;" />
+
+一般来说大小顶堆是为了优先级队列的。所谓优先级队列，即利用大小顶堆“模拟”出一个队列，其中的元素顺序是递增或者递减的。大顶堆就是大的元素在队列的前面，小顶堆是小的元素在队列前面。
+
+- 堆中放入一个元素与弹出一个元素，实际上都是一个O(logn)的操作，即数据弹出/放入时，堆都要自动进行一种维护处理，继续保证整体的二叉树结构 https://www.hello-algo.com/chapter_heap/heap/ 
+
+- 若使用自定义的数据结构，需要自定义堆中元素的排序方法 | **整体元素的定义方法为: **priority_queue<Typename, Container, Functional> typename为其中的元素类型(即自定义的数据结构或者基本数据结构)。container对应的是实现这个大小顶堆的数据结构，一般都是vector（因为一个完全二叉树是可以直接用一个一维数组来表示的），functional对应的是排序函数，其返回true的时候表示优先级的先后顺序，如func(a,b)返回true的时候表示b的优先级高于a
+
+  - 默认结构 
+
+    ```cpp
+    //小顶堆
+    priority_queue <int,vector<int>,greater<int>> pri_que;
+    //大顶堆
+    priority_queue <int,vector<int>,less<int>> pri_que;
+    //默认大顶堆
+    priority_queue<int> pri_que;
+    ```
+
+  - 自定义结构
+
+    ```cpp
+    class student
+    {
+    public:
+    	string name;
+    	int score;
+    };
+    
+    //大顶堆
+    class myComparison
+    {
+    public:
+    	bool operator () (student s1, student s2)
+    	{
+            // s2大于s1返回true，表明这里是谁大谁的优先级高
+    		return s1.score < s2.score;
+    	}
+    };
+    
+    //此时优先队列的定义应该如下
+    priority_queue<student, vector<student>, myComparison> pri_que;
+    ```
+
 ****
 
 ## 多线程与mutex
