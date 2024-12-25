@@ -71,8 +71,12 @@
 
 - Graph-MSF: Graph-based Multi-sensor Fusion for Consistent Localization and State Estimation
 
+- Selective Kalman Filter: When and How to Fuse Multi-Sensor Information to Overcome Degeneracy in SLAM
 
-
+    - 代码目前尚未开源，但有开源的计划
+    - 本文将之前不加考虑地融合多传感器数据的算法成为一种"all in"的方法，出发点在于高精度传感器融合低精度的传感器会降低精度，故只需要在高精度传感器精度降低的时候融入其他传感器，故需要一种退化检测方法。**其使用的传感器为lidar/visual/imu，核心在lidar-imu，visual-imu会在前者发生退化的基础上，补充其退化的方向而不是直接使用**
+    - 分析其具体的实现逻辑:
+        - 基于point-to-plane的测量方程来进行分析(在r3live与r2live上都是基于点到平面的误差作为测量方程，其中voxelmap也实现了一种点面残差的计算，并且整理本文方法所需要的观测方程对应的H矩阵(即观测方程的雅可比矩阵))。剩余部分的分析我个人认为主要是沿着对H矩阵整体做特征值分析，H矩阵拆成平移与旋转两个子矩阵之后的特征值矩阵，以及求导数之后矩阵的特征值分析，最终将完成本文特征值检测方法的实现**(复现并不困难，既然使用平面，那么使用ImMesh中的voxelmap最合适！！！)**
 
 
 

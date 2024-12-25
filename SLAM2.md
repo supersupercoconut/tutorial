@@ -270,6 +270,10 @@ lidar 动态物体很多 | 录制RTCM数据(确认一下)
 
 
 
+**注意对于一些无法直接估计尺度的SLAM算法，如纯视觉的算法在评估的时候需要使用--align对齐两个轨迹。但是对于使用imu或者lidar这些可以直接获取到尺度的SLAM算法，在对比的时候不能使用--align去对齐估计。**
+
+
+
 PS: 参考
 
 1. https://blog.csdn.net/qq_49561752/article/details/141506803?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-141506803-blog-131771589.235%5Ev43%5Epc_blog_bottom_relevance_base9&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-141506803-blog-131771589.235%5Ev43%5Epc_blog_bottom_relevance_base9
