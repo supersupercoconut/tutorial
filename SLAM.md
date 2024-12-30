@@ -73,10 +73,48 @@
 
 - Selective Kalman Filter: When and How to Fuse Multi-Sensor Information to Overcome Degeneracy in SLAM
 
+    - **其存在的问题: 在实际的公式推导中，对于测量方程z(x_i) = h(x_i) + v_i其线性化之后对应的**
     - 代码目前尚未开源，但有开源的计划
     - 本文将之前不加考虑地融合多传感器数据的算法成为一种"all in"的方法，出发点在于高精度传感器融合低精度的传感器会降低精度，故只需要在高精度传感器精度降低的时候融入其他传感器，故需要一种退化检测方法。**其使用的传感器为lidar/visual/imu，核心在lidar-imu，visual-imu会在前者发生退化的基础上，补充其退化的方向而不是直接使用**
     - 分析其具体的实现逻辑:
         - 基于point-to-plane的测量方程来进行分析(在r3live与r2live上都是基于点到平面的误差作为测量方程，其中voxelmap也实现了一种点面残差的计算，并且整理本文方法所需要的观测方程对应的H矩阵(即观测方程的雅可比矩阵))。剩余部分的分析我个人认为主要是沿着对H矩阵整体做特征值分析，H矩阵拆成平移与旋转两个子矩阵之后的特征值矩阵，以及求导数之后矩阵的特征值分析，最终将完成本文特征值检测方法的实现**(复现并不困难，既然使用平面，那么使用ImMesh中的voxelmap最合适！！！)**
+    
+
+
+
+
+
+**VoxelMap思路整理 **
+
+- 噪声建模: 在world系中每一个雷达测量点都是存在噪声的，需要对其进行建模。其主要由雷达测量以及雷达位姿估计这两者组成。
+
+    - 关于原始雷达测量
+
+        - w角度: 需要两个角测量一个点的位置
+        - d距离: 点到当前雷达的距离
+
+        ![image-20241228224431549](figure/image-20241228224431549.png)
+
+        - 该部分的推导涉及到2维流型上的一个切平面中的干扰项对w向量的影响 具体的参考论文为 
+
+            - Pixel-level Extrinsic Self Calibration of High Resolution LiDAR and Camera in Targetless Environments 
+            - Embedding Manifold Structures into Kalman Filters
+
+            ![image-20241228224836117](figure/image-20241228224836117.png)
+
+    - 结合旋转+平移的不确定性，推导world系中每个点对应的协方差(利用误差传播公式进行推导)
+
+        ![img](figure/v2-c1f5dcb7227ba7be9f903c38d0b80cfb_hd.jpg)
+
+        最终与论文中给出的结果是一致的
+
+![image-20241228224930097](figure/image-20241228224930097.png)
+
+- 分析拟合平面的协方差(这里有些困难)，但是拟合平面的法向量是直接按照中心点(取平均得到)的协方差矩阵的最小特征值的对应的特征向量。**在PCL库中有类似的描述，但是没有相关推导**
+
+
+
+
 
 
 

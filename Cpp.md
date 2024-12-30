@@ -1497,6 +1497,40 @@ https://blog.csdn.net/gongjianbo1992/article/details/105128849
 
 
 
+## 宏定义
+
+在Cpp项目中可以直接使用宏定义的方法选择能那些程序被使用，常用方法可以分为在cpp文件以及在cmakelists.txt中设定。
+
+- define 如果定义就执行#ifdef后对应的代码，else后对应的代码被删除，最后使用endif表示该代码终止
+
+    ```cpp
+    #define USE_IKFOM
+    #ifdef USE_IKFOM
+        // state_ikfom transfer_state = kf.get_x();
+        V3D p_global( state_point.rot * ( state_point.offset_R_L_I * p_body + state_point.offset_T_L_I ) + state_point.pos );
+    #else
+        V3D p_global( state.rot_end * ( m_extR * p_body + m_extT ) + state.pos_end );
+    #endif
+    ```
+
+- cmakelists.txt中设定宏定义之后，可以直接使用#ifdef等命令来操作
+
+    ```cpp
+    add_definitions(-DUSE_IKFOM)
+    # 或
+    target_compile_definitions(target_name PRIVATE USE_IKFOM)
+    ```
+
+
+
+**补充关于 #define的使用**
+
+- #define VEC_FROM_ARRAY(v) v[0], v[1], v[2] 其可以将一个数组的前三维数据输出出去
+
+
+
+
+
 ## explicit | static
 
 其在class中使用会出现之前没有意料到的情况
