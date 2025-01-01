@@ -118,6 +118,16 @@
 
 
 
+- 关于fastlio/voxelmap等方法基于IMU的递推方程 **虽然在代码中没有直接体现是基于误差的Kalmal滤波, 但是其从关于P阵的推导上可以发现其的推导**
+
+    
+
+
+
+
+
+
+
 
 主要由于insufficient geometric constraint(可能是某一个方向上的几何约束)
 
