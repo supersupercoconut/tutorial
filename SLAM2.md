@@ -40,6 +40,9 @@
 
 **[LiDAR_IMU_Init](https://github.com/hku-mars/LiDAR_IMU_Init)** IROS 2022 一种直接使用lidar imu进行初始化的方法
 
+- 根据mm-lins中的使用方法，可以手动更改rosbag中点云数据，仿造出雷达出现异常的状态
+- 
+
 ### 4. GPS
 
 录制一些终点RTK正常，评估GPS算法终点的误差(去除GPS/RTK不准的轨迹)
