@@ -10,12 +10,11 @@
 
 关于lidar匹配方法主要有两种：scan-to-scan的以及scan-to-local_map。不过由于scan一帧对应的点云量比较少，所以这里主要研究的是后者。整理关于lidar退化的检测方法，但是这里对应的开源代码很少，论文大部分都是24年的
 
-- 2016年的开山之作(这里可以直接充当baseline) On degeneracy of optimization-based state estimation problems，目前在liosan上可以运行m3DGR，这说明可以直接打印其对应的矩阵特征值指标进行分析.
+- 2016年的开山之作(这里可以直接充当baseline) On degeneracy of optimization-based state estimation problems，目前在lvisam上可以运行m3DGR，这说明可以直接打印其对应的矩阵特征值指标进行分析.
 
 - MM-LINS: a Multi-Map LiDAR-Inertial System for Over-Degenerate Environments
   - 开源 - 整体的处理逻辑以及复现都很简单，即检测fastlio中的关于旋转与平移的协方差矩阵，若其对应的特征值小于之前设置的阈值，即认为发生了退化
-  - **其在实际的实验上，是不是没有对应的真值数据?? 为什么直接比较end-to-end的distance**
-  
+
 - A Point-to-distribution Degeneracy Detection Factor for LiDAR SLAM using Local Geometric Models
 
     - 部分开源 - 自适应变换voxel尺寸没有开源
@@ -74,14 +73,9 @@
 
 - Selective Kalman Filter: When and How to Fuse Multi-Sensor Information to Overcome Degeneracy in SLAM
 
-    - **其存在的问题: 在实际的公式推导中，对于测量方程z(x_i) = h(x_i) + v_i其线性化之后对应的公式我认为是存在问题的，但是实际上论文种忽略了f(x0)这一项，并且直接将 /delta_x 认为是x (对于迭代误差卡尔曼滤波其正常，但是文章中并不是这么建模的) **
-    
-        ![image-20241230121212300](./figure/image-20241230121212300.png)
-    
+    - **其存在的问题: 在实际的公式推导中，对于测量方程z(x_i) = h(x_i) + v_i其线性化之后对应的**
     - 代码目前尚未开源，但有开源的计划
-    
     - 本文将之前不加考虑地融合多传感器数据的算法成为一种"all in"的方法，出发点在于高精度传感器融合低精度的传感器会降低精度，故只需要在高精度传感器精度降低的时候融入其他传感器，故需要一种退化检测方法。**其使用的传感器为lidar/visual/imu，核心在lidar-imu，visual-imu会在前者发生退化的基础上，补充其退化的方向而不是直接使用**
-    
     - 分析其具体的实现逻辑:
         - 基于point-to-plane的测量方程来进行分析(在r3live与r2live上都是基于点到平面的误差作为测量方程，其中voxelmap也实现了一种点面残差的计算，并且整理本文方法所需要的观测方程对应的H矩阵(即观测方程的雅可比矩阵))。剩余部分的分析我个人认为主要是沿着对H矩阵整体做特征值分析，H矩阵拆成平移与旋转两个子矩阵之后的特征值矩阵，以及求导数之后矩阵的特征值分析，最终将完成本文特征值检测方法的实现**(复现并不困难，既然使用平面，那么使用ImMesh中的voxelmap最合适！！！)**
     
@@ -116,7 +110,7 @@
 
 ![image-20241228224930097](figure/image-20241228224930097.png)
 
-- 分析拟合平面的协方差(这里有些困难)，但是拟合平面的法向量是直接按照中心点(取平均得到)的协方差矩阵的最小特征值的对应的特征向量。**在PCL库中有类似的描述，但是没有相关推导(Immesh中求解投影平面也是这么计算的)**
+- 分析拟合平面的协方差(这里有些困难)，但是拟合平面的法向量是直接按照中心点(取平均得到)的协方差矩阵的最小特征值的对应的特征向量。**在PCL库中有类似的描述，但是没有相关推导**
 
 
 
