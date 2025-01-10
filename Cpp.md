@@ -16,6 +16,17 @@
 
 
 
+## 面向对象基础
+
+- 补充一些面向对象基础知识部分，主要从《大话设计模式》开始阅读。**针对对象进行编程即面向对象编程, 类本身就是具有相同属性和功能的对象的抽象集合。**对于一个声明出的类来说，每次使用都需要一次实例化操作。
+
+### 类
+
+- 构造函数
+- 属性
+
+
+
 ## 初始化
 
 C++中的对应的变量最好还是给一个初始值最好 (无论其是一些内置的数据类型 int/double/float等，还是class或者struct等这些人为定义的部分)
@@ -308,6 +319,113 @@ vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方�
     };
     ```
 
+
+
+
+#### 区间和
+
+- 本题目是直接给定一个a,b区间，计算从a到b中这个区间的所有数据之和，不是使用一个滑动窗口求解一个滑动窗口中数据之和的问题。**该问题是直接使用了一个前缀表统计从0~i的所有数据之和，这样任意给定一个a,b组合都能很快的计算**
+
+    ```cpp
+    #include <iostream>
+    #include <vector>
+    using namespace std;
+    /* 实际处理比较简单，就是使用前缀表的方法保留之前叠加的结果，实现O(1)的复杂度 */
+    int main()
+    {
+        int n = 0;
+        cin >> n;
+        vector<int> vec(n,0);
+        for(int i = 0; i < n; ++i)
+            cin >> vec[i];
+    
+        // 生成前缀表
+        int sum = 0;
+        vector<int> next(n,0);
+        for(int i = 0; i < n; ++i)
+        {
+            sum += vec[i];
+            next[i] = sum;
+        }
+    
+        // 接受输入的数据
+        int a = 0, b = 0;
+        while(cin >> a >> b)
+        {
+            if(a == 0) cout << next[b]<< endl;
+            else
+                cout << next[b] - next[a-1]  << endl;
+        }
+        
+        return 0;
+    }
+    ```
+
+    
+
+#### 开发商土地问题
+
+- 同样是穷举方法 + 前缀表来实现，穷举出所有可能取值情况，前缀表提前确定划分到哪一个位置后对应的数值。**这种一开始没有想到特别tricky的求解方法就只能一步一步地解决问题。**
+
+    ```cpp
+    // 卡码网 44 开发商购买土地
+    #include <iostream>
+    #include <vector>
+    #include <cmath>
+    using namespace std;
+    
+    /* 一开始解决这个问题的时候并没有考虑到前缀表, 只是说提前计算好所有区间的值之和 - 虽然确实可以简化二维前缀表成为一维，这里就不再实现了 */
+    int main()
+    {
+        int n = 0, m = 0;
+        cin >> n >> m;
+        vector<vector<int>> vec(n, vector<int>(m, 0));
+        int sum = 0;
+        for(int i = 0; i < n; ++i)
+            for(int j = 0; j < m; ++j)
+            {
+                cin >> vec[i][j];
+                sum += vec[i][j];
+            }
+    
+        // 使用前缀表分析问题
+        vector<vector<int>> next_row(n, vector<int>(m,0));
+        vector<vector<int>> next_col(n, vector<int>(m,0));
+        // 行分析
+        int tmp = 0;
+        for(int i = 0; i < n; ++i)
+        {
+            for(int j = 0; j < m; ++j)
+            {
+                tmp += vec[i][j];
+                next_row[i][j] = tmp;
+            }
+        }
+    
+        // 列分析
+        tmp = 0;
+        for(int i = 0; i < m; ++i)
+        {
+            for(int j = 0; j < n; ++j)
+            {
+                tmp += vec[j][i];
+                next_col[j][i] = tmp;
+            }
+        }
+    
+        // 穷举分析应该如何选择
+        int min = 1724835450;
+        for(int i = 0; i < n; ++i)
+            min = min > abs(sum - 2 * next_row[i][m-1]) ? abs(sum - 2 * next_row[i][m-1]) : min;
+    
+        for(int j = 0; j < m; ++j)
+            min = min > abs(sum - 2 * next_col[n-1][j]) ? abs(sum - 2 * next_col[n-1][j]) : min;
+    
+        cout << min << endl;
+        return 0;
+    }
+    ```
+
     
 
 参考:
@@ -320,7 +438,26 @@ vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方�
 
 ## List 列表
 
-list的优势主要在于插入以及删除元素比较方法，但是想找一个元素的时候，需要使用按值索引的for循环或者是迭代器进行搜索。**一定要注意其在删除元素或者插入元素的时候，迭代器是否还能正常工作** | 一定注意List并不是没有办法进行迭代！！！
+- list的优势主要在于插入以及删除元素比较方便，但是想找一个元素的时候，需要使用按值索引的for循环或者是迭代器进行搜索。一定注意List并不是没有办法进行迭代！！！其只不过是进行迭代比较耗费时间。
+
+    - 构造函数
+
+        ```cpp
+        // 单链表
+        struct ListNode {
+            int val;  // 节点上存储的元素
+            ListNode *next;  // 指向下一个节点的指针
+            ListNode(int x) : val(x), next(NULL) {}  // 节点的构造函数
+        };
+        ```
+
+    - 单链表
+
+        <img src="figure/20200806194529815.png" alt="链表1" style="zoom:50%;" />
+
+    - 双链表
+
+<img src="figure/20200806194559317.png" alt="链表2" style="zoom:50%;" />
 
 - 删除元素
 
@@ -370,6 +507,151 @@ for (auto it = lst.begin(); it != lst.end();) {
 ```
 
 
+
+
+
+#### 移除链表元素
+
+- 给定一个链表，删除其与设定val相等的节点。重点是开始点存在等于val值的可能，解决方法是**创造一个虚拟的头节点来解决问题，这样在后续遍历中比较方便！！**
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode* removeElements(ListNode* head, int val)
+        {
+            // 利用虚拟头节点
+            if(head == nullptr) return nullptr;
+            ListNode* myHead = new ListNode();
+            ListNode* cur = head;
+    
+            myHead->next = head;
+    
+            ListNode* pre = myHead;
+    
+            while(pre->next != nullptr)
+            {
+                cur = pre->next;
+                if(cur->val == val)
+                    pre->next = cur->next;
+                else
+                {
+                    pre = cur;
+                    cur = cur->next;
+                }
+            }
+    
+    
+            head = myHead->next;
+            delete myHead;
+            return head;
+    
+        }
+    };
+    ```
+
+
+
+#### 设计链表
+
+- 主要是使用单链表实现自定义链表的功能，关键在于如何遍历到index的位置处，**使用虚拟头节点确实可以显著减轻逻辑分析的工作量！！！**
+
+    ```cpp
+    class MyLinkedList {
+    public:
+        MyLinkedList() {
+            size = 0;
+            myHead = new ListNode(0, nullptr);
+        }
+        
+        int get(int index) {
+            // index是从0开始计数的
+            ListNode* cur = myHead;
+            int count  = 0;
+            while(cur->next != nullptr)
+            {
+                cur = cur->next;
+                if(count == index)
+                    return cur->val;
+                ++count;
+            }
+            return -1;
+        }
+        
+        void addAtHead(int val) {
+            ListNode* tmp = new ListNode(val);
+            tmp->next = myHead->next;
+            myHead->next = tmp;
+            ++size;
+        }
+        
+        void addAtTail(int val) {
+            // 遍历到尾部补充元素
+            ListNode* tmp = new ListNode(val);
+            ListNode* cur = myHead;
+            while(cur->next != nullptr)
+                cur = cur->next;
+    
+            cur->next = tmp;
+            ++size;
+        }
+        
+        void addAtIndex(int index, int val) {
+            // 遍历到当前元素处，而且是在index之前加
+            if(index < 0) return;
+    
+            ListNode* cur = myHead;
+            ListNode* pre = myHead;
+            int count = 0;
+            while(cur->next != nullptr)
+            {
+                cur = cur->next;
+                if(count == index)
+                {
+                    ListNode* node = new ListNode(val, pre->next);
+                    pre->next = node;
+                    ++size;
+                    return;
+                }
+                ++count;
+                pre = cur;
+            }
+    
+            // 判断index是否等于元素size
+            if(index == size)
+            {
+                ListNode* node = new ListNode(val, pre->next);
+                pre->next = node;
+                ++size;
+            }
+        }
+        
+        void deleteAtIndex(int index) {
+            // 遍历到当前元素处，而且是在index之前加
+            if(index < 0) return;
+            ListNode* cur = myHead;
+            ListNode* pre = myHead;
+            int count = 0;
+            while(cur->next != nullptr)
+            {
+                cur = cur->next;
+                if(count == index)
+                {
+                    pre->next = cur->next;
+                    --size;
+                    return;
+                }
+                ++count;
+                pre = cur;
+            }
+        }
+    
+        // 容量与虚拟头节点
+        int size;
+        ListNode* myHead;
+    };
+    ```
+
+    
 
 
 
