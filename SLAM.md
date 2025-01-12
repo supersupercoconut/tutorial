@@ -370,16 +370,6 @@ mins支持的传感器数量很多，并支持延迟测量以及在线标定
 
 
 
-[PPCA-VINS](https://github.com/lnexenl/PPCA-VINS) 基于先验点云地图实现的vins-fusion，也是用一个作者团队开发的
-
-
-
-
-
-
-
-
-
 
 
 
