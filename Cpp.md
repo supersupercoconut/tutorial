@@ -12,6 +12,8 @@
 
 刷题刷完leetcode之后需要刷一些ACM题，这些leetcode问题跟实际面试问题的输入输出不一样！！！ 笔试的时候需要考虑这些问题的输入与输出（比如这些问题都需要自己手动切割出来自己需要的数据，比如用getline什么的或者考虑输入数据有空格什么的）
 
+- 补充一部分刷题笔记，其可以提供流程图方便观察代码逻辑 https://labuladong.online/algo/essential-technique/
+
 
 
 
@@ -24,6 +26,8 @@
 
 - 构造函数
 - 属性
+
+
 
 
 
@@ -510,6 +514,10 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 
 
+****
+
+**对于链表问题，大部分问题都是直接使用双指针以及虚拟头节点来解决问题的，虚拟头节点可以很好的减轻整个任务的工作量**
+
 #### 移除链表元素
 
 - 给定一个链表，删除其与设定val相等的节点。重点是开始点存在等于val值的可能，解决方法是**创造一个虚拟的头节点来解决问题，这样在后续遍历中比较方便！！**
@@ -553,7 +561,7 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 #### 设计链表
 
-- 主要是使用单链表实现自定义链表的功能，关键在于如何遍历到index的位置处，**使用虚拟头节点确实可以显著减轻逻辑分析的工作量！！！**
+- 主要是使用单链表实现自定义链表的功能，关键在于如何遍历到index的位置处，**使用虚拟头节点确实可以显著减轻逻辑分析的工作量！！！** 没有虚拟头节点的话，遍历过程一般是判断当前节点是不是nullptr，使用虚拟头节点一般是判断当前节点的next节点是不是nullptr。
 
     ```cpp
     class MyLinkedList {
@@ -651,16 +659,363 @@ for (auto it = lst.begin(); it != lst.end();) {
     };
     ```
 
+
+
+
+#### 合并两个链表
+
+- 直接可以使用双指针方法解决链表的合并问题，通过比较两个指针指向节点的大小比较，来判断哪一个节点可以被放入到结果序列中
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode* mergeTwoLists(ListNode* list1, ListNode* list2)
+        {
+            // 使用left与right两个指针遍历各个链表
+            ListNode* left = list1;
+            ListNode* right = list2;
+            ListNode* myHead = new ListNode(0, nullptr);
+            ListNode* res = myHead;
+            while(1)
+            {
+                while(left != nullptr && right != nullptr)
+                {
+                    if(left->val > right->val)
+                    {
+                        res->next = right;
+                        right = right->next;
+                    }
+                    else
+                    {
+                        res->next = left;
+                        left = left->next;
+                    }
     
+                    // 变换指向
+                    res = res->next;
+                }
+    
+                // 后续分析发现其中至少有一个指针不为空 —— 由于right与left仍然能保留其对应的后续数据，所以可以直接赋值即可 res->next = left中right不为空的元素
+                res->next = (left == nullptr) ? right : left;
+    //            ListNode* tmp = (left == nullptr) ? right : left;
+    //            while(tmp != nullptr)
+    //            {
+    //                res->next = tmp;
+    //                res = res->next;
+    //                tmp = tmp->next;
+    //            }
+                break;
+            }
+    
+            ListNode* resu = myHead->next;
+            delete myHead;
+            return resu;
+        }
+    };
+    ```
+
+    
+
+#### 合并K个链表
+
+- 由于有k个链表，需要比较每一个链表节点的之间的大小关系，但是如果每次都要重复比较都比较消耗时间，故这里直接使用优先级队列(小顶堆)来解决问题
+
+    ```cpp
+    class myComprasion
+    {
+    public:
+        bool operator()(ListNode* a, ListNode* b)
+        {
+            return a->val > b->val; // 小顶堆：值小的优先级更高
+        }
+    };
+    
+    class Solution {
+    public:
+        // TODO 没有想清楚之前的解决方法有什么问题 - 当然由于优先级队列中每输入以及弹出一个元素都有一个O(log n)的时间消耗，所以维持优先级队列的数量要越小越好，但是这不是之前方法内存泄漏的原因
+        ListNode* mergeKLists(vector<ListNode*>& lists)
+        {
+            // 优先级队列：按节点值升序排列（小顶堆）
+            priority_queue<ListNode*, vector<ListNode*>, myComprasion> que;
+    
+            // 将每个链表的头节点压入队列
+            for (auto node : lists)
+            {
+                if (node) que.push(node);
+            }
+    
+            // 创建结果链表的虚拟头节点
+            ListNode dummy(0);
+            ListNode* cur = &dummy;
+    
+            // 持续弹出优先队列的最小节点，构建结果链表
+            while (!que.empty())
+            {
+                auto tmp = que.top(); // 取出堆顶节点
+                que.pop();
+                cur->next = tmp;      // 将堆顶节点连接到结果链表
+                cur = cur->next;      // 移动结果链表指针
+    
+                if (tmp->next) que.push(tmp->next); // 将下一个节点压入队列
+            }
+    
+            return dummy.next;
+        }
+    };
+    ```
+
+#### 反转链表
+
+- 这里不能直接使用虚拟的头节点，因为反转链表之后，最后一个节点(也就是之前第一个节点的next位置应该是nullptr)的next却变成了新定义的虚拟偷节点。
+
+    - 一种双指针实现，另一种方法为递归实现
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode* reverseList(ListNode* head) {
+        /*** 双指针方法 ***/
+            // 给定虚拟的头节点来分析问题(这里是否使用虚拟头节点的意义不是很大)
+    //        if(head == nullptr) return nullptr;
+    //        ListNode* myHead = new ListNode(0, head);
+    //        ListNode* pre = myHead;
+    //        ListNode* cur = head;
+    //
+    //        while(cur != nullptr)
+    //        {
+    //            ListNode* tmp = cur->next;
+    //            // 设置的虚拟头节点并不能满足我们的需求，反转之后是不能出现虚拟的头节点的
+    //            if(pre == myHead)
+    //                cur->next = nullptr;
+    //            else
+    //                cur->next = pre;
+    //
+    //            pre = cur;
+    //            cur = tmp;
+    //        }
+    //
+    //        delete myHead;
+    //        return pre;
+    
+            /*** 递归方法(为避免使用虚拟头节点导致的程序还需一步判断的方法，这里可以直接设置pre一开始为nullptr) ***/
+            return reverse(nullptr, head);
+        }
+    
+        ListNode* reverse(ListNode* pre, ListNode* cur)
+        {
+            if(cur == nullptr) return pre;
+            else
+            {
+                ListNode* tmp = cur->next;
+                cur->next = pre;
+                // 互换位置
+                return reverse(cur, tmp);
+            }
+        }
+    };
+    ```
+
+    
+
+#### 两两交换链表中的点
+
+- 两两交换可以定义个虚拟头节点分析，将具体就是定义一个pre与cur指针，交换其能指向的元素顺序最终完成输出
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode* swapPairs(ListNode* head)
+        {
+            ListNode* pre = head;
+            ListNode* cur = nullptr;
+            ListNode* myHead = new ListNode(0, pre);
+    
+            ListNode* last = myHead;
+    
+            while(pre != nullptr)
+            {
+                cur = pre->next;
+                if(cur == nullptr) break;
+    
+                // 均不为空，则可以进行交换
+                pre->next = cur->next;
+                cur->next = pre;
+                last->next = cur;
+                // 保留之前的头节点
+                last = pre;
+                pre = pre->next;
+            }
+    
+            // 接受虚拟头节点的值
+            ListNode* res = myHead->next;
+            delete myHead;
+            return res;
+        }
+    };
+    ```
+
+#### 链表相交
+
+- 判断两个链表是否相交，就要看两者是否有相同的节点出现 (是内存地址上的相同，而不是链表对应数值上的相同)。即先遍历出来两个链表的长度，然后从两者长度一直的部分开始遍历，查找两者是否有相同元素出现
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode *getIntersectionNode(ListNode *headA, ListNode *headB)
+        {
+            // 直接判断时间复杂度为O(n+n+n) 空间复杂度为O(1)
+            int n1 = 0,  n2 = 0;
+            ListNode* tmp = headA;
+            while(tmp != nullptr)
+            {
+                tmp = tmp->next;
+                n1++;
+            }
+    
+            tmp = headB;
+            while(tmp != nullptr)
+            {
+                tmp = tmp->next;
+                ++n2;
+            }
+    
+            // 判断更大值
+            ListNode* left = headA;
+            ListNode* right = headB;
+    
+            if(n1 > n2)
+            {
+                int a = n1 - n2;
+                while(a--)
+                    left = left->next;
+            }
+    
+            else if(n1 < n2)
+            {
+                int a = n2 - n1;
+                while(a--)
+                    right = right->next;
+            }
+    
+            ListNode* res = nullptr;
+            while(right != nullptr && left != nullptr)
+            {
+                if(right == left) return right;
+                right = right->next;
+                left = left->next;
+            }
+            return nullptr;
+        }
+    };
+    ```
+
+#### 环形链表
+
+- 思路很重要 —— 只要想明白了fast指针如果能追到slow指针话一定是有环形出来的，并且从两者相交处以及链表头同时出发一个指针，两者相遇的部分就是进入环形链表的头节点处
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode *detectCycle(ListNode *head)
+        {
+            // 直接判断是否存在一个环的操作比较简单 - fast指针的速度为slow指针速度为两倍(其从原理上发现只会多走一圈) 随想录上有有一个数学解释 : 2(x+y) = x + y + (y+z) 那么 x = z, 故直接从链表相交的点与头节点开始移动既可
+            ListNode* slow = head;
+            ListNode* fast = head;
+            while(slow != nullptr && fast != nullptr)
+            {
+                slow = slow->next;
+                // 判断是否出现fast->next为空
+                if(fast->next == nullptr) break;
+                    fast = fast->next->next;
+    
+                if(fast == slow)
+                {
+                    // 证明有环出现
+                    ListNode* tmp_1 = head;
+                    ListNode* tmp_2 = fast;
+                    while(tmp_1 != nullptr && tmp_2 != nullptr)
+                    {
+                        if(tmp_1 == tmp_2) return tmp_1;
+                        else
+                        {
+                            tmp_1 = tmp_1->next;
+                            tmp_2 = tmp_2->next;
+                        }
+                    }
+                }
+            }
+            return nullptr;
+        }
+    };
+    ```
+
+#### 删除链表中的倒数第N个节点
+
+- 思路很重要 —— 直接利用两个指针进行处理，fast指针比slow指针快N个节点，那么fast指针到链表末尾之后，slow指针也到了倒数第N个节点位置处
+
+    ```cpp
+    class Solution {
+    public:
+        ListNode* removeNthFromEnd(ListNode* head, int n)
+        {
+            /*** 双指针方法解决类似问题(fast先前进n， 然后slow与fast同时移动直到fast到链表的末尾，此时slow指针对应的下一个元素处即为待求元素) ***/
+            // 创建虚拟头节点(利用一个偷节点处理问题确实方便)
+            ListNode* myHead = new ListNode(0, head);
+            ListNode* fast = myHead;
+            ListNode* slow = myHead;
+            while(n--)
+            {
+                if(fast != nullptr)
+                    fast = fast->next;
+            }
+    
+            // fast与slow同时移动，直到fast走到了最终的末尾元素处
+            while(fast != nullptr)
+            {
+                fast = fast->next;
+                if(fast == nullptr) break;
+                slow = slow->next;
+            }
+    
+            slow->next = slow->next->next;
+            head = myHead->next;
+            delete myHead;
+            return head;
+        }
+    };
+    ```
+
+
+
+
+
+
+## Hash表
+
+即在输入键值与数据储存位置相互关联起来的一种结构
+
+- 哈希表的查找效率是O(1)，因为其通过一个散列函数将输入的key值转换到数据的储存位置(即散列表中)。
+    - 根据散列函数的选取不同，键值与数据储存位置的对应关系就有所不同。**理想情况下，其应该是一个键值独立对应一个散列表中的位置，但是如果出现异常的冲突情况，就得需要将对应关系进行一定的修改** (这里只看链表法，因为这是C++ STL <unorder_map>中使用的方法)
+    - 链表法: 将具有相同存储地址的关键字链成一单链表， m个存储地址就设m个单链表，然后用一个数组将m个单链表的表头指针存储起来，形成一个动态的结构，假设散列函数为 Hash(key) = key %13，其拉链存储结构如右图
+
+<img src="figure/image-20250114204149686.png" alt="image-20250114204149686" style="zoom: 67%;" />
+
+- 注意set与map中Key值是不能修改的，而且unordered_set与unordered_map都是基于hash表实现的，查找效率都是O(1), 增删效率都是O(1)。而对于这些基于树的结构，实现起来都是O(log n)的效率。
+
+![image-20250114205052068](figure/image-20250114205052068.png)
+
+
+
+
 
 
 
 ## 栈与队列
 
-- 栈一般不认为是一种基础的数据结构，**栈是以底层容器完成其所有的工作，对外提供统一的接口，底层容器是可插拔的（也就是说我们可以控制使用哪种容器来实现栈的功能）。**stack栈可以由双向队列deque或者vector来实现。
+- 栈一般不认为是一种基础的数据结构，**栈是以底层容器完成其所有的工作，对外提供统一的接口，底层容器是可插拔的（也就是说我们可以控制使用哪种容器来实现栈的功能）。**stack栈可以由双向队列deque或者vector来实现。所以STL中栈往往不被归类为容器，而被归类为container adapter（容器适配器）。
 
 - 队列同样如此，其也是一种容器适配器，一般STL中实现queue队列使用的容器类型也是deque双端队列，当然也可以在创建queue的时候人为指定构造类型。
-    - 对于双端队列deque，其是一个C++ STL中的容器类型。既然是双端队列，其对应的元素就应该是
+    - 对于双端队列deque，其是一个C++ STL中的容器类型.
     
         
 
@@ -670,8 +1025,7 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 
 
-
-容器
+### 容器
 
 - 序列式容器（Sequence containers），此为可序群集，其中每个元素均有固定位置—取决于插入时机和地点，和元素值无关。如果你以追加方式对一个群集插入六个元素，它们的排列次序将和插入次序一致。STL提供了三个序列式容器：向量（vector）、双端队列（deque）、列表（list），此外你也可以把 string 和 array 当做一种序列式容器。
 - 关联式容器（Associative containers），此为已序群集，元素位置取决于特定的排序准则以及元素值，和插入次序无关。如果你将六个元素置入这样的群集中，它们的位置取决于元素值，和插入次序无关。STL提供了四个关联式容器：集合（set）、多重集合（multiset）、映射（map）和多重映射（multimap）。
@@ -683,7 +1037,7 @@ for (auto it = lst.begin(); it != lst.end();) {
 - 单调队列解决就是按照方便去一个区间的最大/小值的问题，
   - 对于n个元素的数组，如果求解连续k个数中的最大值，所使用的时间复杂度为O(n*k)，即n个元素基本上每一个元素都得与其后k-1个元素进行比较（近似计算）
 
-
+PS：感觉有一些像大小顶堆
 
 
 

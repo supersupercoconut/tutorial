@@ -90,12 +90,6 @@
 
 
 
-
-
-![image-20250110193327526](figure/image-20250110193327526.png)
-
-
-
 <img src="figure/image-20250110193346699.png" alt="image-20250110193346699" style="zoom: 80%;" />
 
 
@@ -112,11 +106,9 @@
 
 ![image-20250110193530427](figure/image-20250110193530427.png)
 
-###### 
+
 
 ![image-20250110193546305](figure/image-20250110193546305.png)
-
-
 
 
 
@@ -141,6 +133,20 @@
 记录数据集录制的相关信息
 
 
+
+### GPS 分析
+
+- 一开始在使用GPS的时候，使用的为雷讯给无人机的螺旋天线，这个信号是真的弱...，后期在车上更换成为蘑菇头天线之后，GPS整体的效果会好很多，需要录制GPS话题数据频率跟数据量全部符合自己的要求了，对应的GVINS运行起来也没有问题了。**当然目前还是没有硬件同步的方法，现在对应的6个话题数据为:**
+
+    ```cpp
+    /ublox driver/ephem
+    /ublox driver/glo ephem
+    /ublox driver/iono params
+    /ublox driver/range meas
+    /ublox driver/receiver lla
+    /ublox driver/receiver pvt
+    /ublox driver/time pulse info
+    ```
 
 ### color/depth分析
 
