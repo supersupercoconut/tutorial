@@ -40,8 +40,7 @@
 
 **[LiDAR_IMU_Init](https://github.com/hku-mars/LiDAR_IMU_Init)** IROS 2022 一种直接使用lidar imu进行初始化的方法
 
-- 根据mm-lins中的使用方法，可以手动更改rosbag中点云数据，仿造出雷达出现异常的状态
-- 
+
 
 ### 4. GPS
 
@@ -83,6 +82,34 @@
 
 
 
+## 绘图/表格
+
+只要是m2DGR这篇文章上有的图表，其需要绘制类似的图表
+
+![image-20250110193253135](figure/image-20250110193253135.png)
+
+
+
+<img src="figure/image-20250110193346699.png" alt="image-20250110193346699" style="zoom: 80%;" />
+
+
+
+![image-20250110193405194](figure/image-20250110193405194.png)
+
+
+
+![image-20250110193427672](figure/image-20250110193427672.png)
+
+
+
+![image-20250110193448445](figure/image-20250110193448445.png)
+
+![image-20250110193530427](figure/image-20250110193530427.png)
+
+
+
+![image-20250110193546305](figure/image-20250110193546305.png)
+
 
 
 
@@ -106,6 +133,20 @@
 记录数据集录制的相关信息
 
 
+
+### GPS 分析
+
+- 一开始在使用GPS的时候，使用的为雷讯给无人机的螺旋天线，这个信号是真的弱...，后期在车上更换成为蘑菇头天线之后，GPS整体的效果会好很多，需要录制GPS话题数据频率跟数据量全部符合自己的要求了，对应的GVINS运行起来也没有问题了。**当然目前还是没有硬件同步的方法，现在对应的6个话题数据为:**
+
+    ```cpp
+    /ublox driver/ephem
+    /ublox driver/glo ephem
+    /ublox driver/iono params
+    /ublox driver/range meas
+    /ublox driver/receiver lla
+    /ublox driver/receiver pvt
+    /ublox driver/time pulse info
+    ```
 
 ### color/depth分析
 
@@ -269,15 +310,8 @@ lidar 动态物体很多 | 录制RTCM数据(确认一下)
     evo_traj tum odom_output_tum.txt --ref pose_output_tum.txt -vap  --save_as_tum
     ```
 
-    
-
-
 
 **注意对于一些无法直接估计尺度的SLAM算法，如纯视觉的算法在评估的时候需要使用--align对齐两个轨迹。但是对于使用imu或者lidar这些可以直接获取到尺度的SLAM算法，在对比的时候不能使用--align去对齐估计。**
-
-
-
-PS: 参考
 
 1. https://blog.csdn.net/qq_49561752/article/details/141506803?spm=1001.2101.3001.6650.3&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-141506803-blog-131771589.235%5Ev43%5Epc_blog_bottom_relevance_base9&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-3-141506803-blog-131771589.235%5Ev43%5Epc_blog_bottom_relevance_base9
 2. https://blog.csdn.net/OrdinaryMatthew/article/details/131771589
@@ -940,7 +974,9 @@ pos2dplot(pos);
 
 
 
-## 补充
+
+
+## 传感器调试方法:
 
 补充一些传感器在实际使用中的调试步骤以及方法
 
@@ -960,7 +996,29 @@ pos2dplot(pos);
 
 <img src="figure/image-20241205172548161.png" alt="image-20241205172548161" style="zoom: 80%;" />
 
-### bug整理
+补充使用上的bug:
 
 1. 运行 `rostopic echo ...` 查看话题数据，提示"ERROR: Cannot load message class for ... Are your messages built。这里很神奇的需要新开终端source {$ros_workspace}/devel/setup.bash 之后才能取观察到话题数据
 2. 对于ubuntu20.04发现另一个很神奇的问题 —— rostopic echo /nlink_linktrack_nodeframe提示数据没有显示出来，只需要重新拔插一下，再执行就正常了
+
+
+
+
+
+### D435i
+
+- 正常来说D435i因为使用的人多，问题一般都能解决。但正常录制数据的时候需要对color图像录制compressed格式数据，对于depth图像数据需要录制compressedDepth格式数据。但是用二进制方法安装d435i驱动, 发现只要用rqt查看compressedDepth数据的频率或者图像，原本深度图的30HZ频率降低成了1HZ。**最后发现问题是少装了一个包 ——  sudo apt-get install ros-noetic-image-transport-plugins **
+    - 如果使用源码安装的相机驱动，输出的图像数据中深度图(compressDepth)比可见光图像(compressed)在30HZ频率下会相差100条数据，但是二进制安装的驱动输出的图像数据没有类似的问题
+
+
+
+
+
+### Avia
+
+- avia本身也是没有问题的，但是如果想与D435i相机同时使用，还是需要修改原有的驱动包来使用。因为avia输出的lidar/imu都不是根据系统时间输出的时间戳，所以如果想与D435i同时使用，需要修改avia的雷达驱动，让其按照系统时间戳进行输出。链接: https://github.com/ziv-lin/livox_ros_driver_for_R2LIVE
+
+
+
+
+

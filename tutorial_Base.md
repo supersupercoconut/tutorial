@@ -865,7 +865,7 @@ PS：
 
 ## Github
 
-fork与clone的方式还是不一样的，fork是直接copy到自己的github仓库里面，我们自己的提交并不会影响原仓库。clone就是直接copy到本地计算机上。
+- fork与clone的方式还是不一样的，fork是直接copy到自己的github仓库里面，我们自己的提交并不会影响原仓库。clone就是直接copy到本地计算机上。
 
 
 
@@ -929,7 +929,7 @@ fork与clone的方式还是不一样的，fork是直接copy到自己的github仓
 
 ![image-20241030213120930](figure/image-20241030213120930.png)
 
-- Linux中安装客户端，并直接在网页中进行注册
+- Linux中安装客户端，并直接在网页中进行注册(sed这条命令需要使用root权限来进行配置，但是后续部分都不要使用root权限来设置)
 
 <img src="figure/image-20241030213847606.png" alt="image-20241030213847606" style="zoom: 80%;" />
 
@@ -943,7 +943,9 @@ fork与clone的方式还是不一样的，fork是直接copy到自己的github仓
 
 
 
-**在windows中使用cloudnet**，如果一直不能登录网络，就直接选择退出网络(这里退出之后需要重新授权再登录
+
+
+**在windows中使用cloudnet**，如果一直不能登录网络，就直接选择退出网络(这里退出之后需要重新授权再登录)
 
 PS: 在配置完设备之后，在使用中发现设备一直在连接网络状态，这里可以在"选项"中选择强制下线，然后然后上述步骤重新配置即可。
 
@@ -969,11 +971,200 @@ PS: 在配置完设备之后，在使用中发现设备一直在连接网络状�
 
 
 
+## 固定串口
 
+- 在实际使用中由于上电顺序不一样，不同串口对应的号不一样，导致不同程序需要修改串口号来读取传感器数据，故需要固定串口号。
 
+对应流程：
 
+1. 开启文件 sudo nano /etc/udev/rules.d/99-usb-serial.rules
 
+2. 读取串口设置 udevadm info -a -n /dev/ttyACM0 (读取其对应的idVentor以及idProduct以及serial)，能读取数据的部分是能与lsusb中输出的idVentor/idProduct对应，有serial的就写入serial，无就不写
 
+    ```
+    ------------------------------------------------------------------------------------------------------
+    nuc-yz4@nucyz4-NUC11PAHi7:~$ udevadm info -a -n /dev/ttyCH343USB0
+    
+    Udevadm info starts with the device specified by the devpath and then
+    walks up the chain of parent devices. It prints for every device
+    found, all possible attributes in the udev rules key format.
+    A rule to match, can be composed by the attributes of the device
+    and the attributes from one single parent device.
+    
+      looking at device '/devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2.3/3-2.3:1.0/tty/ttyCH343USB0':
+        KERNEL=="ttyCH343USB0"
+        SUBSYSTEM=="tty"
+        DRIVER==""
+    
+      looking at parent device '/devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2.3/3-2.3:1.0':
+        KERNELS=="3-2.3:1.0"
+        SUBSYSTEMS=="usb"
+        DRIVERS=="usb_ch343"
+        ATTRS{authorized}=="1"
+        ATTRS{bAlternateSetting}==" 0"
+        ATTRS{bInterfaceClass}=="02"
+        ATTRS{bInterfaceNumber}=="00"
+        ATTRS{bInterfaceProtocol}=="01"
+        ATTRS{bInterfaceSubClass}=="02"
+        ATTRS{bNumEndpoints}=="01"
+        ATTRS{supports_autosuspend}=="1"
+    
+    (整个输出数据中只有这一段是有用的, 其余部分输出的内容并不重要！！！)
+      looking at parent device '/devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2.3':
+        KERNELS=="3-2.3"
+        SUBSYSTEMS=="usb"
+        DRIVERS=="usb"
+        ATTRS{authorized}=="1"
+        ATTRS{avoid_reset_quirk}=="0"
+        ATTRS{bConfigurationValue}=="1"
+        ATTRS{bDeviceClass}=="02"
+        ATTRS{bDeviceProtocol}=="00"
+        ATTRS{bDeviceSubClass}=="00"
+        ATTRS{bMaxPacketSize0}=="8"
+        ATTRS{bMaxPower}=="134mA"
+        ATTRS{bNumConfigurations}=="1"
+        ATTRS{bNumInterfaces}==" 2"
+        ATTRS{bcdDevice}=="0443"
+        ATTRS{bmAttributes}=="a0"
+        ATTRS{busnum}=="3"
+        ATTRS{configuration}==""
+        ATTRS{devnum}=="50"
+        ATTRS{devpath}=="2.3"
+        ATTRS{idProduct}=="55d4"
+        ATTRS{idVendor}=="1a86"
+        ATTRS{ltm_capable}=="no"
+        ATTRS{manufacturer}=="http://WCH.CN"
+        ATTRS{maxchild}=="0"
+        ATTRS{product}=="USB Single Serial"
+        ATTRS{quirks}=="0x0"
+        ATTRS{removable}=="unknown"
+        ATTRS{rx_lanes}=="1"
+        ATTRS{serial}=="0002"
+        ATTRS{speed}=="12"
+        ATTRS{tx_lanes}=="1"
+        ATTRS{urbnum}=="11"
+        ATTRS{version}==" 1.10"
+    
+      looking at parent device '/devices/pci0000:00/0000:00:14.0/usb3/3-2':
+        KERNELS=="3-2"
+        SUBSYSTEMS=="usb"
+        DRIVERS=="usb"
+        ATTRS{authorized}=="1"
+        ATTRS{avoid_reset_quirk}=="0"
+        ATTRS{bConfigurationValue}=="1"
+        ATTRS{bDeviceClass}=="09"
+        ATTRS{bDeviceProtocol}=="01"
+        ATTRS{bDeviceSubClass}=="00"
+        ATTRS{bMaxPacketSize0}=="64"
+        ATTRS{bMaxPower}=="100mA"
+        ATTRS{bNumConfigurations}=="1"
+        ATTRS{bNumInterfaces}==" 1"
+        ATTRS{bcdDevice}=="0663"
+        ATTRS{bmAttributes}=="e0"
+        ATTRS{busnum}=="3"
+        ATTRS{configuration}==""
+        ATTRS{devnum}=="49"
+        ATTRS{devpath}=="2"
+        ATTRS{idProduct}=="0610"
+        ATTRS{idVendor}=="05e3"
+        ATTRS{ltm_capable}=="no"
+        ATTRS{manufacturer}=="GenesysLogic"
+        ATTRS{maxchild}=="4"
+        ATTRS{product}=="USB2.1 Hub"
+        ATTRS{quirks}=="0x0"
+        ATTRS{removable}=="removable"
+        ATTRS{rx_lanes}=="1"
+        ATTRS{speed}=="480"
+        ATTRS{tx_lanes}=="1"
+        ATTRS{urbnum}=="341"
+        ATTRS{version}==" 2.10"
+    
+      looking at parent device '/devices/pci0000:00/0000:00:14.0/usb3':
+        KERNELS=="usb3"
+        SUBSYSTEMS=="usb"
+        DRIVERS=="usb"
+        ATTRS{authorized}=="1"
+        ATTRS{authorized_default}=="1"
+        ATTRS{avoid_reset_quirk}=="0"
+        ATTRS{bConfigurationValue}=="1"
+        ATTRS{bDeviceClass}=="09"
+        ATTRS{bDeviceProtocol}=="01"
+        ATTRS{bDeviceSubClass}=="00"
+        ATTRS{bMaxPacketSize0}=="64"
+        ATTRS{bMaxPower}=="0mA"
+        ATTRS{bNumConfigurations}=="1"
+        ATTRS{bNumInterfaces}==" 1"
+        ATTRS{bcdDevice}=="0504"
+        ATTRS{bmAttributes}=="e0"
+        ATTRS{busnum}=="3"
+        ATTRS{configuration}==""
+        ATTRS{devnum}=="1"
+        ATTRS{devpath}=="0"
+        ATTRS{idProduct}=="0002"
+        ATTRS{idVendor}=="1d6b"
+        ATTRS{interface_authorized_default}=="1"
+        ATTRS{ltm_capable}=="no"
+        ATTRS{manufacturer}=="Linux 5.4.0-150-generic xhci-hcd"
+        ATTRS{maxchild}=="12"
+        ATTRS{product}=="xHCI Host Controller"
+        ATTRS{quirks}=="0x0"
+        ATTRS{removable}=="unknown"
+        ATTRS{rx_lanes}=="1"
+        ATTRS{serial}=="0000:00:14.0"
+        ATTRS{speed}=="480"
+        ATTRS{tx_lanes}=="1"
+        ATTRS{urbnum}=="415"
+        ATTRS{version}==" 2.00"
+    
+      looking at parent device '/devices/pci0000:00/0000:00:14.0':
+        KERNELS=="0000:00:14.0"
+        SUBSYSTEMS=="pci"
+        DRIVERS=="xhci_hcd"
+        ATTRS{ari_enabled}=="0"
+        ATTRS{broken_parity_status}=="0"
+        ATTRS{class}=="0x0c0330"
+        ATTRS{consistent_dma_mask_bits}=="64"
+        ATTRS{d3cold_allowed}=="1"
+        ATTRS{dbc}=="disabled"
+        ATTRS{device}=="0xa0ed"
+        ATTRS{dma_mask_bits}=="64"
+        ATTRS{driver_override}=="(null)"
+        ATTRS{enable}=="1"
+        ATTRS{index}=="6"
+        ATTRS{irq}=="130"
+        ATTRS{label}=="Onboard - Other"
+        ATTRS{local_cpulist}=="0-7"
+        ATTRS{local_cpus}=="ff"
+        ATTRS{msi_bus}=="1"
+        ATTRS{numa_node}=="-1"
+        ATTRS{revision}=="0x20"
+        ATTRS{subsystem_device}=="0x3004"
+        ATTRS{subsystem_vendor}=="0x8086"
+        ATTRS{vendor}=="0x8086"
+    
+      looking at parent device '/devices/pci0000:00':
+        KERNELS=="pci0000:00"
+        SUBSYSTEMS==""
+        DRIVERS==""
+    ------------------------------------------------------------------------------------------------------
+    ```
+
+3. 最终对应的串口设置文件如下 (文件这里还写入了串口权限):
+
+    ```
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="3185", ATTRS{idProduct}=="0035", ATTRS{serial}=="0", SYMLINK+="ttyPX4", MODE="0666"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="1546", ATTRS{idProduct}=="01a9", SYMLINK+="ttyGPS", MODE="0666"
+    SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="55d4", ATTRS{serial}=="0002", SYMLINK+="ttyODOM", MODE="0666"
+    ```
+
+4. 最终重新插拔串口线，以及重启udev
+
+    ```
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+    ```
+
+    
 
 
 
