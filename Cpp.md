@@ -1006,6 +1006,45 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 
 
+****
+
+**Hash表一般用于解决快速查找元素的问题，unordered_set只会保留一个值作为key值，unordered_map会保留一个key值以及其对应的数据值**
+
+
+
+#### 两数之和
+
+- 这里一个非常好的解决思路就是每遍历到一个元素 (之前遍历的元素放入到一个unordered_map中)，只会在unordered_map中进行查找对应的元素，这样保证了不会出现{a,b}, {b,a}不会同时出现。**同时发现unordered_map中如果插入了相同key值，不同的插入方式对应的解决方法不同，insert方法是直接不会再进行插入，只会保留第一次插入key值时对应的数据**
+
+    ```cpp
+    class Solution {
+    public:
+        vector<int> twoSum(vector<int>& nums, int target)
+        {
+            // note 这里是使用 map 保留遍历之后的元素(一开始的想法是直接遍历完整个数组之后再开始处理) | 判断两个元素的加和是否等于target这个元素 - 并且只会输出一个vector结果
+            unordered_map<int, int> search;
+            vector<int> res = {};
+            for(int i = 0; i < nums.size(); ++i)
+            {
+                    auto a = search.find(target - nums[i]);
+                    if(a != search.end())
+                    {
+                        return {a->second, i};
+                    }
+                    // 这里对一个map插入了相同的元素，但是map中insert方法并不是覆盖原有的值，而且本问题只需要一组返回结果故这部分可以直接忽略 ！！！
+                    search.insert({nums[i], i});
+            }
+            return {};
+        }
+    };
+    ```
+
+    
+
+
+
+
+
 
 
 
