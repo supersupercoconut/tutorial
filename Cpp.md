@@ -516,6 +516,8 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 ****
 
+### 常见问题
+
 **对于链表问题，大部分问题都是直接使用双指针以及虚拟头节点来解决问题的，虚拟头节点可以很好的减轻整个任务的工作量**
 
 #### 移除链表元素
@@ -1006,11 +1008,46 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 
 
+### 属性
+
+- hash结构一般直接使用unordered_map与unordered_set两种数据
+
+> [!NOTE]
+>
+> 1. 对于unordered_map: 用一个key值访问对应的数据部分
+>
+>     - first, second都是这个容器对应的成员变量: first对应key值，second对应数据
+>
+>     - find() 返回的是对于当前这个map的迭代器，如果当前map中查找不到当前对应的key值，那么find()返回值为map.end()。如果当前查询的key值在map中，利用返回的迭代器可以直接读取对应元素(假设it = map.find(xxx))，那么it->first就是key值，it->second就是对应的数据
+>
+>     - **插入数据**：可以使用insert或者不使用insert
+>
+>         ```cpp
+>             std::unordered_map<std::string, int> umap;
+>             // 插入键值对
+>             umap["apple"] = 3;           // 使用下标操作符
+>             umap.insert({"banana", 5});  // 使用 insert 方法
+>         ```
+>
+>     - **相同数据**：对于unordered_map其中key具有唯一性，如果在已经有这个key值的情况下，还继续使用insert() 插入key值以及其对应的元素, 此时map会直接不执行插入操作。
+>
+>         
+>
+> 2. 对于unordered_set: 快速查找一个元素是否在当前集合中，使用方法大致与unordered_map类似，都包含了find()方法
+>
+>     
+
+
+
+
+
+
+
+
+
 ****
 
-**Hash表一般用于解决快速查找元素的问题，unordered_set只会保留一个值作为key值，unordered_map会保留一个key值以及其对应的数据值**
-
-
+### 常见问题
 
 #### 两数之和
 
@@ -1041,7 +1078,81 @@ for (auto it = lst.begin(); it != lst.end();) {
 
     
 
+#### 四数之和2
 
+- 本问题没有取考察从四个数组中分别选取元素加和为0的下表的所有排列方法，只取考察了其可能性。所以整体思路从先考察A+B两个数组元素所有可能的加和结果开始，再分析C+D两个数组元素所有可能的加和值，寻找A+B加和对应的结果以及次数。最后将次数累积之后就是最终的可能性。
+
+    ```cpp
+    class Solution {
+    public:
+        int fourSumCount(vector<int>& nums1, vector<int>& nums2, vector<int>& nums3, vector<int>& nums4)
+        {
+    //        // TODO 最终这部分对应的时间是超时的... 正常结果是可以直接优化成为O(n^2)但是我只优化到了O(n^3)
+    //        // HASH表可以将O(n^4)转换成为O(n^3) 遍历其中三种情况然后分析最后一种对应的情况
+    //
+    //        unordered_map<int, vector<int>> search; // first为值 second为index下标
+    //        // 这里是直接使用unordered_map的属性直接处理，并不需要判断当前这nums[i]的取值问题
+    //        for(int i = 0; i < nums4.size(); ++i)
+    //        {
+    ////            if(search.find(nums4[i]) != search.end())
+    //                search[nums4[i]].push_back(i);
+    ////            else
+    ////                search.insert({nums4[i], {i}});
+    ////                search[nums4[i]].push_back(i);
+    ////                search.insert({nums4[i], {i}});
+    //        }
+    //
+    //        for(auto i : search)
+    //        {
+    //            cout << i.first << ": ";
+    //            for(auto j : i.second)
+    //            {
+    //                cout << j << " ";
+    //            }
+    //            cout << endl;
+    //        }
+    //
+    //        int count = 0;
+    //        for(int i = 0; i < nums1.size(); ++i)
+    //        {
+    //            for(int j = 0; j < nums2.size(); ++j)
+    //            {
+    //                for(int k = 0; k < nums3.size(); ++k)
+    //                {
+    //                    if(search.find( -(nums1[i] + nums2[j] + nums3[k]) ) != search.end())
+    //                    {
+    //                        for(auto a : search[-(nums1[i] + nums2[j] + nums3[k])])
+    //                            ++count;
+    //                    }
+    //                }
+    //            }
+    //        }
+    //
+    //        return count;
+    
+        // 根据随想录上的思路 ： 先分析其A+B的所有可能取值对应的次数 后再遍历C+D结果中计算其最终结果对应的可能数量 这样确实将一个O(n^4)的算法降低到了O(n^2)
+            int count = 0;
+            unordered_map<int, int> search_map;
+            for(auto i : nums1)
+            {
+                for(auto j : nums2)
+                    search_map[i + j]++;
+            }
+    
+            for(auto i : nums3)
+            {
+                for(auto j : nums4)
+                {
+                    if(search_map.find( -(i+j) ) != search_map.end())
+                        count += search_map[-(i+j)];
+                }
+            }
+            return count;
+        }
+    };
+    ```
+
+    
 
 
 
@@ -1900,6 +2011,16 @@ void R3LIVE::image_callback( const sensor_msgs::ImageConstPtr &msg )
     process_image( temp_img, msg->header.stamp.toSec() );
 }
 ```
+
+
+
+## 虚函数
+
+- 虚函数主要是在基类中实现逻辑，那么基于这些基类实现的子类中如果想使用这些函数，就需要每一个子类自行创建自己对应的函数来调用。
+
+https://blog.csdn.net/i_chaoren/article/details/77281785
+
+
 
 
 
