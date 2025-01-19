@@ -10,6 +10,16 @@
 
 ### 1. 视觉
 
+#### 全景相机Omni
+
+- 前后两个超广角的鱼眼相机，最后拼接成为一张图像，分析其对应的相机模型，对于商业使用的全景相机其投影模型比较简单，是将三维世界全部投影到一个球面上，然后将这个球面展开成为一张图像(实际表现方式与地球地图比较类似，但是其在南北极处的畸变比较严重) **并且在标定部分都不会给定相机的内参与误差**
+
+<img src="figure/22d2cdf7ccf4992e6dfe28e0a927e0ea.jpg" alt="img" style="zoom: 25%;" />
+
+
+
+#### 普通相机RGBD
+
 - 特征点(光照不够或者低纹理)：无非就是特征点数量不够或者完全没有特征点
 
     
@@ -93,8 +103,6 @@
 <img src="figure/image-20250110193346699.png" alt="image-20250110193346699" style="zoom: 80%;" />
 
 
-
-![image-20250110193405194](figure/image-20250110193405194.png)
 
 
 
@@ -288,6 +296,21 @@ lidar 动态物体很多 | 录制RTCM数据(确认一下)
     - 在选择图像与点云的对应点上只需要选择5~10个点即可
 
 ![image-20241115231844288](figure/image-20241115231844288.png)
+
+PS: 简单而言，其会直接使用
+
+- 标定命令：
+
+```
+1. 选择对应的相机模型 
+docker run   -it   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority -v /home/supercoconut/Myfile/datasets/360/calib/:/tmp/input_bags -v /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic  rosrun direct_visual_lidar_calibration preprocess -av --camera_model equirectangular   /tmp/input_bags /tmp/preprocessed
+2. 手动选择对应点
+docker run --rm --net host --gpus all -e DISPLAY=$DISPLAY -v $HOME/.Xauthority:/root/.Xauthority -v /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration initial_guess_manual /tmp/preprocessed
+3. 精确标定
+docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed  koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration calibrate /tmp/preprocessed
+4. 显示
+docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration viewer /tmp/preprocessed
+```
 
 
 
