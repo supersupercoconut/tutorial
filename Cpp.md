@@ -2,7 +2,616 @@
 
 [TOC]
 
-# Cpp
+
+
+# Cpp八股
+
+## C++内存
+
+堆/栈/全局(静态)存储区/代码存储区
+
+- 堆 - 编译器自动分配回收
+
+- 栈 - 自行new/delete 容易忘记 故可以使用智能指针
+
+- 全局(静态) - 放置全局变量或者static定义的变量 - 这里对应变量的生命周期为整个程序运行期间
+
+- 常量区 - 用于保存一些常量
+
+  - 这里说的常量是一些**字面值**，用const修饰的那些常量本质上应该属于是变量！！
+
+- 代码区 - 代码区就是存放从硬盘中编译好的二进制代码
+
+  ```cpp
+  % '\041' 即为字面值
+  char a = '\041';
+  const char b = a; % a才属于是常量 看是全局还是局部变量决定其所在的位置
+  ```
+
+
+
+## 智能指针
+
+shared_ptr | weak_ptr | unique_ptr
+
+- unique_ptr 保证指针独自占用一块内存
+
+- shared_ptr 即利用一块引用计数来判断是否需要删除这块内存。**注意循环引用！！**
+
+  ```cpp
+  #include <memory>
+  class A {
+  public:
+      std::weak_ptr<A> ptr; // 使用 weak_ptr 替代 shared_ptr
+  };
+  
+  int main() {
+      auto a1 = std::make_shared<A>(); // a1.ref_count = 1
+      auto a2 = std::make_shared<A>(); // a2.ref_count = 1
+  
+      a1->ptr = a2; // a2.ref_count 仍为 1（weak_ptr 不增加计数）
+      a2->ptr = a1; // a1.ref_count 仍为 1
+  
+      return 0;
+  } // main 结束时，a1 和 a2 的引用计数归零，内存释放！
+  ```
+
+- weak_ptr 即保证其指向这块内存不会改变其对应的引用计数，就是使用时需要调用lock()转换成为shared_ptr使用
+
+
+
+## static 静态
+
+- 对于局部变量: 增强了变量或者函数的生命周期，但是不会影响作用域 (注意其对应的内存地址会从栈变成静态存储区中)
+
+  ![image-20250130192814542](./figure/image-20250130192814542.png)
+
+- 对于全局变量：静态全局变量的作用域为这个源文件中！！ 不可以像普通的全局变量使用extern之后，可以在其他源文件中使用。**类似的操作就是使用局部匿名空间来定义全局变量，此时这个全局变量也只能在这个源文件中使用，避免了其他源文件中有相同名字的变量导致冲突。**
+
+  ```cpp
+  void func() {
+      static int count = 0; // 静态局部变量
+      count++;
+      std::cout << count << std::endl;
+  }
+  
+  int main() {
+      func(); // 输出 1
+      func(); // 输出 2（保留上一次的值）
+      // std::cout << count; // 错误！count 的作用域仅在 func 内部
+      return 0;
+  }
+  
+  -----------------------------------------------------
+  // 文件 A.cpp
+  int global_var = 42;         // 普通全局变量（外部链接）
+  static int static_var = 100; // 静态全局变量（内部链接）
+  
+  // 文件 B.cpp
+  extern int global_var;       // ✅ 合法，链接到 A.cpp 的 global_var
+  extern int static_var;       // ❌ 链接错误！static_var 仅在 A.cpp 可见
+  ```
+
+- 普通函数：static修饰的函数同样只能在该源文件中使用，不能在其他源文件中使用。
+
+- 类中使用的静态成员变量/函数：static 修饰类中变量或者函数时，其作为该类实例化对象共有的部分。**静态成员函数需要在类外单独定义！！或者在类的构造函数中直接定义 (在第一次实例化这个类的时候就直接确定下来了)**
+
+  ```cpp
+  // 头文件 MyClass.h
+  class MyClass {
+  public:
+      static int static_var; // 声明（未定义）
+  };
+  
+  // 正确：在 MyClass.cpp 中定义
+  // 文件 MyClass.cpp
+  #include "MyClass.h"
+  int MyClass::static_var = 42; // ✅ 正确且唯一的定义
+  
+  // 错误：在多个源文件中定义
+  // 文件 Another.cpp
+  #include "MyClass.h"
+  int MyClass::static_var = 100; // ❌ 重复定义，链接错误！
+  ```
+
+  ```cpp
+  class MyClass {
+  public:
+      static const int static_const_var = 100; // ✅ 类内初始化（无需类外定义）
+  };
+  ```
+
+- 注意： 类中的static函数只能访问static的成员变量
+
+  ![image-20250130193134993](./figure/image-20250130193134993.png)
+
+
+
+## const与constexpr 
+
+- const表示变量会是一个常量，而constexpr表示其修饰的是一个常量表达式。简单而言 const修饰的变量可以在运行期确定，**但是对于constexpr修饰的变量或者函数必须在编译期就确定下来，并且const并没有办法修饰函数**。
+
+  ```cpp
+  int getRuntimeValue() { return 42; }  // 普通函数，运行时计算
+  
+  int main() 
+  {
+      const int a = 10;            	 // ✅ 编译时常量（用字面量初始化）
+      const int b = getRuntimeValue(); // ✅ 运行时常量（通过函数返回值初始化）
+      const int c;                 // ❌ 错误！必须初始化
+  }
+  
+  constexpr int getCompileTimeValue() { return 42; }  // constexpr 函数
+  int main() 
+  {
+      constexpr int a = 10;                      // ✅ 编译时常量
+      constexpr int b = getCompileTimeValue();   // ✅ 编译时调用函数
+      constexpr int c = getRuntimeValue();       // ❌ 错误！函数非 constexpr
+  }
+  ```
+
+- 关于const修饰的对象需要声明的时候就进行初始化
+
+  ```cpp
+  int x = 1;      // 普通变量，可以被修改
+  const int y = x; // const 变量，值被初始化为 x 的值，之后不能被修改
+  ```
+
+- 指针常量与常量指针
+
+  - 常量指针(const int* ptr )即指向一个常量的指针，不可以通过该指针对指向对象的值进行修改。
+  - 指针常量(int* const ptr)即指针为一个常量，不可以改变指针的指向。
+  - 指针常量与常量指针的结合(const int* const ptr) ptr的指向与ptr指向的变量都不可以被修改
+
+  ```cpp
+  const int getConstValue() {
+      return 100;
+  }
+  
+  int main() {
+      int x = getConstValue(); // 正确：可以复制 const 值
+      // getConstValue() = 200; // 错误：不能修改 const 临时对象
+      return 0;
+  }
+  ```
+
+- const 成员函数
+
+  - const 成员函数是指在**类的成员函数声明和定义**后加上 const 关键字，表示该函数不会修改对象的状态(即不会修改对象的任何的非mutable成员变量)
+
+  ```cpp
+  class MyClass {
+  public:
+      int value;
+      MyClass(int val) : value(val) {}
+  
+      // const 成员函数
+      void printValue() const {
+          // value = 100; // 错误：const 成员函数不能修改成员变量
+          std::cout << "Value: " << value << std::endl;
+      }
+  
+      // 非 const 成员函数
+      void setValue(int val) {
+          value = val;
+      }
+  };
+  
+  int main() {
+      MyClass obj(10);
+      obj.printValue(); 			// 正确：调用 const 成员函数
+      const MyClass constObj(20);
+      constObj.printValue(); 		// 正确：const 对象只能调用 const 成员函数
+      // constObj.setValue(30); 	// 错误：const 对象不能调用非 const 成员函数
+      return 0;
+  }
+  ```
+
+- 关于类对象被声明成const之后，其只能调用const成员函数。**这个对象在初始化的时候对应的类成员变量就不能再修改(只有被mutable修饰的成员变量才能被修改)**。这里考虑到安全性设置的定义。当然普通的类对象也可以包含const成员函数，也可以调用其他的非const成员函数。
+
+  ```cpp
+  class MyClass {
+  public:
+      int x;
+      mutable int y; // mutable 成员，允许在 const 对象中修改
+      void modify() { x = 10; }        // 非 const 成员函数
+      void read() const { /* ... */ }  // const 成员函数
+  };
+  
+  // 定义 const 类对象
+  const MyClass obj;
+  ```
+
+  
+
+
+
+## 函数的值传递/引用传递/指针传递
+
+- 值传递 - 形参相当于是在栈中开辟了一块内存来copy一份实参数据。形参修改与实参无关
+
+- 引用传递 - 引用就是一种类型别名，其也是在栈中开辟一块内存用于保留形参，但是这个形参是对应实参的内存地址
+
+- 指针传递 - 同样也是对应实参的内存地址
+
+  - 指针与引用传递之间的区别为 指针可以随意更换指向的对象，但是引用不能不进行初始化，一旦进行初始化之后就无法更改指向对象。
+
+  ```
+  // 补充C++函数中经常使用的常量引用 - 放置通过引用修改引用对象的值
+  void readData(const vector<int> &data) {  // 避免拷贝，且不能修改 data
+      // 只能读取 data
+  }
+  ```
+
+
+
+## 函数重载/重写/重定义
+
+- **函数重载**
+
+  - 函数形参的类型、数量以及顺序不同均可以构成重载，但是要保证**函数名相同**
+  - 函数的返回值是否相同在函数重载中并不关心
+  - 函数重载在实际使用中通过隐式转换寻找匹配的函数对象
+
+  ```cpp
+  void func(int a); // ok
+  void func(char a); // ok
+  void func(char a,int b); // ok
+  void func(int a, char b); // ok
+  char func(int a); // error 与第一个函数有冲突
+  ```
+
+- 函数重写
+
+  - 函数重写相当于是实现多态的一种手段，通过首先定义的基类，在派生类中对基类函数进行重写。**类似的实现逻辑是direct_visual_lidar_calibration中用一个相机基类，派生类中实现多种相机模型的功能。**
+  - 要求返回值，参数列表什么的都⼀定要完全相同
+
+  ```cpp
+  class Base {
+  public:
+      virtual void show() {  // 声明为虚函数
+          std::cout << "Base class show" << std::endl;
+      }
+  };
+  
+  class Derived : public Base {
+  public:
+      void show() override {  // 重写基类的虚函数
+          std::cout << "Derived class show" << std::endl;
+      }
+  };
+  ```
+
+- 函数重定义
+
+  - 派⽣类重新定义⽗类中相同名字的非virtual 函数，参数列表和返回类型都可以不同。即⽗类中除了定义成 virtual 且**完全相同的同名函数**才不会被派⽣类中的同名函数所隐藏
+
+​    
+
+## 指针
+
+- 野指针与悬空指针
+  - 野指针 - 未进行初始化的指针
+  - 悬空指针 - 指向已释放内存的指针
+
+- 函数指针：同样是一种指针变量，但是其指向的对象是一个函数，在使用的时候需要手动指定这个函数指针所包含的参数
+
+  > 返回类型 (*指针变量名)(参数列表);
+
+  ```cpp
+  int add(int a, int b) {
+      return a + b;
+  }
+  
+  int (*funcPtr)(int, int);  // 声明一个函数指针，指向返回类型为int、参数为两个int的函数
+  funcPtr = add;  // 将函数指针指向 add 函数
+  
+  int result = funcPtr(3, 4);  // 通过函数指针调用 add 函数
+  std::cout << "Result: " << result << std::endl;  // 输出：7
+  ```
+
+
+
+## 堆空间分配 
+
+new malloc delete free，其中new与malloc是C++新引入的部分
+
+
+
+
+
+
+
+## 虚函数以及纯虚函数
+
+- **派生类可以重写也可以不重写直接调用基类中的虚函数，**并且基类可以被实例化。通过基类的引用或者指针直接访问派生类中的**虚函数**。
+  - **在运行期中**，animal->speak() 才能确定被调用的哪一个派生类或者基类中的speak()函数
+  - 使用**virtual**关键字表示
+
+```cpp
+class Animal 
+{
+public:
+    virtual void speak() { 
+        cout << "Animal sound" << endl; 
+    }
+};
+
+class Dog : public Animal 
+{
+public:
+    void speak() override {  // 重写基类虚函数
+        cout << "Woof!" << endl; 
+    }
+};
+
+int main() 
+{
+    Animal* animal = new Dog();
+    animal->speak();  // 输出 "Woof!"（调用的是 Dog 的 speak）
+    delete animal;
+}
+```
+
+- 纯虚函数是在基类中声明的虚函数，它在基类中没有定义，但要求任何派生类都要定义自己的实现方法。在基类中实现纯虚函数的方法是在函数原型后加 **=0**
+  - 包含纯虚函数的类没有办法被实例化， 只能成为一个抽象类。对应的派生类必须重写基类中的纯虚函数，否则会被直接当成抽象类，为下一层的派生类使用
+
+```cpp
+virtual void funtion1()=0;
+```
+
+
+
+## 继承
+
+继承即C++中一个类继承另一个类来实现功能。
+
+- 一个类(派生类)可以继承多个类(基类)
+
+- 继承方式可以有public, private以及protect三种，但是一般是只使用public
+
+  ```cpp
+  class derived-class: access-specifier base-class // 其中访问修饰符 access-specifier 是 public、protected 或 private 其中的一个
+  ```
+
+- **派生类可以访问基类中的成员函数以及变量(但具体需要看类的继承类型)。**
+
+  - **虽然类的继承类型存在一些不同，但无论什么继承类型派生类都不能访问基类的private私有成员。**
+
+  ![image-20250203162200688](./figure/image-20250203162200688.png)
+
+- 派生类可以重写基类的虚函数以及纯虚函数 **(当然对于纯虚函数而言是必须实现)**
+
+- **派生类**可以比基类中包含更多的成员变量以及成员函数
+
+- 派生类中其余与基类名称相同的函数会覆盖基类中的同名函数，并且派生类中的同名函数在返回类型与参数列表上都可以与基类中的同名函数不一样。
+
+  ```cpp
+  #include <iostream>
+  class Base
+  {
+  public:
+  	virtual void print()
+  	{
+  		std::cout << "Base print" << std::endl;
+  	}
+  
+  	void work()
+  	{
+  		std::cout << "Base do work..." << std::endl;
+  	}
+  };
+  
+  class Derived : public Base
+  {
+  public:
+  	virtual void print()
+  	{
+  		std::cout << "Derived print!" << std::endl;
+  	}
+  	void work()
+  	{
+  		std::cout << "Derived do work..." << std::endl;
+  	}
+  };
+  
+  int main()
+  {
+  	Base* pBase = new Derived();
+  	pBase->print();
+  	pBase->work();
+  	
+  	getchar();
+  	return 0;
+  }
+  
+  ```
+
+  - 这里pBase虽然是一个指向Base的指针, 但是通过 Base* pBase = new Derived() 其可以访问派生类Derived中对应的虚函数，可这里pBase->work();是无法调用派生类中对应的work()函数的，调用的还是自己基类中定义的work函数。当然可以使用dynamic_cast进行指针的转换，将基类指针转换成为派生类指针进行使用。
+  - 派生类实际上可以不定义自己的work函数，直接使用基类中的work函数，即实现了继承。这里相当于是实现了派生类对基类函数的重定义
+
+
+
+## pirvate/public/protected
+
+在类中使用这三种修饰符互相之间的区别
+
+![image-20250203165335999](./figure/image-20250203165335999.png)
+
+
+
+## Hash表使用
+
+- unordered_map的使用 | 对于unordered_map<int, int>这种 如果insert的一个未出现过的元素(key值)，那么其对应的数据会自动定义成为0。
+
+  - 初始化
+
+    ```cpp
+    // 基本声明
+    std::unordered_map<std::string, int> umap;
+    
+    // 初始化列表（C++11+）
+    std::unordered_map<std::string, int> umap = {
+        {"Alice", 25},
+        {"Bob", 30},
+        {"Charlie", 35}
+    };
+    
+    // 方法1：insert()
+    umap.insert({"David", 40});
+    
+    // 方法2：emplace()（更高效，直接构造键值对）
+    umap.emplace("Eve", 45);
+    
+    // 方法3：通过下标操作符[]
+    umap["Frank"] = 50;  // 若键不存在，会创建新键值对
+    ```
+
+    
+
+## explicit 关键字
+
+- 防止类中进行隐式的构造函数调用，即防止了由于C++自身的隐式类型转换，导致调用其他的构造函数(从C++11开始，也可以作用在多参数的构造函数上)
+
+  ```cpp
+  class MyClass {
+  public:
+      explicit MyClass(int x) { 
+          std::cout << "Constructed with " << x << std::endl; 
+      }
+  };
+  
+  int main() {
+      // MyClass obj = 5;  // 错误：无法隐式转换
+      MyClass obj(5);      // 正确：显式调用构造函数
+      return 0;
+  }
+  ```
+
+  ```cpp
+  class Vec3 {
+  public:
+      explicit Vec3(int x, int y, int z) { /* ... */ }
+  };
+  
+  void func(const Vec3& v) {}
+  
+  int main() {
+      // func({1, 2, 3});  // 错误：explicit 禁止隐式转换
+      func(Vec3{1, 2, 3}); // 正确：显式构造
+      return 0;
+  }
+  ```
+
+
+
+
+
+
+
+
+
+## C++ 类型转换
+
+### 隐式类型转换
+
+##### Numeric promotions
+
+- Integral promotion: 小整型转换成较大的整型
+
+  - **signed char** or **signed short** can be converted to int;
+
+  - **unsigned char** or **unsigned short** can be converted to int if it can hold(包括其所有的取值范围，没想到是使用hold) its entire value range, and unsigned int otherwise;
+
+  - **char** can be converted to int or unsigned int depending on the underlying type: signed char or unsigned char (see above);
+
+  - **wchar_t**, **char8_t** (since C++20), **char16_t**, and **char32_t** (since C++11) can be converted to the first type from the following list able to hold their entire value range: int, unsigned int, long, unsigned long, long long, unsigned long long (since C++11);
+
+- Floating-point promotion: 
+
+##### Numeric conversions
+
+数值转换可能有数据精度的损失(整型与浮点型在计算机中的表示方式不一样)
+
+- Integral conversion
+- Floating-point conversion
+
+### 显式类型转换
+
+Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
+
+- static_cast<type>(expression) 将expression转换成type类型（**静态转换，即在编译期进行转换，不会影响到运行期** —— dynamic_cast是在运行期转换的，但安全性上要高于static_cast）。
+  - 有一些转换也是做不到的 如"Hindoeiw"转换成int。（只要存在从expression 的类型到该 type 的隐式类型转换，那么static_cast这种方法基本就可以使用）
+  - 对于一些隐式类型做不到的，该方法也可能可以做到。隐式类型转换不能将一个void* 的数据转换成int* ,可以通过static_cast<int*>(...) 进行转换。
+  - 不能更改常量性（改变常量指针或者常量引用都不行）
+
+```cpp
+	int x = 3;
+	int y = 4;
+	std::cout<<3/4.0<<std::endl; // 一个常数除法，只需要其中一个是double，结果就是double类型
+	std::cout<<(static_cast<double>(x)/y)<<std::endl;
+```
+
+- dynamic_cast —— 运行期中使用的类型转换，增加了安全性的判断
+- const_cast —— 可以去除/增加常量性（但一定要注意去除常量性是一种很危险的行为，尤其是对一个const int类型的常量，使用const_cast去除指向其的指针或者对其的引用的常量性，来更改这个常量值——很危险）
+- reinterpret_cast —— 重新解释（主要用于指针的重新解释上）
+  - int指针改成double指针之后，指针解引用时会多读取本不属于int类型数据的四个字节(得到的结果很可能是错的)
+
+```cpp
+	int x = 3;
+	int* ptr = &x;
+	double* ptr2 = reinterpret_cast<double*>(ptr);
+	std::cout<<*ptr2<<std::endl;
+```
+
+> [!CAUTION]
+>
+> **C类型显示转换： ** C类型（类似于 (double)a 这种 ）中的显示转换不太支持使用——因为在CPP中使用c类型的转换，系统还是会默认转换成const_cast、static_cast等方法来完成转换；而且如果直接使用C类型的转换，有可能系统中默认使用了reinterpret_cast这种方法，导致莫名其妙的错误。
+
+
+
+
+
+## C++与C/Java之间的区别
+
+- C++与C的区别
+
+![image-20250204222409306](./figure/image-20250204222409306.png)
+
+- C++与Java的区别
+
+![image-20250204222529411](./figure/image-20250204222529411.png)
+
+
+
+
+
+## 深拷贝与浅拷贝
+
+- **浅拷贝是指将一个对象的成员变量的值直接复制到另一个对象中**。对于基本数据类型（如`int`、`float`等），浅拷贝即实现直接赋值。然而，对于指针类型的成员变量，浅拷贝仅仅复制指针的值（即地址），而不是指针所指向的内存内容，即两个指针指向同一块内存。
+  - 如果想安全地实现指针的浅拷贝，可以使用zhi真指针
+- 对于深拷贝而言，相当于实现独立的内存空间来获取数据。**C++ 的默认都是浅拷贝，深拷贝需要自行实现**
+
+
+
+
+
+## 类的构造函数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Cpp数据结构
 
 算法基础部分参考：https://www.hello-algo.com/chapter_hello_algo/
 
@@ -17,15 +626,6 @@
 
 
 
-
-## 面向对象基础
-
-- 补充一些面向对象基础知识部分，主要从《大话设计模式》开始阅读。**针对对象进行编程即面向对象编程, 类本身就是具有相同属性和功能的对象的抽象集合。**对于一个声明出的类来说，每次使用都需要一次实例化操作。
-
-### 类
-
-- 构造函数
-- 属性
 
 
 
@@ -1155,6 +1755,208 @@ for (auto it = lst.begin(); it != lst.end();) {
     
 
 
+
+#### 三数之和
+
+- 这个问题在于降重，使用hash表的话降重比较麻烦，随想录中双指针解决该问题的思路降重比较简单
+
+  ```
+  class Solution {
+  public:
+      /* 使用hash方法没有解决该问题 */
+  //    vector<vector<int>> threeSum(vector<int>& nums)
+  //    {
+  //        // int, vector<int> 前面数值 后面下标(可能出现相同元素下标)
+  //        unordered_map<int, vector<int> > search;
+  //        for(int i = 0; i < nums.size(); i++)
+  //        {
+  //          if(search.find(nums[i]) == search.end()){
+  //            search[nums[i]] = vector<int>{i};
+  //          }
+  //          else
+  //            search[nums[i]].push_back(i);
+  //        }
+  //
+  //        // 这里只能实现有关于不同下标的组合逻辑
+  //        vector<vector<int> > res = {};
+  //        for(int i = 0; i < nums.size(); ++i)
+  //        {
+  //            for(int j = i + 1; j < nums.size(); ++j)
+  //            {
+  //                int tmp = - nums[i] - nums[j];
+  //                if(search.find(tmp) != search.end())
+  //                {
+  //                    // note 这里不仅要求下标不同，还限制了数据不能相同 所以这样方法不能使用(这里最复杂的部分在于没有办法进行去重)
+  //                    for(auto k : search[tmp])
+  //                        if(k != i && k != j) res.push_back({nums[i], nums[j], nums[k]});
+  //                }
+  //            }
+  //        }
+  //        return res;
+  //    }
+      /* 随想录中给定的方法是直接使用双指针解决 */
+      vector<vector<int>> threeSum(vector<int>& nums)
+      {
+          // 首先进行排序
+          sort(nums.begin(), nums.end());
+          vector<vector<int>> res = {};
+          for(int i = 0; i < nums.size(); ++i)
+          {
+              if(nums[i] > 0) return res;
+              // 除去第一次i可以直接使用, 下一次的i需要去重
+  //            if(i > 0 && nums[i] == nums[i-1]) continue;
+              // note 之前这里用的是++i而不是continue 问题在于去重不够
+              while(i > 0 && nums[i] == nums[i-1])
+              {
+                  ++i;
+                  if(i > nums.size() - 1) return res;
+              }
+              int left = i + 1;
+              int right = nums.size() - 1;
+  
+              while(left < right)
+              {
+                  if(nums[i] + nums[left] + nums[right] > 0 ) --right;
+                  else if(nums[i] + nums[left] + nums[right] < 0 ) ++left;
+                  else
+                  {
+                      // 确定等于0那么即进行去重
+                      while(left < right && nums[left] == nums[left + 1]) ++left;
+                      while(left < right && nums[right] == nums[right - 1]) --right;
+                      // 去重之后一定要同时收缩
+                      res.push_back({nums[i], nums[left], nums[right]});
+                      ++left;
+                      --right;
+                  }
+              }
+          }
+          return res;
+      }
+  };
+  ```
+
+  
+
+#### 四数之和
+
+- 跟三数之和的思路相同，不过多了一层for循环
+
+  ```cpp
+  class Solution {
+  public:
+      vector<vector<int>> fourSum(vector<int>& nums, int target)
+      {
+          // note 思路与 15三树之和 非常相似
+          sort(nums.begin(), nums.end());
+          vector<vector<int>> res = {};
+  
+          for(int i = 0; i < nums.size(); ++i)
+          {
+              if(nums[i] > target && target >= 0) return res;
+              if(i > 0 && nums[i] == nums[i-1]) continue;
+              for(int j = i + 1; j < nums.size(); ++j)
+              {
+                  if(j - i > 1 && nums[j] == nums[j-1]) continue;
+                  int left = j + 1;
+                  int right = nums.size() - 1;
+                  while(left < right)
+                  {
+                      // note 最大的问题是数值直接相加可能导致的越界
+                      long long int temp = nums[i] + nums[j];
+                      temp = temp + nums[left] + nums[right];
+                      if(temp < target) ++left;
+                      else if(temp > target) --right;
+                      else
+                      {
+                          while(left < right && nums[left] == nums[left+1]) ++left;
+                          while(left < right && nums[right] == nums[right-1]) --right;
+                          res.push_back({nums[i], nums[j], nums[left], nums[right]});
+                          ++left;
+                          --right;
+                      }
+                  }
+              }
+          }
+          return res;
+      }
+  };
+  ```
+
+  
+
+## 字符串
+
+C与C++中保存字符串，前者使用字符数组，后者使用string来进行表示
+
+### 常见问题
+
+#### 反转字符串
+
+- 直接使用双指针解决该问题，两个指针一个从头一个从尾进行遍历，最后获取到结果。
+
+  ```cpp
+  class Solution {
+  public:
+      void reverseString(vector<char>& s)
+      {
+          // 即直接使用两个指针进行交互
+          if(s.empty()) return;
+          int left = 0;
+          int right = s.size()-1;
+          while(left < right)
+          {
+              int temp = s[right];
+              s[right] = s[left];
+              s[left] = temp;
+              ++left;
+              --right;
+          }
+      }
+  };
+  ```
+
+  
+
+#### 反转字符串2
+
+-  在前面的基础上增加了k的条件，即2k个元素中只有前k个需要反转，后k个不变。如果整体不够2k个元素，那么再分类进行讨论
+
+  ```cpp
+  class Solution {
+  public:
+      void trans(string & s, int left, int right)
+      {
+          while(left < right)
+          {
+              char temp = s[right];
+              s[right] = s[left];
+              s[left] = temp;
+              --right;
+              ++left;
+          }
+      }
+  
+      string reverseStr(string s, int k)
+      {
+          if(s.empty()) return s;
+          int left = 0;
+          int right = k - 1; // k个字符
+  
+          while(right < s.size())
+          {
+              trans(s, left, right);
+              left = left + 2*k;
+              right = right + 2*k;
+          }
+  
+          // 最后剩余的字符数量判断是否大于k
+          if(left < s.size() - 1) trans(s, left, s.size()-1);
+          return s;
+      }
+  };
+  ```
+
+  
 
 
 
@@ -2354,5 +3156,4 @@ https://blog.csdn.net/gongjianbo1992/article/details/105128849
 
 
 
-
-
+3. 关于using namespace std； 由于这种使用方法可能会直接不想要的命名空间中的内容全部引入，导致对一个大型项目中的命名空间被污染，所以可以使用其他方法来解决这种问题。**eg: 使用using std::string可以将后续中的所有的std::string都简化成为string。**
