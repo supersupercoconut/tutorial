@@ -16,7 +16,7 @@
 
 - 全局(静态) - 放置全局变量或者static定义的变量 - 这里对应变量的生命周期为整个程序运行期间
 
-- 常量区 - 用于保存一些常量
+- 常量区 - 用于保存一些字面值与在编译期就能确定的常量(部分const变量以及constexpr修饰的变量)
 
   - 这里说的常量是一些**字面值**，用const修饰的那些常量本质上应该属于是变量！！
 
@@ -62,7 +62,9 @@ shared_ptr | weak_ptr | unique_ptr
 
 ## static 静态
 
-- 对于局部变量: 增强了变量或者函数的生命周期，但是不会影响作用域 (注意其对应的内存地址会从栈变成静态存储区中)
+- 对于局部变量: 增强了变量的生命周期，但是不会影响作用域 (注意其对应的内存地址会从栈变成静态存储区中)
+
+  - **看看下面的例子，注意使用！！**
 
   ![image-20250130192814542](./figure/image-20250130192814542.png)
 
@@ -70,7 +72,7 @@ shared_ptr | weak_ptr | unique_ptr
 
   ```cpp
   void func() {
-      static int count = 0; // 静态局部变量
+      static int count = 0; // 静态局部变量(注意这里只有第一次使用的时候才会初始化，之后就只剩下赋值了!!)
       count++;
       std::cout << count << std::endl;
   }
@@ -92,9 +94,29 @@ shared_ptr | weak_ptr | unique_ptr
   extern int static_var;       // ❌ 链接错误！static_var 仅在 A.cpp 可见
   ```
 
-- 普通函数：static修饰的函数同样只能在该源文件中使用，不能在其他源文件中使用。
+- 普通函数：static修饰的函数同样只能在该源文件中使用，不能在其他源文件中使用。由于C++是从上向下的编译过程，所以这里static函数虽然只能在这个源文件中使用，我们还是需要将其放在最前面定义比较好。
 
-- 类中使用的静态成员变量/函数：static 修饰类中变量或者函数时，其作为该类实例化对象共有的部分。**静态成员函数需要在类外单独定义！！或者在类的构造函数中直接定义 (在第一次实例化这个类的时候就直接确定下来了)**
+    - 普通函数使用static的好处在于static修饰的函数只能在这里源文件中使用，多个文件同名的static函数之间并不会有冲突
+
+    ```cpp
+    #include <stdio.h>
+    static void bar() {  // ✅ 直接将 bar() 提前定义
+        printf("Hello from bar()\n");
+    }
+    
+    void foo() {
+        bar();  // ✅ OK，因为 bar() 已经被定义
+    }
+    
+    int main() {
+        foo();
+        return 0;
+    }
+    ```
+
+- 类中使用的静态成员变量/函数：static 修饰类中变量或者函数时，其作为该类实例化对象共有的部分。**静态成员变量需要在类外单独定义！！或者在类的构造函数中直接定义(类内定义只能static const才可以，只有一个static不行)**
+
+  - 类的静态成员变量是该类所有的对象共同拥有的类对象，并不是不能修改!!
 
   ```cpp
   // 头文件 MyClass.h
@@ -106,7 +128,7 @@ shared_ptr | weak_ptr | unique_ptr
   // 正确：在 MyClass.cpp 中定义
   // 文件 MyClass.cpp
   #include "MyClass.h"
-  int MyClass::static_var = 42; // ✅ 正确且唯一的定义
+  int MyClass::static_var = 42; // ✅ 正确且唯一的定义(注意这里并没有实例化这类)
   
   // 错误：在多个源文件中定义
   // 文件 Another.cpp
@@ -121,7 +143,7 @@ shared_ptr | weak_ptr | unique_ptr
   };
   ```
 
-- 注意： 类中的static函数只能访问static的成员变量
+- 注意： **类中的static函数只能访问static的成员变量**
 
   ![image-20250130193134993](./figure/image-20250130193134993.png)
 
@@ -129,7 +151,7 @@ shared_ptr | weak_ptr | unique_ptr
 
 ## const与constexpr 
 
-- const表示变量会是一个常量，而constexpr表示其修饰的是一个常量表达式。简单而言 const修饰的变量可以在运行期确定，**但是对于constexpr修饰的变量或者函数必须在编译期就确定下来，并且const并没有办法修饰函数**。
+- const表示变量会是一个常量，而constexpr表示其修饰的是一个常量表达式。简单而言 const修饰的变量可以在运行期确定(也可以是编译期就确定)，**但是对于constexpr修饰的变量或者函数必须在编译期就确定下来，并且const并没有办法修饰函数**。
 
   ```cpp
   int getRuntimeValue() { return 42; }  // 普通函数，运行时计算
@@ -237,7 +259,7 @@ shared_ptr | weak_ptr | unique_ptr
   - 指针与引用传递之间的区别为 指针可以随意更换指向的对象，但是引用不能不进行初始化，一旦进行初始化之后就无法更改指向对象。
 
   ```
-  // 补充C++函数中经常使用的常量引用 - 放置通过引用修改引用对象的值
+  // 补充C++函数中经常使用的常量引用 - 避免通过引用修改引用对象的值
   void readData(const vector<int> &data) {  // 避免拷贝，且不能修改 data
       // 只能读取 data
   }
@@ -288,7 +310,7 @@ shared_ptr | weak_ptr | unique_ptr
 
 ​    
 
-## 指针
+## 指针/引用
 
 - 野指针与悬空指针
   - 野指针 - 未进行初始化的指针
@@ -309,12 +331,39 @@ shared_ptr | weak_ptr | unique_ptr
   int result = funcPtr(3, 4);  // 通过函数指针调用 add 函数
   std::cout << "Result: " << result << std::endl;  // 输出：7
   ```
+  
+- 引用
+
+  - **在使用引用中, 在定义的时候需要直接指定好对象，后续不可以修改 (这里与指针不一样)**
+
+  ```cpp
+  int a = 10;
+  int& ref = a;   // 正确：引用绑定到变量a
+  int& invalidRef; // 错误：引用未初始化，编译失败
+  
+  int a = 10, b = 20;
+  int& ref = a;
+  ref = b; // 实际是将a的值改为20，而非让ref指向b！
+  ```
+
+  - 引用中注意引用对象生命周期是否结束
+
+  ```cpp
+  int& createDanglingRef() {
+      int local = 42;
+      return local; // 返回局部变量的引用，函数结束后local被销毁
+  }
+  int& badRef = createDanglingRef(); // badRef是悬空引用
+  std::cout << badRef; // 未定义行为！
+  ```
+
+  
 
 
 
 ## 堆空间分配 
 
-new malloc delete free，其中new与malloc是C++新引入的部分
+new malloc delete free，其中new与delete是C++新引入的部分
 
 
 
@@ -324,7 +373,7 @@ new malloc delete free，其中new与malloc是C++新引入的部分
 
 ## 虚函数以及纯虚函数
 
-- **派生类可以重写也可以不重写直接调用基类中的虚函数，**并且基类可以被实例化。通过基类的引用或者指针直接访问派生类中的**虚函数**。
+- **派生类可以重写也可以不重写直接调用基类中的虚函数，**并且基类可以被实例化。通过基类的引用或者指针直接访问派生类中重写的**虚函数**。
   - **在运行期中**，animal->speak() 才能确定被调用的哪一个派生类或者基类中的speak()函数
   - 使用**virtual**关键字表示
 
@@ -536,7 +585,7 @@ virtual void funtion1()=0;
 - Integral conversion
 - Floating-point conversion
 
-### 显式类型转换
+### 显式类型转换(这里还是不太明确)
 
 Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
 
@@ -584,12 +633,10 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 
 
-
-
 ## 深拷贝与浅拷贝
 
 - **浅拷贝是指将一个对象的成员变量的值直接复制到另一个对象中**。对于基本数据类型（如`int`、`float`等），浅拷贝即实现直接赋值。然而，对于指针类型的成员变量，浅拷贝仅仅复制指针的值（即地址），而不是指针所指向的内存内容，即两个指针指向同一块内存。
-  - 如果想安全地实现指针的浅拷贝，可以使用zhi真指针
+  - 如果想安全地使用指针的浅拷贝，可以使用智能指针来保证安全性
 - 对于深拷贝而言，相当于实现独立的内存空间来获取数据。**C++ 的默认都是浅拷贝，深拷贝需要自行实现**
 
 
@@ -598,6 +645,134 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 ## 类的构造函数
 
+在C++中类的构造函数一般有五种，分别用于类的构造。
+
+- 默认构造函数
+
+    - 自己没有显式定义，系统会自动生成默认的构造函数
+    - 自己定义的默认构造函数要求 要么没有参数 要么所有的参数都有默认值
+
+    ```cpp
+    Student();//没有参数
+    Student(int num=0;int age=0);//所有参数均有默认值
+    ```
+
+- 一般构造函数
+
+    - 即包含一到多个参数的构造函数，即对应最常见的构造函数
+
+- 拷贝构造函数
+
+    - 拷贝初始化一般是使用一个已经定义的类对象对当前对象进行初始化。如果没有自定义拷贝构造函数，默认的拷贝构造函数一般使用的是**浅拷贝**，**如果出现指针变量对象即会出现两个指针指向同一块内存的情况，很容易出现悬空指针的情况。**
+    - **对于一个类没有显式定义拷贝构造函数的话，系统会自动生成一个默认的拷贝构造函数。**
+    - **显式调用拷贝构造函数 / 隐式调用拷贝构造函数:  **这两者的区别是使用()以及=，但是这两者最后都会调用拷贝构造函数。
+
+    ```cpp
+    // 显式调用拷贝构造函数
+    Complex c2(c1);
+    // 隐式调用拷贝构造函数
+    Complex c2 = c1;
+    ```
+
+    
+
+    ```cpp
+    #include <iostream>
+    using namespace std;
+    
+    class Complex {
+    private:
+        double real;
+        double imag;
+    
+    public:
+        Complex() : real(0), imag(0) {
+            cout << "Default Constructor called!" << endl;
+        }
+    
+        Complex(double r, double i) : real(r), imag(i) {
+            cout << "Parameterized Constructor called!" << endl;
+        }
+    
+        // 拷贝构造函数
+        Complex(const Complex &other) : real(other.real), imag(other.imag) {
+            cout << "Copy Constructor called!" << endl;
+        }
+    
+        void display() const {
+            cout << "Real: " << real << ", Imag: " << imag << endl;
+        }
+    };
+    
+    int main() {
+        Complex c1(3.0, 4.0); // 调用参数化构造函数
+    
+        Complex c2(c1);       // 直接初始化，调用拷贝构造函数
+        Complex c3 = c1;      // 拷贝初始化，调用拷贝构造函数
+    
+        c2.display();
+        c3.display();
+    
+        return 0;
+    }
+    ```
+
+- 转换构造函数
+
+    - 用于初始化的变量不是构造函数对应的形参类型，但是C++自己通过隐式转换将输入变量转换到类的构造函数所需要的形参类型进行初始化，如果想避免这种情况即可以使用explicit防止。
+
+    ```cpp
+    class MyClass {
+    public:
+        int value;
+        MyClass(int v) : value(v) {} // 转换构造函数
+    };
+    
+    void func(MyClass obj) {
+        cout << "Value: " << obj.value << endl;
+    }
+    
+    int main() {
+        func(10); // 隐式调用转换构造函数，将int转换为MyClass
+        return 0;
+    }
+    ```
+
+- 移动构造函数
+
+    - 主要使用是将其他对象的内存资源用在这个对象上，避免之前由于深拷贝内存需要重新设置一份影响执行效率
+    - 函数的定义方式与拷贝构造函数相似，但是其对应的形参是一种右值引用
+
+    ```cpp
+    ClassName(ClassName &&other);
+    ```
+
+- 赋值运算符重载
+
+    -  **这里调用赋值运算符与拷贝构造函数中的赋值完全不一样，这里要求左右两边的对象都是被创建好了，如果没有显式实现一个赋值运算符的重载，系统本身也是会自动生成一个默认的赋值运算符来完成拷贝工作(当然也是浅拷贝)**
+
+    ```cpp
+    A a1, A a2; a1 = a2;//调⽤赋值运算符
+    A a3 = a1;//调⽤拷⻉构造函数，因为进⾏的是初始化⼯作，a3在使用之前并未存在
+    ```
+
+- **补充对于类的使用：**
+
+    - 这里相当于使用A()后形成一个临时变量，再将这个临时变量赋值给a变量。当然在编译器优化中，这个临时变量的参与过程会被自动的优化掉。
+
+    ```cpp
+    struct A {
+        A(int a = 0) {
+            a_ = a;
+        }
+     
+        int a_;
+    };
+    
+    A a = A(); 
+    ```
+
+    
 
 
 
@@ -605,6 +780,220 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 
 
+## 类的成员初始化列表
+
+- 在C++的类构造函数中可以直接初始化类的成员变量，而不是在类的构造函数体内使用赋值语句进行初始化
+
+    ```cpp
+    // 其中member1与member2对应的是类的成员变量
+    ClassName::ClassName(value1, value2) : member1(value1), member2(value2), ... {
+        // 构造函数体
+    }
+    ```
+
+    
+
+
+
+
+
+## 左/右值引用
+
+- 左值与右值
+
+    - 左值：能取地址的为左值
+    - 右值：不能直接取地址的为右值
+
+    ```cpp
+    // a为左值 5为右值
+    int a = 5;
+    // a为左值 A()形成的临时变量是一个右值
+    struct A {
+        A(int a = 0) {
+            a_ = a;
+        }
+     
+        int a_;
+    };
+    A a = A();
+    ```
+
+- 左值引用/右值引用
+
+    - 左值引用
+
+        - 除去const对应的左值引用是可以指向右值的
+
+        ```cpp
+        const int &ref_a = 5;  // 编译通过
+        ```
+
+        ```cpp
+        int a = 5;
+        int &ref_a = a; // 左值引用指向左值，编译通过
+        int &ref_a = 5; // 左值引用指向了右值，会编译失败
+        ```
+
+    - 右值引用：使用 &&，其可以指向右值，但是不能指向左值
+
+        ```cpp
+        int &&ref_a_right = 5; // ok
+         
+        int a = 5;
+        int &&ref_a_left = a; // 编译不过，右值引用不可以指向左值
+         
+        ref_a_right = 6; // 右值引用的用途：可以修改右值
+        ```
+
+    - **被声明出来的左值引用与右值引用都是左值，其都是可以取地址的，故其都是左值**。但是对于充当函数返回值的右引用值，其对应的数据就是右值。比如std::move()其返回都就是一个右值引用，其就是右值。
+
+        ```cpp
+        // 形参是个右值引用
+        void change(int&& right_value) {
+            right_value = 8;
+        }
+         
+        int main() {
+            int a = 5; // a是个左值
+            int &ref_a_left = a; // ref_a_left是个左值引用
+            int &&ref_a_right = std::move(a); // ref_a_right是个右值引用
+         
+            change(a); // 编译不过，a是左值，change参数要求右值
+            change(ref_a_left); // 编译不过，左值引用ref_a_left本身也是个左值
+            change(ref_a_right); // 编译不过，右值引用ref_a_right本身也是个左值
+             
+            // 之类std::move(xx)返回的是个临时变量，没有办法对其进行取地址，所以其是一个右值
+            change(std::move(a)); // 编译通过
+            change(std::move(ref_a_right)); // 编译通过
+            change(std::move(ref_a_left)); // 编译通过
+         
+            change(5); // 当然可以直接接右值，编译通过
+            cout << &a << ' ';
+            cout << &ref_a_left << ' ';
+            cout << &ref_a_right;
+            // 打印这三个左值的地址，都是一样的
+        }
+        ```
+
+- std::move() 
+
+    - 其本身并不会改变程序的性能，其只会将一个左值转换成为右值，相当于C++中的static_cast<T &&>的类型转换，真正让程序效率提升的部分还是引用本身。
+
+    - 以**移动构造函数为例**，使用右值引用从当函数的形参即可以读取左值又可以右值，虽然左值引用也属于引用，可以避免拷贝。但是右值引用更加方便！！！ 即**对象在<需要拷贝且被拷贝者之后不再被需要>的场景，建议使用**`std::move`**触发移动语义，提升性能！！！std::move()本身只是一种类型转换的功能**
+
+        ```cpp
+        /* 右值引用体现其优越性 */ 
+        void f(const int& n) {
+            n += 1; // 编译失败，const左值引用不能修改指向变量
+        }
+        
+        void f2(int && n) {
+            n += 1; // ok
+        }
+        
+        int main() {
+            f(5);
+            f2(5);
+        }
+        ```
+
+        ```cpp
+        // 一个数组对象需要拷贝进行的初始化
+        class Array {
+        public:
+            Array(int size) : size_(size) {
+                data = new int[size_];
+            }
+             
+            // 深拷贝构造
+            Array(const Array& temp_array) {
+                ...
+            }
+             
+            // 深拷贝赋值
+            Array& operator=(const Array& temp_array) {
+                ...
+            }
+         
+            // 移动构造函数，可以浅拷贝 —— 但是const对象没有办法修改，这里temp_array.data_ = nullptr;完全不能实现
+            Array(const Array& temp_array, bool move) {
+                data_ = temp_array.data_;
+                size_ = temp_array.size_;
+                // 为防止temp_array析构时delete data，提前置空其data_      
+                temp_array.data_ = nullptr;
+            }
+             
+         
+            ~Array() {
+                delete [] data_;
+            }
+         
+        public:
+            int *data_;
+            int size_;
+        };
+        
+        
+        // 但是如何使用右值引用完全不需要担心，直接转换内存地址的所有权即可
+        class Array {
+        public:
+            ......
+         
+            // 优雅
+            Array(Array&& temp_array) {
+                data_ = temp_array.data_;
+                size_ = temp_array.size_;
+                // 为防止temp_array析构时delete data，提前置空其data_      
+                temp_array.data_ = nullptr;
+            }
+             
+         
+        public:
+            int *data_;
+            int size_;
+        };
+        
+        // 具体使用
+        // 例1：Array用法
+        int main(){
+            Array a;
+         
+            // 做一些操作
+            .....
+             
+            // 左值a，用std::move转化为右值
+            Array b(std::move(a));
+        }
+        ```
+
+        ```cpp
+        // 例2：std::vector和std::string的实际例子
+        int main() {
+            std::string str1 = "aacasxs";
+            std::vector<std::string> vec;
+             
+            vec.push_back(str1); // 传统方法，copy
+            vec.push_back(std::move(str1)); // 调用移动语义的push_back方法，避免拷贝，str1会失去原有值，变成空字符串
+            vec.emplace_back(std::move(str1)); // emplace_back效果相同，str1会失去原有值
+            vec.emplace_back("axcsddcas"); // 当然可以直接接右值
+        }
+         
+        // std::vector方法定义
+        void push_back (const value_type& val);
+        void push_back (value_type&& val);
+         
+        void emplace_back (Args&&... args);
+        ```
+        
+        
+
+
+
+
+
+
+
+****
 
 
 
