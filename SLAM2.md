@@ -209,7 +209,7 @@ lidar 动态物体很多 | 录制RTCM数据(确认一下)
 
 PS: 简单而言，其会直接使用
 
-- 标定命令：
+- 标定全景相机与avia：
 
 ```
 1. 选择对应的相机模型 
@@ -219,10 +219,17 @@ docker run --rm --net host --gpus all -e DISPLAY=$DISPLAY -v $HOME/.Xauthority:/
 3. 精确标定
 docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed  koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration calibrate /tmp/preprocessed
 4. 显示
-docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority /home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration viewer /tmp/preprocessed
+docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority -v/home/supercoconut/Myfile/datasets/360/output:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration viewer /tmp/preprocessed
 ```
 
+- 标定D435i与avia
 
+```
+1. docker run   -it   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/new/2-11/new/calib:/tmp/input_bags   -v /home/supercoconut/Myfile/datasets/new/2-11/new/result/:/tmp/preprocessed    koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration preprocess -av --camera_model plumb_bob   --camera_intrinsic 607.79772949218,607.83526613281,328.79772949218,245.53321838378 --camera_distortion_coeffs 0.0,0.0,0.0,0.0,0.0 /tmp/input_bags /tmp/preprocessed
+
+2. 
+
+```
 
 
 
