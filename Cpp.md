@@ -161,7 +161,11 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
   inline int functionName(int first, int secend,...) {/****/};
   ```
 
-- inline函数在多个源文件中使用，需要保证多个多源文件中inline函数的定义
+- inline函数在多个源文件中使用，需要保证多个多源文件中inline函数的定义全部相同。inline函数本身的可以作用域就是整个Cpp项目，所以需要保证多个源文件中的Inline函数定义完全相同，或者使用static inline函数来单独在一个源文件使用
+
+- **在实际使用中一般会将小函数定义成为inline函数 (与调用这个函数本身相比，这个函数本身的执行过程所需要时间更短)**
+
+
 
 
 
@@ -280,6 +284,8 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
       // 只能读取 data
   }
   ```
+
+- **注意突出形参是否能进行修改，值传递并没有修改形参，后续两种方式都没有办法修改形参**
 
 
 
@@ -639,7 +645,9 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 ## C++与C/Java之间的区别
 
-- C++与C的区别
+- C++与C的区别 回答的方面有很多
+  - 可以从面向过程(函数)还是面向对象来进行解释
+
 
 ![image-20250204222409306](./figure/image-20250204222409306.png)
 
@@ -836,7 +844,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 - 左值引用/右值引用
 
-    - 左值引用
+    - 左值引用 : **所谓的左值引用就是定义一个引用，其直接指向一个左值 (对于一个函数返回值如果其返回左值就能复制给左值引用)**
 
         - 除去const对应的左值引用是可以指向右值的
 
@@ -983,7 +991,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
         ```
 
         ```cpp
-        // 例2：std::vector和std::string的实际例子
+        // 例2：std::vector和std::string的实际例子 因为std::move()会返回一个右值，故函数会匹配上这里的右值引用为参数的构造函数
         int main() {
             std::string str1 = "aacasxs";
             std::vector<std::string> vec;
@@ -1002,6 +1010,82 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
         ```
         
         
+
+## 移动语义与完美转发
+
+- 移动语义 
+
+  - 很典型的例子就是移动构造函数，通过使用这个构造函数将直接将一个数据从一个对象转换到该对象手里，**避免了使用拷贝(无论是深浅)导致的时间浪费**
+
+    - std::move() 这里是直接将一个左值转换成为一个右值处理，转换成为右值之后会自动调用使用右值引用的函数处进行后续处理
+
+    ```cpp
+    #include <iostream>
+    #include <vector>
+     
+    class MyObject {
+    public:
+        MyObject() {
+            std::cout << "Default Constructor" << std::endl;
+        }
+     
+        MyObject(const MyObject& other) {
+            std::cout << "Copy Constructor" << std::endl;
+        }
+     
+        MyObject(MyObject&& other) noexcept {
+            std::cout << "Move Constructor" << std::endl;
+        }
+     
+        MyObject& operator=(const MyObject& other) {
+            std::cout << "Copy Assignment Operator" << std::endl;
+            // 这里返回*this指针完全是赋值运算符自身要求，属于C++的特性之一
+            return *this;
+        }
+     
+        MyObject& operator=(MyObject&& other) noexcept {
+            std::cout << "Move Assignment Operator" << std::endl;
+            return *this;
+        }
+    };
+     
+    int main() {
+        MyObject obj1;
+        MyObject obj2(std::move(obj1));  // 移动构造函数
+     
+        MyObject obj3;
+        obj3 = std::move(obj2);  // 移动赋值运算符 (这里相当于使用的是运算符重载，obj3与obj2都是已经定义的对象，并不会调用拷贝构造函数)
+     
+        std::vector<MyObject> vec;
+        vec.push_back(std::move(obj3));  // 向容器中移动对象
+     
+        return 0;
+    }
+    ```
+
+- 完美转发 std::forward
+
+
+
+
+
+## 运算符重载
+
+- 用赋值运算符举例
+
+  - **重载运算符有一个返回类型和一个参数列表**, 对于C++中的赋值运算符而言，其会直接支持 a = b = c 的连续赋值操作，其中b=c会返回b本身的值，即需要重载使用的运算符也得要能支持这种操作，故这里需要返回*this
+
+  ```cpp
+  MyObject& operator=(const MyObject& other) {
+      std::cout << "Copy Assignment Operator" << std::endl;
+      // 这里返回*this指针完全是赋值运算符自身要求，属于C++的特性之一
+      return *this;
+  }
+  ```
+
+  
+
+
 
 
 
@@ -1087,6 +1171,20 @@ auto&& matrix_tmp = H_T_H.block<6,6>(0,0);
 
 
 
+
+## swap()函数
+
+在C++中有一个非常方便交换两个变量值的函数 swap()，其对应的函数原型如下，从其就可以分析支持的变量类型基本上无限的。
+
+```cpp
+template<class T>
+void swap(T &a,T &b)
+{
+    T c(a);
+    a=b;
+    b=c;
+}
+```
 
 
 
@@ -2759,7 +2857,7 @@ PS：感觉有一些像大小顶堆
 ### 存储方式
 
 - 线性存储 | 顺序存储 ： 使用数组储存表中元素
-- 链性存储 : 用指针方式实现
+- 链性存储 : 用链表节点的方式实现
 
 ```cpp
 struct TreeNode {
@@ -2805,6 +2903,95 @@ struct TreeNode {
 **刷题**
 
 - 代码随想录中给出来的方法一般都是在递归开始的时候确定这个节点是不是为nullptr(应对node为叶子节点的左右子树) | 这种表示方法在一定程度上是比在进入递归的时候先去判断node->left或者node->right是不是为空要更方便一些(至少在代码上是简化的)
+
+
+
+
+
+
+
+
+
+### 常见问题
+
+#### 递归遍历
+
+- 对应的三种遍历方式都是非常好进行实现的，只不过是中间节点的位置有些不同。
+
+  ```cpp
+  // 前序遍历
+  class Solution {
+  public:
+  
+      void traverse(TreeNode* node, vector<int>& res)
+      {   
+          if(node == nullptr) return;
+          res.push_back(node->val);
+          traverse(node->left, res);
+          traverse(node->right, res);
+      }
+  
+  
+      vector<int> preorderTraversal(TreeNode* root) 
+      {
+          // 前序遍历 说明中在前 再左至右
+          if(root == nullptr) return {};
+          vector<int> res = {};
+          traverse(root, res);
+          return res;
+      }
+  };
+  ```
+
+  ```cpp
+  // 中序遍历
+  class Solution {
+  public:
+  
+      void traverse(TreeNode* node, vector<int>& res)
+      {
+          if(node == nullptr) return;
+          traverse(node->left, res);
+          res.push_back(node->val);
+          traverse(node->right, res);
+      }
+  
+      vector<int> inorderTraversal(TreeNode* root) {
+          if(root == nullptr) return {};
+          vector<int> res = {};
+          traverse(root, res);
+          return res;
+      }
+  };
+  ```
+
+  ```cpp
+  // 后序遍历
+  class Solution {
+  public:
+  
+      void traverse(TreeNode* node, vector<int>& res){
+          // 后序遍历, 中间节点最后读取
+          if(node == nullptr) return;
+          traverse(node->left, res);
+          traverse(node->right, res);
+          res.push_back(node->val);
+      }
+  
+      vector<int> postorderTraversal(TreeNode* root) {
+          vector<int> res = {};
+          if(root == nullptr) return res;
+          traverse(root, res);
+          return res;
+      }
+  };
+  ```
+
+  
+
+
+
+
 
 
 
