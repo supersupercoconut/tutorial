@@ -58,6 +58,129 @@ shared_ptr | weak_ptr | unique_ptr
 
 - weak_ptr 即保证其指向这块内存不会改变其对应的引用计数，就是使用时需要调用lock()转换成为shared_ptr使用
 
+### 使用
+
+- **注意这里智能指针指向的对象一般是堆上的内存开辟的，毕竟智能指针是利用RAII来安全管理数据，如果其保留在栈上，系统本身就可以自动管理**
+
+  ```cpp
+  std::unique_ptr<int> ptr = std::make_unique<int>(42);
+  
+  std::shared_ptr<std::vector<int>> data = 
+  std::make_shared<std::vector<int>>(100);
+  ```
+
+  
+
+## RAII 
+
+- 所谓的RAII，从其对应的英文字符上就可以判断出来，资源获取即是初始化(resource acquisition is initialization) | Resource Acquisition Is Initialization（RAII）是C++中管理资源的重要范式。该模式的核心思想是**将资源获取与对象生命周期绑定，通过构造函数获取资源，析构函数释放资源**。这种机制可以确保即使在异常发生时，资源也能被正确释放
+  - 很简单的例子就是智能指针与互斥锁
+    - 如果通过new与delete手动开辟堆上面的内存, 很容易出现开辟但是忘记释放，可以使用智能指针解决这种问题。
+    - 互斥锁即多线程中应该使用一个mutex变量调用lock()与unlock()来控制资源只能同时被一个线程进行修改，如果忘记释放也会导致死锁问题，故可以使用lock_guard()与unique_lock()解决
+
+
+
+
+
+## 互斥锁
+
+- C++标准库提供了**两种基于RAII的锁管理类：lock_guard和unique_lock。**理解它们的区别对编写高效、安全的并发代码至关重要
+
+  ```cpp
+  // 常规上锁:
+  std::mutex mtx;
+  void safe_increment() {
+      mtx.lock();
+      // 临界区操作
+      mtx.unlock();
+  }
+  ```
+
+  - lock_gurad 相当于是非常简单的锁使用，只是没有想到其是一种类对象，其声明时相当于上锁**(调用构造函数)**，声明周期结束即可以认为解锁**(调用析构函数)**，比前者更加安全。**lock_guard 最适合在明确定义的作用域内进行简单的锁管理, 使用非常简单**
+
+  ```cpp
+  std::mutex mtx;
+  void safe_access() {
+      {
+          std::lock_guard<std::mutex> lock(mtx);
+          // 临界区操作
+      } // 自动解锁
+      // 其他非临界区操作
+  }
+  ```
+
+  ```cpp
+  // 类对象直接创建使用
+  template<class Mutex>
+  class lock_guard {
+  public:
+      explicit lock_guard(Mutex& m) : mutex(m) {
+          mutex.lock();
+      }
+      
+      ~lock_guard() {
+          mutex.unlock();
+      }
+      
+      lock_guard(const lock_guard&) = delete;
+      lock_guard& operator=(const lock_guard&) = delete;
+  
+  private:
+      Mutex& mutex;
+  };
+  ```
+
+- unique_lock 是C++中更加高级的锁管理器。相比于lock_guard，其可以延迟加锁、定时加锁与尝试加锁，并且可以转移锁的控制权。
+
+  - 其在声明的时候，可以选择当前不获取锁，后续可以手动上锁或者使用一个定时器延迟一段时间之后上锁
+  - 甚至其可以作为函数的返回值进行返回，相当于将这个锁继续后续使用，即延长了这个锁的使用时间，在最后析构的时候，其仍然会自动解锁。
+
+  ```cpp
+  int n;
+  std::mutex some_mutex;
+  
+  void prepare_data()
+  {
+      cout << n++ << endl;
+  }
+  
+  void do_something()
+  {
+      cout << n++ << endl;
+  }
+  
+  std::unique_lock<std::mutex> get_lock()
+  {
+      std::unique_lock<std::mutex> lk(some_mutex);//与lock_guard相同，构造时获取锁
+      cout << "owns_lock? " << lk.owns_lock() << endl;//1
+      prepare_data();
+      return lk;
+  }
+  
+  int main()
+  {
+      //unique_lock基本使用
+      std::mutex mutex2;
+      std::unique_lock<std::mutex> lock2(mutex2, std::defer_lock);//告诉构造函数暂不获取锁
+      cout << "owns_lock? " << lock2.owns_lock() << endl;//0
+      lock2.lock();//手动获取锁
+      std::cout << "owns_lock? " << lock2.owns_lock() << endl;//1
+      lock2.unlock();//手动解锁
+      cout << "owns_lock? " << lock2.owns_lock() << endl;//0
+      //锁所有权转移到函数外部
+      std::unique_lock<std::mutex> lk(get_lock());//
+      do_something();
+  }
+  //析构
+  //lock2未获取锁mutex2，因此不会调用unlock
+  //lk对象持有锁some_mutex，调用unlock
+  
+  ```
+
+  
+
+
+
 
 
 ## static 静态
@@ -662,6 +785,35 @@ virtual void funtion1()=0;
 - Integral conversion
 - Floating-point conversion
 
+
+
+### 显示类型转换
+
+- C++经常使用的转换类型一般有四种，static_cast, dynamic_cast，const_cast以及reinterpret_cast类型之间的转换。**除去dynamic_cast是运行期确定的，其余都是编译期确定的**
+
+  - static_cast : 基本类型之间的转换或者是**基类与派生类的指针或引用**之间的转换，可以进行向上转换以及向下转换
+
+    - 向上转换是安全的 ，向上转换主要是派生类到基类的转换，由于派生类指向的对象是要多余基类的，使用指针或者引用的话，直接转换是安全的。
+    - 向下转换是不安全的，因为基类指针可以指向派生类，但是也可以直接指向的基类，这种情况可以直接使用dynamic_cast进行分析
+
+  - dynamic_cast : **多态类之间的转换，尤其是基类的指针或引用转换到派生类的指针或者引用**
+
+    - 同样可以向上转换，与static_cast没有区别
+    - 向下转换是安全的 —— 会进行安全检查，但是要求**基类必须包含虚函数**
+
+  - const_cast : 用于去除常量性，但是其不会直接去除常量自身的常量性，去除的主要是其对应的指针或引用的常量性
+
+    ```cpp
+    const int a = 10;
+    const int * p = &a;
+    *p = 20;                  //compile error(p目前还是一个常量指针)
+    int b = const_cast<int>(a);  //compile error(a的常量性不可以改变)
+    ```
+
+  - reinterpret_cast : 用于完全不想关变量类型的转换，比如从整形转换成为指针或者引用。
+
+
+
 ### 显式类型转换(这里还是不太明确)
 
 Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
@@ -1116,7 +1268,6 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
         void emplace_back (Args&&... args);
         ```
         
-    
     - std::move()的实现原理为: 即无论输入的参数是左值还是右值都同意转换成右值
     
       ```cpp
@@ -1313,9 +1464,9 @@ auto&& matrix_tmp = H_T_H.block<6,6>(0,0);
 ## 二叉树的基本结构
 
 - 满二叉树
-- 平衡二叉树
-- 完全二叉树
-- 二叉搜索树
+- 平衡二叉树 : 其要求的是左右子树的高度差 
+- 完全二叉树 
+- 二叉搜索树 :  其要求的是左右节点的值
 
 - 平衡二叉树搜索树
 - 二叉树的存储方式(两种)
@@ -1364,6 +1515,10 @@ void swap(T &a,T &b)
 ## 内存对齐
 
 **即数据储存的起始地址可以整除数据实际按照占据的字节数**——对应的好处就是方便CPU一次读取就尽可能地直接获取到这个数据
+
+
+
+
 
 
 
@@ -3034,7 +3189,7 @@ PS：感觉有一些像大小顶堆
 ![image-20240916210506436](figure/image-20240916210506436.png)
 
 - 二叉搜索树 | 平衡二叉搜索树
-    - 二叉搜索树：二叉树中的左子树的值小于中间节点，右子树的值大于中间节点。但是对于数据；排列非常不平衡的情况下，即虽然是二叉树但是数据过于特殊，将这个二叉树退化成了一个链表形状 —— 其对应的搜索效率就从 O(log n)退化成 O(n)
+    - 二叉搜索树：二叉树中的左子树的值小于中间节点，右子树的值大于中间节点。但是对于数据；排列非常不平衡的情况下，即虽然是二叉树但是数据过于特殊，将这个二叉树退化成了一个链表形状 —— 其对应的搜索效率就从 O(log n)退化成 O(n)，所以需要一种平衡二叉树来解决问题
     - 平衡二叉搜索树：解决上述二叉搜索树中的左右子树差距过大的情况而产生的数据结构，可以保证搜索数据基本可以维持在O(log n) —— **C++中的set、map、multi-set、multi-map都是类似的方式 **
 
 - 高度 | 深度 (但是在leetcode中节点的深度与高度都是从1开始的)
@@ -3179,11 +3334,158 @@ struct TreeNode {
   };
   ```
 
+
+
+
+#### 迭代遍历
+
+- 除去这三种递归遍历，还可利用栈进行迭代遍历 - 元素放入栈中的顺序是从上到下的，对于前序遍历比较简单，但是对于中序以及后序遍历，遍历到的元素并不能直接放入结果中，可以直接利用一个set判断这个元素是否被遍历过
+
+  ```cpp
+  void myTravsel(TreeNode* node, vector<int>& res)
+  {
+      if(node == nullptr) return;
+      stack<TreeNode*> st;
+      st.push(node);
+      while(!st.empty())
+      {
+          auto temp = st.top();
+          st.pop();
+          res.push_back(temp->val);
+          if(temp->right != nullptr) st.push(temp->right);
+          if(temp->left != nullptr) st.push(temp->left);
+      }
+  }
+  ```
+
+  ```cpp
+  // 包含了对于一些节点重入栈与出栈，保证整体的流程还是左中右
+  void myTravseral(TreeNode* root, vector<int>& res)
+  {
+      if(root == nullptr) return;
+      stack<TreeNode*> st;
+      unordered_set<TreeNode*> used;
+      st.push(root);
+      while(!st.empty())
+      {
+          auto temp = st.top();
+          st.pop();
+          if(used.find(temp) == used.end()) used.insert(temp);
+          else
+          {
+              res.push_back(temp->val);
+              continue;
+          }
+          if(temp->right != nullptr) st.push(temp->right);
+          st.push(temp);
+          if(temp->left != nullptr) st.push(temp->left);
+      }
+  }
+  ```
+
+  ```cpp
+  // 相对随想录上面的方法，这种就直接按照从上到下的顺序进行分析，中间节点重复一次输入栈的过程
+  void myTraversal(TreeNode* root, vector<int>& res)
+  {
+      if(root == nullptr) return;
+      stack<TreeNode*> s;
+      unordered_set<TreeNode*> used;
+      s.push(root);
+      while(!s.empty())
+      {
+          auto tmp = s.top();
+          s.pop();
+  
+          if(used.find(tmp) == used.end()) used.insert(tmp);
+          else
+          {
+              res.push_back(tmp->val);
+              continue;
+          }
+  
+          s.push(tmp);
+          if(tmp->right) s.push(tmp->right);
+          if(tmp->left) s.push(tmp->left);
+  
+      }
+  }
+  ```
+
   
 
+#### 层次遍历
 
+- 关于层次遍历主要借助的数据结构为单向队列，使用一个size去判断当前遍历层中元素是否已经全部被获取到了
 
+  ```cpp
+  class Solution {
+  public:
+    // 主要是使用size进行处理 | size只有等这一层的数据全部被处理之后才会更新
+      vector<vector<int>> levelOrder(TreeNode* root)
+      {
+          if(root == nullptr) return {};
+          vector<vector<int>> res;
+          vector<int> res_temp;
+          int size = 1;
+          // 单项队列 FIFO
+          queue<TreeNode*> s;
+          s.push(root);
+  
+          while(!s.empty()){
+              TreeNode* p = s.front();
+              s.pop();
+              res_temp.push_back(p->val);
+              size--;
+  
+              if(p->left != nullptr){
+                  s.push(p->left);
+              }
+              if(p->right != nullptr){
+                  s.push(p->right);
+              }
+  
+              if(size == 0){
+                  size = s.size();
+                  res.push_back(res_temp);
+                  res_temp.clear();
+              }
+          }
+          return res;
+      }
+  };
+  ```
 
+##### 层次遍历II
+
+- 相比原始的层次遍历，这里不过是想让整个层次遍历从上到下变成了从下到上，即可以直接将输出的res数组进行反转处理。
+
+  ```cpp
+  class Solution {
+  public:
+      vector<vector<int>> levelOrderBottom(TreeNode* root) {
+          queue<TreeNode*> que;
+          if (root != NULL) que.push(root);
+          vector<vector<int>> result;
+          while (!que.empty()) {
+              int size = que.size();
+              vector<int> vec;
+              for (int i = 0; i < size; i++) {
+                  TreeNode* node = que.front();
+                  que.pop();
+                  vec.push_back(node->val);
+                  if (node->left) que.push(node->left);
+                  if (node->right) que.push(node->right);
+              }
+              result.push_back(vec);
+          }
+          reverse(result.begin(), result.end()); // 在这里反转一下数组即可
+          return result;
+  
+      }
+  };
+  ```
+
+  
 
 
 
