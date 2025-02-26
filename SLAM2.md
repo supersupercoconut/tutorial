@@ -227,8 +227,11 @@ docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xa
 ```
 1. docker run   -it   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/new/2-11/new/calib:/tmp/input_bags   -v /home/supercoconut/Myfile/datasets/new/2-11/new/result/:/tmp/preprocessed    koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration preprocess -av --camera_model plumb_bob   --camera_intrinsic 607.79772949218,607.83526613281,328.79772949218,245.53321838378 --camera_distortion_coeffs 0.0,0.0,0.0,0.0,0.0 /tmp/input_bags /tmp/preprocessed
 
-2. 
+2. docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/2-20/result:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic rosrun direct_visual_lidar_calibration initial_guess_manual /tmp/preprocessed
 
+3. docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/2-20/result:/tmp/preprocessed   koide3/direct_visual_lidar_calibration:noetic   rosrun direct_visual_lidar_calibration calibrate /tmp/preprocessed
+
+4. docker run   --rm   --net host   --gpus all   -e DISPLAY=$DISPLAY   -v $HOME/.Xauthority:/root/.Xauthority   -v /home/supercoconut/Myfile/datasets/2-20/result:/tmp/preprocessed koide3/direct_visual_lidar_calibration:noetic rosrun direct_visual_lidar_calibration initial_guess_manual /tmp/preprocessed
 ```
 
 
