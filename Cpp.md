@@ -58,6 +58,129 @@ shared_ptr | weak_ptr | unique_ptr
 
 - weak_ptr 即保证其指向这块内存不会改变其对应的引用计数，就是使用时需要调用lock()转换成为shared_ptr使用
 
+### 使用
+
+- **注意这里智能指针指向的对象一般是堆上的内存开辟的，毕竟智能指针是利用RAII来安全管理数据，如果其保留在栈上，系统本身就可以自动管理**
+
+  ```cpp
+  std::unique_ptr<int> ptr = std::make_unique<int>(42);
+  
+  std::shared_ptr<std::vector<int>> data = 
+  std::make_shared<std::vector<int>>(100);
+  ```
+
+  
+
+## RAII 
+
+- 所谓的RAII，从其对应的英文字符上就可以判断出来，资源获取即是初始化(resource acquisition is initialization) | Resource Acquisition Is Initialization（RAII）是C++中管理资源的重要范式。该模式的核心思想是**将资源获取与对象生命周期绑定，通过构造函数获取资源，析构函数释放资源**。这种机制可以确保即使在异常发生时，资源也能被正确释放
+  - 很简单的例子就是智能指针与互斥锁
+    - 如果通过new与delete手动开辟堆上面的内存, 很容易出现开辟但是忘记释放，可以使用智能指针解决这种问题。
+    - 互斥锁即多线程中应该使用一个mutex变量调用lock()与unlock()来控制资源只能同时被一个线程进行修改，如果忘记释放也会导致死锁问题，故可以使用lock_guard()与unique_lock()解决
+
+
+
+
+
+## 互斥锁
+
+- C++标准库提供了**两种基于RAII的锁管理类：lock_guard和unique_lock。**理解它们的区别对编写高效、安全的并发代码至关重要
+
+  ```cpp
+  // 常规上锁:
+  std::mutex mtx;
+  void safe_increment() {
+      mtx.lock();
+      // 临界区操作
+      mtx.unlock();
+  }
+  ```
+
+  - lock_gurad 相当于是非常简单的锁使用，只是没有想到其是一种类对象，其声明时相当于上锁**(调用构造函数)**，声明周期结束即可以认为解锁**(调用析构函数)**，比前者更加安全。**lock_guard 最适合在明确定义的作用域内进行简单的锁管理, 使用非常简单**
+
+  ```cpp
+  std::mutex mtx;
+  void safe_access() {
+      {
+          std::lock_guard<std::mutex> lock(mtx);
+          // 临界区操作
+      } // 自动解锁
+      // 其他非临界区操作
+  }
+  ```
+
+  ```cpp
+  // 类对象直接创建使用
+  template<class Mutex>
+  class lock_guard {
+  public:
+      explicit lock_guard(Mutex& m) : mutex(m) {
+          mutex.lock();
+      }
+      
+      ~lock_guard() {
+          mutex.unlock();
+      }
+      
+      lock_guard(const lock_guard&) = delete;
+      lock_guard& operator=(const lock_guard&) = delete;
+  
+  private:
+      Mutex& mutex;
+  };
+  ```
+
+- unique_lock 是C++中更加高级的锁管理器。相比于lock_guard，其可以延迟加锁、定时加锁与尝试加锁，并且可以转移锁的控制权。
+
+  - 其在声明的时候，可以选择当前不获取锁，后续可以手动上锁或者使用一个定时器延迟一段时间之后上锁
+  - 甚至其可以作为函数的返回值进行返回，相当于将这个锁继续后续使用，即延长了这个锁的使用时间，在最后析构的时候，其仍然会自动解锁。
+
+  ```cpp
+  int n;
+  std::mutex some_mutex;
+  
+  void prepare_data()
+  {
+      cout << n++ << endl;
+  }
+  
+  void do_something()
+  {
+      cout << n++ << endl;
+  }
+  
+  std::unique_lock<std::mutex> get_lock()
+  {
+      std::unique_lock<std::mutex> lk(some_mutex);//与lock_guard相同，构造时获取锁
+      cout << "owns_lock? " << lk.owns_lock() << endl;//1
+      prepare_data();
+      return lk;
+  }
+  
+  int main()
+  {
+      //unique_lock基本使用
+      std::mutex mutex2;
+      std::unique_lock<std::mutex> lock2(mutex2, std::defer_lock);//告诉构造函数暂不获取锁
+      cout << "owns_lock? " << lock2.owns_lock() << endl;//0
+      lock2.lock();//手动获取锁
+      std::cout << "owns_lock? " << lock2.owns_lock() << endl;//1
+      lock2.unlock();//手动解锁
+      cout << "owns_lock? " << lock2.owns_lock() << endl;//0
+      //锁所有权转移到函数外部
+      std::unique_lock<std::mutex> lk(get_lock());//
+      do_something();
+  }
+  //析构
+  //lock2未获取锁mutex2，因此不会调用unlock
+  //lk对象持有锁some_mutex，调用unlock
+  
+  ```
+
+  
+
+
+
 
 
 ## static 静态
@@ -96,7 +219,7 @@ shared_ptr | weak_ptr | unique_ptr
 
 - 普通函数：static修饰的函数同样只能在该源文件中使用，不能在其他源文件中使用。由于C++是从上向下的编译过程，所以这里static函数虽然只能在这个源文件中使用，我们还是需要将其放在最前面定义比较好。
 
-    - 普通函数使用static的好处在于static修饰的函数只能在这里源文件中使用，多个文件同名的static函数之间并不会有冲突
+    - **普通函数使用static的好处在于static修饰的函数只能在这里源文件中使用，多个文件同名的static函数之间并不会有冲突。而普通的函数，默认是extern的，也就是说它可以被其它代码文件调用**
 
     ```cpp
     #include <stdio.h>
@@ -264,7 +387,60 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
   const MyClass obj;
   ```
 
+- 类的const成员变量要通过类的列表初始化直接定义
+
+  ```cpp
+  #pragma once
+  class CConst
+  {
+  public:
+  // 在初始化列表初始化const成员函数
+      CConst(void): iValue(200)
+      {
+          // error
+          // iValue = 300;
+      }
+  ~CConst(void);
+  private:
+      // const 成员变量
+      const int iValue;
+  };
+  ```
+
+
+
+
+## mutable
+
+- 只能用在类中使用，被其修饰的变量可以被const成员函数进行修改 | **这里未必一定是在修饰const成员变量，只要是一个成员变量都能被mutable修饰**
+
+  ```cpp
+  class Time 
+  {
+  	public:
+  		int hour;
+  		int minute;
+  		mutable int second;
+  	public:
+     		void noone() const{
+  			second = 12;//正确
+  			hour = 11;//报错
+  		}
+  };
   
+  ```
+
+
+
+## volatile
+
+
+
+
+
+
+
+
 
 
 
@@ -511,6 +687,43 @@ virtual void funtion1()=0;
 
 
 
+## final 关键字
+
+- 用于防止类中的虚函数被重写以及防止这个类被继承。
+
+  ```cpp
+  class Base final {
+      // 类的实现
+  };
+  // 下面的代码会导致编译错误
+  class Derived : public Base {
+      // 编译错误：无法继承自 final 类
+  };
+  ```
+
+  ```cpp
+  class Base {
+  public:
+      virtual void func() final {  // 这个函数不能被重写
+          std::cout << "Base::func()" << std::endl;
+      }
+  };
+  
+  // 下面的代码会导致编译错误
+  class Derived : public Base {
+  public:
+      void func() override {  // 编译错误：无法重写 final 函数
+          std::cout << "Derived::func()" << std::endl;
+      }
+  };
+  ```
+
+  
+
+
+
+
+
 ## Hash表使用
 
 - unordered_map的使用 | 对于unordered_map<int, int>这种 如果insert的一个未出现过的元素(key值)，那么其对应的数据会自动定义成为0。
@@ -607,6 +820,35 @@ virtual void funtion1()=0;
 - Integral conversion
 - Floating-point conversion
 
+
+
+### 显示类型转换
+
+- C++经常使用的转换类型一般有四种，static_cast, dynamic_cast，const_cast以及reinterpret_cast类型之间的转换。**除去dynamic_cast是运行期确定的，其余都是编译期确定的**
+
+  - static_cast : 基本类型之间的转换或者是**基类与派生类的指针或引用**之间的转换，可以进行向上转换以及向下转换
+
+    - 向上转换是安全的 ，向上转换主要是派生类到基类的转换，由于派生类指向的对象是要多余基类的，使用指针或者引用的话，直接转换是安全的。
+    - 向下转换是不安全的，因为基类指针可以指向派生类，但是也可以直接指向的基类，这种情况可以直接使用dynamic_cast进行分析
+
+  - dynamic_cast : **多态类之间的转换，尤其是基类的指针或引用转换到派生类的指针或者引用**
+
+    - 同样可以向上转换，与static_cast没有区别
+    - 向下转换是安全的 —— 会进行安全检查，但是要求**基类必须包含虚函数**
+
+  - const_cast : 用于去除常量性，但是其不会直接去除常量自身的常量性，去除的主要是其对应的指针或引用的常量性
+
+    ```cpp
+    const int a = 10;
+    const int * p = &a;
+    *p = 20;                  //compile error(p目前还是一个常量指针)
+    int b = const_cast<int>(a);  //compile error(a的常量性不可以改变)
+    ```
+
+  - reinterpret_cast : 用于完全不想关变量类型的转换，比如从整形转换成为指针或者引用。
+
+
+
 ### 显式类型转换(这里还是不太明确)
 
 Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
@@ -654,6 +896,20 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 - C++与Java的区别
 
 ![image-20250204222529411](./figure/image-20250204222529411.png)
+
+
+
+## C++ 11新特征
+
+- 自动类型推导 auto
+- 智能指针
+- RAII lock **锁封装**：相当于在之前锁的基础上(之前都是手动lock()与unlock())，这种可以自动释放锁
+- std::thread: 管理C++多线程，锁是保护公共资源，线程是并行开发
+- 右值引用：通过使用右值引用进而出现了移动语义与完美转发
+
+
+
+
 
 
 
@@ -804,20 +1060,52 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 
 
-## 类的成员初始化列表
+## 列表初始化
 
-- 在C++的类构造函数中可以直接初始化类的成员变量，而不是在类的构造函数体内使用赋值语句进行初始化
+目前是一共有三种初始化方法(列表初始化/直接初始化/赋值初始化)
 
-    ```cpp
-    // 其中member1与member2对应的是类的成员变量
-    ClassName::ClassName(value1, value2) : member1(value1), member2(value2), ... {
-        // 构造函数体
-    }
-    ```
+- 赋值初始化部分是最常见的，但是效率最低，其会直接创建一个临时对象进行赋值(一般编译器会自动优化掉这部分)
 
-    
+- 直接初始化 ()
 
+- 列表初始化 {} 最安全，等效于直接初始化。如果出现类型精度损失的话会直接报错。如 `double` 到 `int`
 
+  ```cpp
+  // 对于基本类型 (){}基本没有区别, 都是对这个变量进行初始化
+  int x = 10;  
+  int y(10);
+  int z{10};   
+  
+  //////////////////////////////////////////////////
+  
+  class MyClass {
+  public:
+      int value;
+      MyClass(int v) : value(v) {}  // 构造函数
+  };
+  
+  int main() {
+      MyClass a = 10;  // 赋值初始化（可能涉及额外的构造和赋值）
+      MyClass b(10);   // 直接初始化（通常是最优的）
+      MyClass c{10};   // 列表初始化（等效于直接初始化）
+  
+      return 0;
+  }
+  ```
+
+  - 补充在类中使用的初始化列表，即使用{}包含的数据可以直接对一个类进行初始化，但要求其对应的构造函数要包含如下：
+
+  ```cpp
+  // 其中member1与member2对应的是类的成员变量
+  ClassName::ClassName(value1, value2) : member1(value1), member2(value2), ... {
+      // 构造函数体
+  }
+  
+  // 初始化 
+  ClassName{1,2};
+  ```
+
+  
 
 
 
@@ -827,6 +1115,12 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
     - 左值：能取地址的为左值
     - 右值：不能直接取地址的为右值
+    - **补充: **在c++11之后出现了泛左值、将亡值以及纯右值
+      - 泛左值 = 左值 + 将亡值
+      - 右值 = 将亡值 + 右值
+      - 纯右值: 即一些字面值以及不具名的临时对象(如int func()这种返回非引用类型函数的返回值)
+      - 将亡值(即即将被销毁的值)，其与右值不一样的地方在于其可以被取地址，比如std::move()的返回值，虽然其是一个右值，但是其可以被取地址
+
 
     ```cpp
     // a为左值 5为右值
@@ -903,7 +1197,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
     - 其本身并不会改变程序的性能，其只会将一个左值转换成为右值，相当于C++中的static_cast<T &&>的类型转换，真正让程序效率提升的部分还是引用本身。
 
-    - 以**移动构造函数为例**，使用右值引用从当函数的形参即可以读取左值又可以右值，虽然左值引用也属于引用，可以避免拷贝。但是右值引用更加方便！！！ 即**对象在<需要拷贝且被拷贝者之后不再被需要>的场景，建议使用**`std::move`**触发移动语义，提升性能！！！std::move()本身只是一种类型转换的功能**
+    - 以**移动构造函数为例**，使用右值引用从当函数的形参即可以读取左值又可以右值，虽然左值引用也属于引用，可以避免拷贝。但是右值引用更加方便！！！ 即**对象在需要拷贝且被拷贝者之后不再被需要的场景，建议使用**`std::move`**触发移动语义，提升性能！！！std::move()本身只是一种类型转换的功能**
 
         ```cpp
         /* 右值引用体现其优越性 */ 
@@ -1009,7 +1303,18 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
         void emplace_back (Args&&... args);
         ```
         
-        
+    - std::move()的实现原理为: 即无论输入的参数是左值还是右值都同意转换成右值
+    
+      ```cpp
+      template <typename T>
+      typename remove_reference<T>::type&& move(T&& t)
+      {
+      	return static_cast<typename remove_reference<T>::type&&>(t);
+      ```
+    
+      
+
+
 
 ## 移动语义与完美转发
 
@@ -1066,7 +1371,38 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 - 完美转发 std::forward
 
-  - 相当于不会修改函数参数的左值或者右值属性
+  - 在**模板函数**中可以保证输入参数的**值类别(左值/右值)**传递给其他函数
+  
+    - **通用引用(万能引用): **输入左值，T被推导为左值引用；输入右值，T被推导为常规类型 。但如果T被推导成为左值引用的话(假设是int &)，T &&即int& &&，会触发引用折叠 —— 即C++中并不支持&&&这么多引用符号，一个引用类型要么是&(左值引用)，要么是&&(右值引用)
+  
+    ![image-20250221154602020](figure/image-20250221154602020.png)
+  
+    ```cpp
+    #include <iostream>
+    using namespace std;
+    
+    template <typename T>    // 函数模板
+    void myfunc(T&& val)     // 万能引用
+    {
+    	cout << val << endl;
+    	return;
+    }
+    
+    int main()
+    {
+    	myfunc(120); // ok，自动类型推导，120是右值，T为int类型，val为int&&类型
+    
+    	int i = 180;
+    	myfunc(i); // ok，自动类型推导，i是左值，T为int&类型，val为int&类型
+    
+        return 0;
+    }
+    ```
+    
+    - 对于forward<T>(x)而言，其返回值依赖与T，如果T为左值引用，则返回x的左值引用; 如果不是非引用类型，则返回x的右值引用。
+  
+
+
 
 
 
@@ -1163,16 +1499,20 @@ auto&& matrix_tmp = H_T_H.block<6,6>(0,0);
 ## 二叉树的基本结构
 
 - 满二叉树
-- 平衡二叉树
-- 完全二叉树
-- 二叉搜索树
+- 平衡二叉树 : 其要求的是左右子树的高度差 
+- 完全二叉树 
+- 二叉搜索树 :  其要求的是左右节点的值
 
 - 平衡二叉树搜索树
 - 二叉树的存储方式(两种)
 
-- 二叉树的便利方式(四种)
+- 二叉树的遍历方式(四种) ：前序中序后序以及一种层次
 
 - 二叉树的定义方式(每一个二叉树节点一般会被定义成为一个链表节点)
+
+- 二叉树的高度与深度 - 这里会存在两种定义方法 一说是节点数量一说是边的数量
+  - 高度
+  - 深度
 
 
 
@@ -1191,6 +1531,46 @@ void swap(T &a,T &b)
     b=c;
 }
 ```
+
+
+
+## define
+
+- #define只是一个预处理命令，保证其在预处理阶段进行文本替换，并不会进行类型检查。相比const，const是实实在在定义了一个变量，所以会有语法检查，更加安全。
+
+
+
+
+
+## extern
+
+- 一般对于变量使用，表示其他源文件中可以使用这个源文件中定义的变量，避免编译中出现的错误。
+- **extern "C"** 主要是方便C++代码调用其他C语言的代码 —— 因为在实际编译器中，C++与C编译器不同，比如C++支持函数重载，其对应的函数编译之后的结果与C中编译函数之后的结果不同，所以在链接的时候C++是找不到C的编译结果的，故需要使用extern "C"可以将当前这个C++文件按照C的规则进行编译，故方便调用C代码。
+
+
+
+
+
+## 内存对齐
+
+**即数据储存的起始地址可以整除数据实际按照占据的字节数**——对应的好处就是方便CPU一次读取就尽可能地直接获取到这个数据
+
+
+
+
+
+
+
+## 其他
+
+- strlen函数，计算一个C风格字符串的长度
+- **sizeof**是一个关键字，在编译时就能确定结果，计算一个类型或者变量占用的字节数
+  - **sizeof 运算符可用于获取类、结构、共用体和其他用户自定义数据类型的大小。**
+
+
+
+
+
 
 
 
@@ -1216,6 +1596,136 @@ void swap(T &a,T &b)
 
 
 
+
+### 数据的输入
+
+- cin输入数据，空格以及换行符作为其分隔符，不能用其读取包含空格的字符串
+
+  ```cpp
+  #include <iostream>
+  #include <string>
+  #include <vector>
+  using namespace std;
+  
+  int main() {
+  
+      int i = 0;
+      vector<string> res;
+      while(cin >> i)
+      {
+          string tmp;
+          //  cin的输入相当于只会去看当前的输入流中是否存在数据，如果没有数据输入，其会在while循环中进行等待
+          while(cin>>tmp)
+              res.push_back(tmp);
+      }
+  
+      for(auto i : res)
+          cout << i << " ";
+  
+      return 0;
+  }
+  ```
+
+- cin.get() 其可以读取一个字符也可以读取一行字符，在实际使用中要注意其在读取一行字符的时候，最后一个元素是'\0'（读取一个字符不会出现'\0'） | 保留了C中对于字符串的表示风格 | **但是其缺点在于不会自动舍弃掉换行符！！！换行符会被直接保留在输入流缓冲区中，所以下面代码中的b会直接是一个换行符！！！**
+
+  ```cpp
+  #include <iostream>
+  using namespace std;
+  
+  int main() {
+  
+      char a, b;
+      cin.get(a);
+      // cin.get(); 可以在这里在读取一次清楚多余的换行符
+      cin.get(b);
+      cout << a << ", " << b << ", " << endl;
+      return 0;
+  }
+  ```
+
+  ```cpp
+  char c;
+  c = cin.get(); // 读取一个字符
+  
+  char buffer[100];
+  cin.get(buffer, 100); // 读取最多99个字符，会自动添加空字符'\0'
+  ```
+
+- cin.getline() 其会直接读取一行数据，但是其可以删除对应的换行符，不过仍然会保留'\0'。
+
+  ```cpp
+  istream& cin.getline(char* buffer, int size, char delimiter = '\n');
+  ```
+
+- getline其被定义在<string>头文件中，其不需要预先读取字符串的size。**不同方法如何混合使用的话比较麻烦，最好不要混合使用，getline()比起来前两者方法都更加安全**
+
+  ```cpp
+  // 全局函数，操作 std::string
+  istream& getline(istream& is, string& str, char delimiter = '\n');
+  ///////////////////////////////////////////
+  #include <string>
+  string str;
+  getline(cin, str); // 读取一行到 string 对象
+  
+  ```
+
+  ```cpp
+  // 实现了一种在一行字符串中提取数据 所有的数据用空格进行间隔
+  #include <iostream>
+  #include <string>
+  #include <vector>
+  using namespace std;
+  int main() {
+  
+      string a;
+      vector<string> res;
+      getline(cin, a);
+  
+      // 按照空格分割元素
+      int last = 0;
+      for(int i = 0; i < a.size(); ++i)
+      {
+          if(a[i] == ' ')
+          {
+              string tmp = a.substr(last, i - last);
+              res.push_back(tmp);
+              last = i + 1;
+          }
+      }
+      // 最后一个元素
+      string tmp = a.substr(last, a.size() - last);
+      res.push_back(tmp);
+  
+      for(auto i : res)
+          cout << i << endl;
+  
+      return 0;
+  }
+  ```
+
+- 注意对于C++中的string而言，可以使用substr()方法来截取其对应的字符串。**注意这里对应的字符串本身其实并没有被删减，该方法其会返回子字符串**
+
+  ```cpp
+  s.substr(pos, n)    截取s中从pos开始（包括0）的n个字符的子串，并返回
+  s.substr(pos)        截取s中从从pos开始（包括0）到末尾的所有字符的子串，并返回
+  ```
+
+
+
+### 补充
+
+- 在牛客上，说这种方法可能更加安全。但是这种方法需要后续自行弹出这个while循环，否则程序会自己循环在里面
+
+  ```cpp
+  int N;//学生总数
+  while(cin>>N){ //while里面输入总数，然后在该循环里面处理
+      for(int i=0;i<N;i++){ //用for循环输入N组数据
+          cin>>stu[i].name>>stu[i].num;//输入姓名和学号
+      }
+  }
+  ```
+
+  
 
 
 
@@ -2848,10 +3358,10 @@ PS：感觉有一些像大小顶堆
 ![image-20240916210506436](figure/image-20240916210506436.png)
 
 - 二叉搜索树 | 平衡二叉搜索树
-    - 二叉搜索树：二叉树中的左子树的值小于中间节点，右子树的值大于中间节点。但是对于数据；排列非常不平衡的情况下，即虽然是二叉树但是数据过于特殊，将这个二叉树退化成了一个链表形状 —— 其对应的搜索效率就从 O(log n)退化成 O(n)
+    - 二叉搜索树：二叉树中的左子树的值小于中间节点，右子树的值大于中间节点。但是对于数据；排列非常不平衡的情况下，即虽然是二叉树但是数据过于特殊，将这个二叉树退化成了一个链表形状 —— 其对应的搜索效率就从 O(log n)退化成 O(n)，所以需要一种平衡二叉树来解决问题
     - 平衡二叉搜索树：解决上述二叉搜索树中的左右子树差距过大的情况而产生的数据结构，可以保证搜索数据基本可以维持在O(log n) —— **C++中的set、map、multi-set、multi-map都是类似的方式 **
 
-- 高度 | 深度 (但是在leetcode中节点的深度与高度都是从1开始的)
+- 高度 | 深度 (但是在leetcode中节点的深度与高度都是从1开始的) **这里有两种说法，一种是计算边的数量，一种是计算顶点的数量**
     - 节点的深度（depth）：从根节点到该节点所经过的边的数量。
     - 节点的高度（height）：从距离该节点最远的叶节点到该节点所经过的边的数量
 
@@ -2993,17 +3503,321 @@ struct TreeNode {
   };
   ```
 
+
+
+
+#### 迭代遍历
+
+- 除去这三种递归遍历，还可利用栈进行迭代遍历 - 元素放入栈中的顺序是从上到下的，对于前序遍历比较简单，但是对于中序以及后序遍历，遍历到的元素并不能直接放入结果中，可以直接利用一个set判断这个元素是否被遍历过
+
+  ```cpp
+  void myTravsel(TreeNode* node, vector<int>& res)
+  {
+      if(node == nullptr) return;
+      stack<TreeNode*> st;
+      st.push(node);
+      while(!st.empty())
+      {
+          auto temp = st.top();
+          st.pop();
+          res.push_back(temp->val);
+          if(temp->right != nullptr) st.push(temp->right);
+          if(temp->left != nullptr) st.push(temp->left);
+      }
+  }
+  ```
+
+  ```cpp
+  // 包含了对于一些节点重入栈与出栈，保证整体的流程还是左中右
+  void myTravseral(TreeNode* root, vector<int>& res)
+  {
+      if(root == nullptr) return;
+      stack<TreeNode*> st;
+      unordered_set<TreeNode*> used;
+      st.push(root);
+      while(!st.empty())
+      {
+          auto temp = st.top();
+          st.pop();
+          if(used.find(temp) == used.end()) used.insert(temp);
+          else
+          {
+              res.push_back(temp->val);
+              continue;
+          }
+          if(temp->right != nullptr) st.push(temp->right);
+          st.push(temp);
+          if(temp->left != nullptr) st.push(temp->left);
+      }
+  }
+  ```
+
+  ```cpp
+  // 相对随想录上面的方法，这种就直接按照从上到下的顺序进行分析，中间节点重复一次输入栈的过程
+  void myTraversal(TreeNode* root, vector<int>& res)
+  {
+      if(root == nullptr) return;
+      stack<TreeNode*> s;
+      unordered_set<TreeNode*> used;
+      s.push(root);
+      while(!s.empty())
+      {
+          auto tmp = s.top();
+          s.pop();
+  
+          if(used.find(tmp) == used.end()) used.insert(tmp);
+          else
+          {
+              res.push_back(tmp->val);
+              continue;
+          }
+  
+          s.push(tmp);
+          if(tmp->right) s.push(tmp->right);
+          if(tmp->left) s.push(tmp->left);
+  
+      }
+  }
+  ```
+
   
 
+#### 层次遍历
 
+- 关于层次遍历主要借助的数据结构为**单向队列**，使用一个size去判断当前遍历层中元素是否已经全部被获取到了
 
+  ```cpp
+  class Solution {
+  public:
+    // 主要是使用size进行处理 | size只有等这一层的数据全部被处理之后才会更新
+      vector<vector<int>> levelOrder(TreeNode* root)
+      {
+          if(root == nullptr) return {};
+          vector<vector<int>> res;
+          vector<int> res_temp;
+          int size = 1;
+          // 单项队列 FIFO
+          queue<TreeNode*> s;
+          s.push(root);
+  
+          while(!s.empty()){
+              TreeNode* p = s.front();
+              s.pop();
+              res_temp.push_back(p->val);
+              size--;
+  
+              if(p->left != nullptr){
+                  s.push(p->left);
+              }
+              if(p->right != nullptr){
+                  s.push(p->right);
+              }
+  
+              if(size == 0){
+                  size = s.size();
+                  res.push_back(res_temp);
+                  res_temp.clear();
+              }
+          }
+          return res;
+      }
+  };
+  ```
 
+##### 层次遍历II
 
+- 相比原始的层次遍历，这里不过是想让整个层次遍历从上到下变成了从下到上，即可以直接将输出的res数组进行反转处理。
 
+  ```cpp
+  class Solution {
+  public:
+      vector<vector<int>> levelOrderBottom(TreeNode* root) {
+          queue<TreeNode*> que;
+          if (root != NULL) que.push(root);
+          vector<vector<int>> result;
+          while (!que.empty()) {
+              int size = que.size();
+              vector<int> vec;
+              for (int i = 0; i < size; i++) {
+                  TreeNode* node = que.front();
+                  que.pop();
+                  vec.push_back(node->val);
+                  if (node->left) que.push(node->left);
+                  if (node->right) que.push(node->right);
+              }
+              result.push_back(vec);
+          }
+          reverse(result.begin(), result.end()); // 在这里反转一下数组即可
+          return result;
+  
+      }
+  };
+  ```
 
+  
 
+#### 翻转二叉树
 
+- 将整个树中的左右子树都需要进行转换，可以直接使用后序进行处理，每一个节点的左右子树进行转换，最后再将root节点的左右转换即认为处理完毕
 
+  ```cpp
+  class Solution {
+  public:
+  
+      void travsersal(TreeNode* node)
+      {
+          if(node == nullptr) return;
+          travsersal(node->left);
+          travsersal(node->right);
+          swap(node->right, node->left); 
+      }
+  
+      TreeNode* invertTree(TreeNode* root) {
+          // 直接使用中序遍历进行互换操作
+          travsersal(root);
+          return root;
+      }
+  };
+  ```
+
+#### 对称二叉树
+
+- 对称二叉树解决起来比较tricky, 但是整体思路还是要借助递归，这样才可以不断地返回到上一层中进行处理。从root的左右子树的头节点开始分析left的left跟right的right，如果相同用去继续left的right跟right的left，最终如果均可以相同才可以最终认定相同。**这里可以直接画图观察一下**
+
+  ```cpp
+  class Solution {
+  public:
+      // 本问题还是需要使用递归的原因是需要能返回上一级节点处，借助其就可以直接分析取值情况
+      bool travsersal(TreeNode* left, TreeNode* right)
+      {
+          // 手动判断是否同时为空
+          if(left == nullptr && right == nullptr) return true;
+          else if(left == nullptr && right != nullptr) return false;
+          else if(left != nullptr && right == nullptr) return false;
+          // 同时存在值可以判断值是否相同
+          if(left->val != right->val) return false;
+          else
+          {
+              // bool a = true, b = true;
+              bool a = travsersal(left->left, right->right);
+              if(!a) return false;
+              bool b = travsersal(left->right, right->left);
+              if(!b) return false;
+          }   
+          return true;
+      }
+      bool isSymmetric(TreeNode* root) {
+          if(root == nullptr) return true;
+          // if(root->left != nullptr &&)
+          return travsersal(root->left, root->right);
+  
+      }
+  };
+  ```
+
+#### 二叉树最大深度
+
+- 如果使用递归解决的话，就是左右子树各自返回一个深度值，然后去其大者+1即可
+
+- 如果使用层次解决的话，就遍历完所有的层直接返回一个最大值
+
+  ```cpp
+  class Solution {
+  public:
+  
+      /* 递归方法 */
+      // int travsersal(TreeNode* node)
+      // {
+      //     if(node == nullptr) return 0;
+      //     int left = travsersal(node->left);
+      //     int right = travsersal(node->right);
+      //     return left >= right ? left + 1 : right + 1;
+      // }
+      
+      // int maxDepth(TreeNode* root) {
+      //     // 最大深度 直接前序遍历 到叶子节点之后直接弹出结果
+      //     if(root == nullptr) return 0;
+      //     return travsersal(root);
+      // }
+  
+      /* 类似的问题还可以使用层次遍历解决 */
+      int maxDepth(TreeNode* root)
+      {
+          if(root == nullptr) return 0;
+          queue<TreeNode*> q;
+          int size = 1;
+          int depth = 0;
+          q.push(root);
+  
+          while(!q.empty())
+          {
+              depth++; 
+              while(size--)
+              {
+                  TreeNode* tmp = q.front();
+                  q.pop();
+                  if(tmp->left) q.push(tmp->left);
+                  if(tmp->right) q.push(tmp->right);
+              }  
+              size = q.size();
+          }
+          return depth;
+      }
+  };
+  ```
+
+#### 二叉树最小深度
+
+- **最小深度一定要注意，如果左右子树如果是空的话，一定不可以直接用0，可以先给左右子树的返回值设置为非常大**
+
+  - 递归遍历：注意左右子树为空即可	
+  - 层次遍历：找到第一个叶子节点即认为是最小深度
+
+  ```cpp
+  class Solution {
+  public:
+  
+      // 需要注意的是，这里要特别分析叶子节点为nullptr的情况 —— 这种时候的返回值是不能充当对比对象的 
+      int traversal(TreeNode* node)
+      {            
+          int left = 1000000 ; int right = 1000000;
+          if(node->left != nullptr) left = traversal(node->left);
+          if(node->right != nullptr) right = traversal(node->right);
+          
+          if(left == 1000000 && left == right) return 1;
+          return left > right ? right + 1 : left + 1;
+      }
+  
+      int minDepth(TreeNode* root) {
+          /*递归方法解决问题(递归就相当于左右两个子树同时返回最小值最后一并输出)*/
+          if(root == nullptr) return 0;
+          return traversal(root);
+  
+          /*层次遍历中找到第一次找到叶子节点即可以认为是最小深度*/ 
+          // if(root == nullptr) return 0;
+          // queue<TreeNode*> q;
+          // q.push(root);
+          // int size = 1;
+          // int depth = 0;
+          // while(!q.empty())
+          // {
+          //     ++depth;
+          //     while(size--)
+          //     {
+          //         TreeNode* tmp = q.front();
+          //         q.pop();
+          //         if(tmp->left) q.push(tmp->left);
+          //         if(tmp->right) q.push(tmp->right);
+          //         if(tmp->left == nullptr && tmp->right == nullptr) return depth;
+          //     }
+          //     size = q.size();
+          // }
+          // return depth;
+      }
+  };
+  ```
+
+  
 
 ## 回溯
 
@@ -4063,13 +4877,6 @@ https://blog.csdn.net/gongjianbo1992/article/details/105128849
 
 
 
-
-## explicit | static
-
-其在class中使用会出现之前没有意料到的情况
-
-- explicit
-- static 
 
 
 
