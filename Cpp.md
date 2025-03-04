@@ -10,17 +10,17 @@
 
 堆/栈/全局(静态)存储区/代码存储区
 
-- 堆 - 编译器自动分配回收
+- 栈: 编译器自动分配回收
 
-- 栈 - 自行new/delete 容易忘记 故可以使用智能指针
+- 堆: 自行new/delete 容易忘记 故可以使用智能指针
 
-- 全局(静态) - 放置全局变量或者static定义的变量 - 这里对应变量的生命周期为整个程序运行期间
+- 全局(静态): 放置全局变量或者static定义的变量 - 这里对应变量的生命周期为整个程序运行期间
 
-- 常量区 - 用于保存一些字面值与在编译期就能确定的常量(部分const变量以及constexpr修饰的变量)
+- 常量区: 用于保存一些字面值与在编译期就能确定的常量(部分const变量以及constexpr修饰的变量)
 
   - 这里说的常量是一些**字面值**，用const修饰的那些常量本质上应该属于是变量！！
 
-- 代码区 - 代码区就是存放从硬盘中编译好的二进制代码
+- 代码区: 代码区就是存放从硬盘中编译好的二进制代码
 
   ```cpp
   % '\041' 即为字面值
@@ -434,8 +434,10 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 
 ## volatile
 
-- 标记一个变量，后续编译器对访问该变量的代码不再进行优化，从而可以提供对该变量对应地址的稳定访问。**该关键值主要是在跟嵌入式相关的代码中使用比较多，硬件中还是会直接访问地址的操作还是比较多的**
+- 标记一个变量，后续编译器对访问该变量的代码不再进行优化，从而可以提供对该变量对应地址的稳定访问。**该关键值主要是在跟嵌入式相关的代码中使用比较多，硬件中还是会直接访问地址的操作还是比较多的。**
   - 参考: https://www.runoob.com/w3cnote/c-volatile-keyword.html
+
+
 
 
 
@@ -483,7 +485,7 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 - 函数重写
 
   - 函数重写相当于是实现多态的一种手段，通过首先定义的基类，在派生类中对基类函数进行重写。**类似的实现逻辑是direct_visual_lidar_calibration中用一个相机基类，派生类中实现多种相机模型的功能。**
-  - 要求返回值，参数列表什么的都⼀定要完全相同
+  - **要求返回值，参数列表什么的都⼀定要完全相同(这里与函数重载完全不同)**
 
   ```cpp
   class Base {
@@ -562,7 +564,7 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 
 new malloc delete free，其中new与delete是C++新引入的部分
 
-
+- delete  | **delete ptr** -- 代表用来释放内存，且只用来释放ptr指向的内存
 
 
 
@@ -570,9 +572,12 @@ new malloc delete free，其中new与delete是C++新引入的部分
 
 ## 虚函数以及纯虚函数
 
-- **派生类可以重写也可以不重写直接调用基类中的虚函数，**并且基类可以被实例化。通过基类的引用或者指针直接访问派生类中重写的**虚函数**。
+- 虚函数/纯虚函数是实现多态的一种手段。**所谓多态：**是可以通过基类指针或引用可以直接调用派生类中重写的虚函数，但是不能调用派生类中的其他函数。
+
+  - 在基类中使用**virtual**关键字表示，在派生类中使用**override**关键字
+  - 包含虚函数对应的基类是可以实例化的，包含纯虚函数的基类不可以被实例化。
+
   - **在运行期中**，animal->speak() 才能确定被调用的哪一个派生类或者基类中的speak()函数
-  - 使用**virtual**关键字表示
 
 ```cpp
 class Animal 
@@ -600,11 +605,92 @@ int main()
 ```
 
 - 纯虚函数是在基类中声明的虚函数，它在基类中没有定义，但要求任何派生类都要定义自己的实现方法。在基类中实现纯虚函数的方法是在函数原型后加 **=0**
-  - 包含纯虚函数的类没有办法被实例化， 只能成为一个抽象类。对应的派生类必须重写基类中的纯虚函数，否则会被直接当成抽象类，为下一层的派生类使用
+  - 包含纯虚函数的类没有办法被实例化， 只能成为一个抽象类。对应的派生类必须重写基类中的纯虚函数，否则会被直接当成抽象类，为下一层的派生类使用。
 
 ```cpp
 virtual void funtion1()=0;
 ```
+
+### 虚函数表/虚函数表指针
+
+- 每一个包含虚函数的类都会有一个虚函数表，并且包含了一个指向虚函数表的指针。在调用虚函数时，需要通过虚函数表获取虚函数的函数指针再进行调用，故调用虚函数的效率会低一些。**对于非虚函数，其不会被保留在虚表中**
+
+  ![img](figure/v2-e864f4fe6a480b3230a5c9aebd7df996_1440w.jpg)
+
+  - 对于派生类，其同样会保留一个虚函数表以及指向这个虚函数表的指针，并且这个虚函数表中保留的是指向虚函数的函数指针。在派生类中是会跟据其重写、补充或者继承的虚函数来修改其继承到的虚函数表。
+
+    - 基类指针/引用调用派生类时，其访问的是这个派生类虚函数表，从而访问派生类虚函数实现多态。
+
+    ![img](figure/v2-0fceb07713e411d48b4c361452129585_1440w.jpg)
+
+  - 举例(这里的重写没有写明override，但实际上派生类还是对基类的函数进行了重写以及重定义 | 下图中的非虚函数B::func2()绘制错误，应为func1())
+
+    ```cpp
+    class A {
+    public:
+        virtual void vfunc1();
+        virtual void vfunc2();
+        void func1();
+        void func2();
+    private:
+        int m_data1, m_data2;
+    };
+    class B : public A {
+    public:
+        virtual void vfunc1();
+        void func1();
+    private:
+        int m_data3;
+    };
+    class C: public B {
+    public:
+        virtual void vfunc2();
+        void func2();
+    private:
+        int m_data1, m_data4;
+    };
+    ```
+
+    ![img](figure/v2-dfe4aefdee7e06cf3151b57492ed42a2_1440w.jpg)
+
+
+
+- **补充: **经过虚表调用虚函数的过程称为动态绑定，其表现出来的现象称为运行时多态。
+
+  - 为什么其在运行期才能确定而不是在编译期确定的
+
+    - 虚函数调用不依赖编译期的具体类型，而是在运行期根据对象的实际类型查表调用。基类指针指向什么类型的数据就会调用该派生类的虚函数。
+
+    ```cpp
+    class Animal {
+    public:
+        virtual void speak() = 0;
+    };
+    
+    class Dog : public Animal { void speak() override { /* ... */ } };
+    class Cat : public Animal { void speak() override { /* ... */ } };
+    
+    int main() {
+        int userChoice;
+        cin >> userChoice;
+        Animal* animal = (userChoice == 1) ? new Dog() : new Cat();
+        animal->speak(); // 正确：运行期多态
+    }
+    ```
+
+  - 为什么基类指针或引用不能直接调用派生类的非虚函数
+
+    - 非虚函数不在虚函数表中，基类指针虽然可以指向一个派生类对象，但是由于其指针类型的限制，其只能访问基类中有的对象，所以只能访问派生类中重写的虚函数
+
+  - 构造函数/析构函数/静态成员函数是否可以是虚函数
+
+    - 构造不可以，虚函数表在类完成初始化之后才会被创建
+    - 析构可以，析构函数定义成虚函数，在基类指针指向派生类的时候，可以调用派生类的析构函数完成资源释放。
+    - 静态成员不可以，静态成员函数里面并不包括this指针。虽然虚函数表对一个类而言只有一个，但是其需要通过this指针来调用这个类的成员函数。
+
+
+
+
 
 
 
@@ -675,6 +761,33 @@ virtual void funtion1()=0;
 
   - 这里pBase虽然是一个指向Base的指针, 但是通过 Base* pBase = new Derived() 其可以访问派生类Derived中对应的虚函数，可这里pBase->work();是无法调用派生类中对应的work()函数的，调用的还是自己基类中定义的work函数。当然可以使用dynamic_cast进行指针的转换，将基类指针转换成为派生类指针进行使用。
   - 派生类实际上可以不定义自己的work函数，直接使用基类中的work函数，即实现了继承。这里相当于是实现了派生类对基类函数的重定义
+
+
+
+### 虚继承
+
+- 解决多重继承中可能出现的问题，如下面中B,C类同时被D继承，导致最后在D中会包含了两种A中的数据，不仅冗余而且会有二义性的出现，对应的解决方法就是使用**虚继承**
+
+  ```cpp
+  class A {
+  public:
+      int data;
+  };
+  
+  class B : public A {};  // 普通继承自A
+  class C : public A {};  // 普通继承自A
+  
+  class D : public B, public C {}; // 多重继承自B和C
+  ```
+
+  ```cpp
+  class B : virtual public A {}; // 虚继承自A
+  class C : virtual public A {}; // 虚继承自A
+  
+  class D : public B, public C {}; // 多重继承自B和C
+  ```
+
+  
 
 
 
@@ -752,12 +865,7 @@ virtual void funtion1()=0;
       - **删除元素： **开放寻址中不能直接删除元素，因为删除带来的空桶会导致在查询中，如果找到空桶，系统就会自动返回或者直接在这个位置插入元素，导致一些元素本身在Hash表中但是不能被正确的查询到。
         - 对于删除元素可采用懒删除（lazy deletion）机制：它不直接从哈希表中移除元素，**而是利用一个常量 `TOMBSTONE` 来标记这个桶**。在该机制下，`None` 和 `TOMBSTONE` 都代表空桶，都可以放置键值对。但不同的是，线性探测到 `TOMBSTONE` 时应该继续遍历，因为其之下可能还存在键值对
 
-
-
-
-
-
-#### 使用
+### 使用
 
 - unordered_map的使用 | 对于unordered_map<int, int>这种 如果insert的一个未出现过的元素(key值)，那么其对应的数据会自动定义成为0。
 
@@ -832,7 +940,7 @@ virtual void funtion1()=0;
 
 ### 隐式类型转换
 
-##### Numeric promotions
+#### Numeric promotions
 
 - Integral promotion: 小整型转换成较大的整型
 
@@ -846,7 +954,7 @@ virtual void funtion1()=0;
 
 - Floating-point promotion: 
 
-##### Numeric conversions
+#### Numeric conversions
 
 数值转换可能有数据精度的损失(整型与浮点型在计算机中的表示方式不一样)
 
@@ -878,7 +986,7 @@ virtual void funtion1()=0;
     int b = const_cast<int>(a);  //compile error(a的常量性不可以改变)
     ```
 
-  - reinterpret_cast : 用于完全不想关变量类型的转换，比如从整形转换成为指针或者引用。
+  - reinterpret_cast : 用于完全不相关变量类型的转换，比如从整形转换成为指针或者引用。
 
 
 
@@ -1444,6 +1552,12 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 ## 运算符重载
 
+- 大部分运算符是可以进行重载，但是还是有一些运算符不能进行重载。其需要使用**operator**运算符来进行实现，并且包含一个返回类型与函数形参。
+
+  ```cpp
+  Box operator+(const Box&);
+  ```
+
 - 用赋值运算符举例
 
   - **重载运算符有一个返回类型和一个参数列表**, 对于C++中的赋值运算符而言，其会直接支持 a = b = c 的连续赋值操作，其中b=c会返回b本身的值，即需要重载使用的运算符也得要能支持这种操作，故这里需要返回*this
@@ -1606,6 +1720,76 @@ void swap(T &a,T &b)
 
 
 
+## 常见错误
+
+- 关于悬空指针的出现
+
+  -  在下面这个例子中我忘记了如果在一个语句中直接定义一个变量，但是又定了一个指针指向该对象，在这个语句结束之后，这指针就变成了悬空指针，很容易出现未定义的操作
+
+    ```cpp
+    struct Node 
+    {
+        int nValue;
+        Node* pNext;
+        Node(int _nValue, Node* _pNext) 
+        {
+            nValue = _nValue;
+            pNext = _pNext;
+        }
+    };
+    	// 定义一个虚拟头节点
+    	Node myHead(0, nullptr);
+        Node* node_ptr = &myHead;
+        for(int i = 0; i < res.size(); ++i)
+        {
+            // Node离开这个作用域之后就变成了未定义的对象，node_ptr就指向了一个被释放的部分 —— 程序自然出现了不可预料的错误
+            Node tmp(res[i], nullptr);
+            node_ptr->pNext = &tmp;
+            node_ptr = &tmp;
+        }
+    
+        node_ptr = myHead.pNext;
+        while(node_ptr != nullptr)
+        {
+            cout << node_ptr->nValue << " ";
+            node_ptr = node_ptr->pNext;
+        }
+    
+    ```
+
+  - 另一个可能导致悬空指针的部分即在delete部分，delete释放指针对应的内存之后。这个指针对象的生命周期并没有结束，但现在其指向的对象已经被释放了！！！该指针变成悬空指针
+
+    ```cpp
+    	// 将数组中的所有元素都转换成为了Node对应的结构体
+    	Node* myHead = new Node(0, nullptr);
+        Node* node_ptr = myHead;
+        for(auto i : res)
+        {
+            // 堆内存不会自动被释放掉
+            Node* tmp = new Node(i, nullptr);
+            node_ptr->pNext = tmp;
+            node_ptr = tmp;
+        }
+    
+    	// 释放堆内存
+        node_ptr = myHead->pNext;
+        while(node_ptr != nullptr)
+        {
+            auto tmp = node_ptr;
+            node_ptr = node_ptr->pNext;
+            delete tmp;
+        }
+        delete myHead;
+    ```
+
+    
+
+
+
+
+
+
+
 
 ****
 
@@ -1753,7 +1937,7 @@ void swap(T &a,T &b)
 
   - std::to_string() 其中整形数据直接转换string
   - std::stoi() 字符串转换int类型  —— 除去直接转换成为整形数据，还可以转换成为std::stol以及std::stoll
-  - std::isstringstream 自动分割字符串数据
+  - std::istringstream 自动分割字符串数据 **注意其对应的头文件为<sstream>!!!**
 
   ```cpp
   #include <iostream>
@@ -2768,7 +2952,104 @@ for (auto it = lst.begin(); it != lst.end();) {
 
 
 
+#### 链表排序 
 
+- 目前只看了其中一种方法——归并排序，其是按照分而治之的思路来处理的，按照左闭右开的思路，不断地去将链表分割，然后最终合并。对应时间复杂度从O(n*2)变成了O(n*log(n))
+
+  ```cpp
+  class Solution {
+  public:
+  
+  // 查找中间节点(我这种方法虽然可以解决头节点的问题，但是目前来看寻找中间节点的方法还是直接给定首尾元素之后去遍历比较简单)
+  //    ListNode* searchMid(ListNode* head)
+  //    {
+  //        if(head == nullptr) return nullptr;
+  //        ListNode* slow = head;
+  //        ListNode* fast = head;
+  //        while(fast->next != nullptr)
+  //        {
+  //            if(fast->next != nullptr) fast = fast->next->next;
+  //            if(fast != nullptr)
+  //                slow = slow->next;
+  //            else
+  //                break;
+  //        }
+  //        return slow;
+  //    }
+  
+      // 寻找中间节点, 并递归完成合并
+  //    ListNode* sortList(ListNode* head, ListNode* tail)
+  //    {
+  //        // 如果输入一个节点或者没有节点，即返回头元素即可
+  //        if(head == nullptr) return head;
+  //        // note 由于后面merge部分slow同时给了两个slowList函数, 说明这里其实是一个左闭右开的区间
+  //            // 一开始给的tail是nullptr 但是后面tail在递归中会变成非空值, 所以这里需要手动切割 防止tail的元素被同时使用了两次
+  //        if(head->next == tail)
+  //        {
+  //            head->next = nullptr;
+  //            return head;
+  //        }
+  //        ListNode* slow = head;
+  //        ListNode* fast = head;
+  //        while(fast != tail)
+  //        {
+  //            slow = slow->next;
+  //            fast = fast->next;
+  //            if(fast != tail) fast = fast->next;
+  //        }
+  //        return merge(sortList(head, slow), sortList(slow, tail));
+  //    }
+  
+          // note 这种思路比leetcode上给的思路更加清除 sortList()要遵循的一个原则就是要么都是左闭右开 要么都是左闭右闭 这两个不能同时出现出来!!
+          ListNode* sortList(ListNode* head, ListNode* tail) {
+              if (head == tail || !head->next) return head; // 修正终止条件
+              ListNode *slow = head, *fast = head->next;
+              while (fast != tail && fast->next != tail) {  // 确保fast可以移动两步
+                  slow = slow->next;
+                  fast = fast->next->next;
+              }
+              ListNode* mid = slow->next;
+              slow->next = nullptr; // 正确断开链表
+              ListNode* left = sortList(head, nullptr); // 递归排序左半部分
+              ListNode* right = sortList(mid, nullptr);  // 递归排序右半部分
+              return merge(left, right);
+          }
+      // note 这部分对应的合并部分相当于是最简单的部分 - 多链表合并也可以直接使用优先级队列实现
+      ListNode* merge(ListNode* head1, ListNode* head2)
+      {
+          ListNode* myHead = new ListNode(0, nullptr);
+          ListNode* tmp = myHead;
+          while(head1 != nullptr && head2 != nullptr)
+          {
+              if(head1->val > head2->val)
+              {
+                  tmp->next = head2;
+                  head2 = head2->next;
+              }
+              else
+              {
+                  tmp->next = head1;
+                  head1 = head1->next;
+              }
+              tmp = tmp->next;
+          }
+          if(head1 != nullptr) tmp->next = head1;
+          else
+              tmp->next = head2;
+          // 这里将虚拟头头节点作为返回值
+          auto res = myHead->next;
+          delete myHead;
+          return res;
+      }
+  
+      // note 主要解决的方法是插值排序 将整个链表不断先进行分割，之后再将其进行合并
+      ListNode* sortList(ListNode* head) {
+          return sortList(head, nullptr);
+      }
+  };
+  ```
+
+  
 
 
 ## Hash表
