@@ -564,7 +564,17 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 
 new malloc delete free，其中new与delete是C++新引入的部分
 
-- delete  | **delete ptr** -- 代表用来释放内存，且只用来释放ptr指向的内存
+- new与delete的使用要更加简单以及安全
+- malloc与free都需要手动计算需要分配
+
+
+
+- delete | **delete ptr** -- 代表用来释放内存，且只用来释放ptr指向的内存
+- 
+
+
+
+
 
 
 
@@ -1681,9 +1691,36 @@ void swap(T &a,T &b)
 
 
 
-## define
+## define/using/typdef
 
 - #define只是一个预处理命令，保证其在预处理阶段进行文本替换，并不会进行类型检查。相比const，const是实实在在定义了一个变量，所以会有语法检查，更加安全。
+
+- typedef 相当于是一个已经存在的类型给一个类型别名
+
+  ```cpp
+  typedef int MyInt;                      // 基本类型别名
+  typedef std::vector<float> FloatVec;    // 容器类型别名
+  typedef void (*FuncPtr)(int);           // 函数指针别名
+  ```
+
+- using 可以成为类型别名，也可以成为引入命名空间
+
+  ```cpp
+  using MyInt = int;                      // 等价于typedef
+  using FuncPtr = void (*)(int);          // 函数指针（更直观）
+  
+  // 模板别名（typedef无法实现）
+  template<typename T>
+  using Vec = std::vector<T>;            // Vec<int> 等价于 std::vector<int>
+  
+  // 引入命名空间
+  using std::cout;
+  using namespace std::literals;         // 引入字面量命名空间
+  ```
+
+  
+
+
 
 
 
@@ -1701,6 +1738,88 @@ void swap(T &a,T &b)
 ## 内存对齐
 
 **即数据储存的起始地址可以整除数据实际按照占据的字节数**——对应的好处就是方便CPU一次读取就尽可能地直接获取到这个数据
+
+
+
+
+
+## Class/Struct/union
+
+- classs与struct 的区别主要在默认的访问控制以及继承权限上，在内存对齐等方面上是没有区别的。
+  - class默认是private私有(即默认所有的成员变量以及函数是私有的)，继承上是私有继承的，即基类中的公有对象与保护对象是会被继承成为派生类的私有变量。
+  - struct的默认访问权限是public，在继承上默认也是public
+
+- struct与union
+
+  - union共用体类型，其中包含的数据一次只能使用一种，此时不能访问union中的其他数据，安全性较低。
+
+    - union中的占据的字节数按照其中最大的数据占据字节数来定义
+
+    ```cpp
+    #include <iostream>
+    using namespace std;
+     
+    union test
+    {
+         char mark;
+         long num;
+         float score;
+    }a;
+     
+    int main()
+    {
+         // cout<<a<<endl; // wrong
+         a.mark = 'b';
+         cout<<a.mark<<endl; // 输出'b'
+         cout<<a.num<<endl; // 98 字符'b'的ACSII值
+         cout<<a.score<<endl; // 输出错误值
+     
+         a.num = 10;
+         cout<<a.mark<<endl; // 输出换行 非常感谢suxin同学的指正
+         cout<<a.num<<endl; // 输出10
+         cout<<a.score<<endl; // 输出错误值
+     
+         a.score = 10.0;
+         cout<<a.mark<<endl; // 输出空
+         cout<<a.num<<endl; // 输出错误值
+         cout<<a.score<<endl; // 输出10
+     
+         return 0;
+    }
+    
+    ```
+
+- enum与enum class
+
+  - 枚举类型，但是由于enum导致的作用域污染的问题，通过enum class可以解决
+
+  - 枚举类型中的每一个枚举常量都分配了其对应的常量值
+
+  - C语言规定，枚举类型（enum）的成员的可见范围被提升至该枚举类型所在的作用域内。这被认为有可能污染了外部的作用域，为此，C++11引入了枚举类(enum class)解决此问题
+
+    ```cpp
+    // 如果这两个枚举类型的变量在同一个文件中出现问题 ！！ 只能定义成 enum class Sex以及Student
+    enum Sex
+    {
+        Girl,  
+        Boy 
+    };
+    // 错误，编译器提示 Girl，Boy重定义
+    enum Student
+    {
+        Girl,  
+        Boy 
+    };
+    
+    ```
+
+    
+
+  
+
+
+
+
 
 
 
