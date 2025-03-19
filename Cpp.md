@@ -91,8 +91,6 @@ shared_ptr | weak_ptr | unique_ptr
 
 
 
-
-
 ## RAII 
 
 - 所谓的RAII，从其对应的英文字符上就可以判断出来，资源获取即是初始化(resource acquisition is initialization) | Resource Acquisition Is Initialization（RAII）是C++中管理资源的重要范式。该模式的核心思想是**将资源获取与对象生命周期绑定，通过构造函数获取资源，析构函数释放资源**。这种机制可以确保即使在异常发生时，资源也能被正确释放
@@ -924,7 +922,9 @@ virtual void funtion1()=0;
 
     
 
-## explicit 关键字
+## explicit/noexcept/delete关键字
+
+### explicit
 
 - 防止类中进行隐式的构造函数调用，即防止了由于C++自身的隐式类型转换，导致调用其他的构造函数(从C++11开始，也可以作用在多参数的构造函数上)
 
@@ -958,11 +958,30 @@ virtual void funtion1()=0;
   }
   ```
 
+### delete
 
+- 除去删除堆内存的操作，其在类中还可以禁止使用一些构造函数，即在函数的最后补充即可
 
+  ```cpp
+  HeapOnly(const HeapOnly&) = delete;
+  ```
 
+  
 
+### noexcept
 
+- noexcept 主要是用在移动构造函数跟移动语义重载的运算符上，其可以提示编译器正确使用移动语义构造而不是使用之前定义的拷贝构造函数
+
+  ```cpp
+  String(String&& other) noexcept : m_data(other.m_data), m_length(other.m_length)
+  {
+      cout << "Moving operation" << endl;
+      other.m_data = nullptr;
+      other.m_length = 0;
+  }
+  ```
+
+  
 
 
 
@@ -1094,38 +1113,76 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 
 
-## 类的构造函数
+## 类
 
-在C++中类的构造函数一般有五种，分别用于类的构造。
+- C++类的构造函数一共有五种，但是使用起来比较复杂。
+
+### 五种常见构造函数
+
+> [!IMPORTANT]
+>
+> **编译器只可能生成默认与拷贝构造函数, 并不会直接生成其他的构造函数**。当然，编译器自己也会生成默认的赋值运算符。自动生成的拷贝构造与赋值运算符里面实现的都是浅拷贝构造
+
+
 
 - 默认构造函数
+
+  - 在C++中，如果类没有显示定义任何构造函数，编译器会自动生成一个默认的无参数的构造函数。其对于基本类型是不会进行初始化，成员变量未定义。对于类类型的成员变量，其会调用这个类对象的默认构造函数对其进行初始化。
+
+    ```cpp
+    class A
+    {
+    public:
+        string s; // 类类型的构造函数，s会自动初始化
+        int a;	  // a没有进行初始化，是一个随机值
+    };
+    ```
+
+  - 默认构造函数有两类:
 
     - 自己没有显式定义，系统会自动生成默认的构造函数
     - 自己定义的默认构造函数要求 要么没有参数 要么所有的参数都有默认值
 
     ```cpp
-    Student();//没有参数
+    // 前两者构造函数同理
+    Student() = default; 
+    Student(){};//没有参数
+    
     Student(int num=0;int age=0);//所有参数均有默认值
     ```
 
-- 一般构造函数
+  - **一定注意：一旦在类中自定义了类的构造函数，那么编译器就不会有默认的构造函数出现了，除非自己补充B() = default**
 
-    - 即包含一到多个参数的构造函数，即对应最常见的构造函数
+    ```cpp
+    class B {
+    public:
+        B(int x) {} // 自定义构造函数（带参数）
+        // 此时编译器不会生成默认构造函数 B()
+    };
+    
+    int main() {
+        B obj; // 错误：没有默认构造函数可用
+        return 0;
+    }
+    ```
+
+- 一般构造函数
+  - 即包含一到多个参数的构造函数，即对应最常见的构造函数
 
 - 拷贝构造函数
 
-    - 拷贝初始化一般是使用一个已经定义的类对象对当前对象进行初始化。如果没有自定义拷贝构造函数，默认的拷贝构造函数一般使用的是**浅拷贝**，**如果出现指针变量对象即会出现两个指针指向同一块内存的情况，很容易出现悬空指针的情况。**
-    - **对于一个类没有显式定义拷贝构造函数的话，系统会自动生成一个默认的拷贝构造函数。**
-    - **显式调用拷贝构造函数 / 隐式调用拷贝构造函数:  **这两者的区别是使用()以及=，但是这两者最后都会调用拷贝构造函数。
+  - 一般是使用一个已经定义的类对象对当前对象进行初始化。**对于一个类没有显式定义拷贝构造函数的话，系统会自动生成一个默认的拷贝构造函数。**默认的拷贝构造函数一般使用的是**浅拷贝**，**如果出现指针变量对象即会出现两个指针指向同一块内存的情况，很容易出现悬空指针的情况。**
+
+  - 显式调用/隐式调用拷贝构造函数
 
     ```cpp
-    // 显式调用拷贝构造函数
-    Complex c2(c1);
-    // 隐式调用拷贝构造函数
-    Complex c2 = c1;
-    ```
-
+    Complex c2(c1); 	// 显式调用
+    Complex c2 = c1;	// 隐式调用
     
+    // 两个已经声明过的对象使用赋值并不能调用拷贝构造函数
+    Complex c1, c2;
+    c1 = c2;
+    ```
 
     ```cpp
     #include <iostream>
@@ -1149,7 +1206,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
         Complex(const Complex &other) : real(other.real), imag(other.imag) {
             cout << "Copy Constructor called!" << endl;
         }
-    
+    	
         void display() const {
             cout << "Real: " << real << ", Imag: " << imag << endl;
         }
@@ -1170,7 +1227,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 - 转换构造函数
 
-    - 用于初始化的变量不是构造函数对应的形参类型，但是C++自己通过隐式转换将输入变量转换到类的构造函数所需要的形参类型进行初始化，如果想避免这种情况即可以使用explicit防止。
+  - 用于初始化的变量不是构造函数对应的形参类型，但是C++自己通过隐式转换将输入变量转换到类的构造函数所需要的形参类型进行初始化，如果想避免这种情况即可以使用**explicit**防止。
 
     ```cpp
     class MyClass {
@@ -1189,10 +1246,12 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
     }
     ```
 
+
 - 移动构造函数
 
-    - 主要使用是将其他对象的内存资源用在这个对象上，避免之前由于深拷贝内存需要重新设置一份影响执行效率
-    - 函数的定义方式与拷贝构造函数相似，但是其对应的形参是一种右值引用
+  - 主要使用是将其他对象的内存资源用在这个对象上，避免之前由于深拷贝内存需要重新设置一份影响执行效率
+
+  - 函数的定义方式与拷贝构造函数相似，但是其对应的形参是一种右值引用
 
     ```cpp
     ClassName(ClassName &&other);
@@ -1200,12 +1259,186 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 - 赋值运算符重载
 
-    -  **这里调用赋值运算符与拷贝构造函数中的赋值完全不一样，这里要求左右两边的对象都是被创建好了，如果没有显式实现一个赋值运算符的重载，系统本身也是会自动生成一个默认的赋值运算符来完成拷贝工作(当然也是浅拷贝)**
+  - **这里调用赋值运算符与拷贝构造函数中的赋值完全不一样，这里要求左右两边的对象都是被创建好了，如果没有显式实现一个赋值运算符的重载，系统本身也是会自动生成一个默认的赋值运算符来完成拷贝工作(当然也是浅拷贝)**
 
     ```cpp
     A a1, A a2; a1 = a2;//调⽤赋值运算符
     A a3 = a1;//调⽤拷⻉构造函数，因为进⾏的是初始化⼯作，a3在使用之前并未存在
     ```
+
+  - 并且对于赋值运算符，其对应的返回值一般是这个类的引用
+
+    ```cpp
+    Person& operator=(const Person& p)
+    {
+        cout << "Assign" << endl;
+        return *this;
+    }
+    ```
+
+
+
+
+
+### 基本使用
+
+#### 初始化
+
+- 类定义的时候可以直接进行初始化，即所有类的实例化对象成员变量a都默认为0 (无论对象是栈上、堆上还是全局/静态存储)，**除非在类的构造函数中有对这个变量的重新定义**。
+
+  ```cpp
+  class A
+  {
+      public:
+          A() = default;
+          int a = 0;
+  };
+  ```
+
+#### 自定义类
+
+- 类声明的时候有时候会按照C的方法来进行构造，这个时候就需要注意一下C语言风格的字符串(最后一个元素是'\0')，其中strlen()被定义在string.h这个头文件中。
+
+  - 虽然在这个String类中需要保留字符串，但是这里实际上保留的还是一个char\*的指针类型。输入数据也是char\*，是因为strlen这种函数可以直接获取到一个字符串的大小，输入参数是这个指针的起始位置(相当于strlen自己从开始找到最后的'\0'位置，但是其不会包含'\0')。
+
+  - new/delete的时候实际上就决定了这个字符串指针指向元素的大小了，编译器自身应该会保存这种数据，所以在最后delete的时候使用的命令还是delete [] m_data.
+
+  - **注意这里构造函数中用的也是const char* str**，这样可以直接接受一个右值对象进行构造。下面第一种写法是错误的，因为C++中的"123"这种字符串字面值是直接表示为const char[xx]类型的，char*不能直接指向该数据，只能使用后面的方法来接受该字符串的值。
+
+    ```cpp
+    char* p = "123";
+    char p2[] = "123";
+    const char* p3 = "123";
+    ```
+
+  - **移动语义的部分都需要加上noexcept，否则编译器可能还是会调用之前的拷贝构造而不使用移动语义**。
+
+  ```cpp
+  class String
+  {
+      char* m_data;
+      size_t m_length;
+  
+  public:
+      String(const char* str)
+      {
+          m_length = strlen(str);
+          m_data = new char[m_length + 1];
+          memcpy(m_data, str, m_length + 1);
+      }
+  
+      ~String()
+      {
+          delete [] m_data;
+      }
+  
+      // 跟据三五原则 实现析构函数就最好实现其对应的拷贝构造以及运算符重载的情况
+      String(const String& other)
+      {
+          // 直接接受新输入的字符串
+          cout << "Copying operation" << endl;
+          m_length = strlen(other.m_data);
+          m_data = new char[m_length + 1];
+          memcpy(m_data, other.m_data, m_length + 1);
+      }
+  
+      // 重载运算符
+      String& operator=(const String& other)
+      {
+          if(this != &other)
+          {
+              delete [] m_data;
+              m_length = strlen(other.m_data);
+              m_data = new char[m_length + 1];
+              memcpy(m_data, other.m_data, m_length + 1);
+          }
+          return *this;
+      }
+  
+      // 在三法则之后 C++11由于引入了移动语义，所以这里有出现了五法则，尤其对应的移动语义构造函数以及重载的移动语义赋值运算符
+      // note 移动语义函数/重载运算符 只有在定义成为noexcept之后才能被正确调用，否则编译器可能还是会默认调用拷贝构造函数
+      String(String&& other) noexcept : m_data(other.m_data), m_length(other.m_length)
+      {
+          cout << "Moving operation" << endl;
+          other.m_data = nullptr;
+          other.m_length = 0;
+      }
+  
+      String& operator=(String&& other) noexcept
+      {
+          // 这里应该对比的是this指针对应的地址是否是other的地址 所以这里不应该对比 *this == other
+          if(this != &other)
+          {
+              delete [] m_data;
+              m_data = other.m_data;
+              m_length = other.m_length;
+              other.m_data = nullptr;
+              other.m_length = 0;
+          }
+          return *this;
+      }
+  };
+  ```
+
+  
+
+
+
+
+
+
+
+
+### 特殊类
+
+- 这里说的特殊类一般对应的是有特殊要求的类，比如这个类只能在堆上定义。
+
+#### 只在堆上定义的类
+
+- 首先需要将一些构造函数定义成为私有而非公有
+
+  - **个人理解：**这里HeapOnly a; 编译器会自动去访问其对应构造函数，但是这里的构造函数是私有的话，编译器就不能通过这种方法来实现构造，就需要定义一个static函数，其定义为共有，通过这个静态成员函数才能去访问这个构造函数。对于所有的构造函数，其实都是编译器在类外去调用这个函数来初始化这个类的，定义成为私有后，编译器就无法操作。
+  - **个人理解：**为什么这里使用static成员函数可以访问其他的非静态成员函数，是因为对于构造函数而言是不需要this指针的，因为在调用这个函数时，类中还没有this指针。所以该静态成员函数可以调用该构造函数。
+  - HeapOnly(const HeapOnly&) = delete; 这里为了防止编译器生成默认的构造函数，这里就加上一个限制，直接禁止掉使用拷贝构造函数。该语句在public区比private要好一些。
+
+  ```cpp
+  #include <iostream>
+  using namespace std;
+  class HeapOnly {
+      public:
+          static HeapOnly* create()
+          {
+              return new HeapOnly;
+          }
+          void destroy() {
+              delete this; // 通过成员函数释放对象
+          }
+      HeapOnly(const HeapOnly&) = delete;
+      private:
+          HeapOnly() {} // 私有构造函数
+          ~HeapOnly() {} // 私有析构函数
+  };
+  
+  int main()
+  {
+      HeapOnly* a = HeapOnly::create();
+      system("pause");
+      return 0;
+  }
+  
+  ```
+
+  
+
+
+
+
+
+
+
+
+
+
 
 - **补充对于类的使用：**
 
@@ -1293,19 +1526,20 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
       - 将亡值(即即将被销毁的值)，其与右值不一样的地方在于其可以被取地址，比如std::move()的返回值，虽然其是一个右值，但是其可以被取地址
 
 
-    ```cpp
-    // a为左值 5为右值
-    int a = 5;
-    // a为左值 A()形成的临时变量是一个右值
-    struct A {
-        A(int a = 0) {
-            a_ = a;
-        }
-     
-        int a_;
-    };
-    A a = A();
-    ```
+```cpp
+
+// a为左值 5为右值
+int a = 5;
+// a为左值 A()形成的临时变量是一个右值
+struct A {
+    A(int a = 0) {
+        a_ = a;
+    }
+ 
+    int a_;
+};
+A a = A();
+```
 
 - 左值引用/右值引用
 
@@ -1366,7 +1600,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 - std::move() 
 
-    - 其本身并不会改变程序的性能，其只会将一个左值转换成为右值，相当于C++中的static_cast<T &&>的类型转换，真正让程序效率提升的部分还是引用本身。
+    - 其本身并不会改变程序的性能，其只会将一个左值转换成为右值引用，相当于C++中的static_cast<T &&>的类型转换，真正让程序效率提升的部分还是引用本身。
 
     - 以**移动构造函数为例**，使用右值引用从当函数的形参即可以读取左值又可以右值，虽然左值引用也属于引用，可以避免拷贝。但是右值引用更加方便！！！ 即**对象在需要拷贝且被拷贝者之后不再被需要的场景，建议使用**`std::move`**触发移动语义，提升性能！！！std::move()本身只是一种类型转换的功能**
 
@@ -1473,8 +1707,14 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
          
         void emplace_back (Args&&... args);
         ```
-        
-    - std::move()的实现原理为: 即无论输入的参数是左值还是右值都同意转换成右值
+    
+    
+    
+    
+    
+    ### 实现原理
+    
+    - std::move()的实现原理为: 即无论输入的参数是左值还是右值都同意转换成右值引用，其中 remove_reference<T>::type 即可以将输入的T类型(无论T后面有没有引用)都转换成为没有引用的T类型，最终返回的就是右值引用
     
       ```cpp
       template <typename T>
@@ -1483,7 +1723,19 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
       	return static_cast<typename remove_reference<T>::type&&>(t);
       ```
     
-      
+    
+    - 完美转换对应的函数原型如下，调用的时候需要使用std::forward<T>(x)，即forward函数并不像std::move()一样，还可以自动类型推导T的类型，这里T需要手动给定
+    
+      ```cpp
+      template <typename T>
+      T&& forward(typename std::remove_reference<T>::type& t) {
+          return static_cast<T&&>(t);
+      }
+      ```
+    
+    - std::move(x)，不论x输入的是一个左值还是右值，std::move()返回的都是一个不具名的右值引用，那么其一定是一个右值而不是一个左值。只有具名的右值引用才是一个左值。
+    
+        - 参考：https://blog.csdn.net/weixin_39318565/article/details/131231149
 
 
 
@@ -1833,7 +2085,57 @@ void swap(T &a,T &b)
     
     ```
 
+
+
+
+
+
+## emplace/ emplace_back
+
+- 两者的主要区分在于使用对象是一个顺序容器还是一个非顺序的容器，对于vector/list/queue这种对应的是emplace_back()在容器最后补充一个元素，emplace主要用在set, map这种序列上主要是直接插入元素。
+
+  - 两者都能避免直接先构造一个对象再进行数据的插入，现在是直接插入
+
+    ```cpp
+    #include <set>
+    #include <string>
     
+    class Student {
+    public:
+        Student(int id, const std::string& name) 
+            : id_(id), name_(name) {}
+        
+        // set会根据operator<排序
+        bool operator<(const Student& other) const {
+            return id_ < other.id_;
+        }
+    
+    private:
+        int id_;
+        std::string name_;
+    };
+    
+    int main() {
+        std::set<Student> students;
+        // 直接传递Student的构造参数
+        students.emplace(101, "Alice");  // 构造Student(101, "Alice")
+        students.emplace(102, "Bob");    // 构造Student(102, "Bob")
+        return 0;
+    }
+    //////////////////////////////////////////////////////////////////////////
+    std::map<int, std::string> simpleMap;
+    simpleMap.emplace(42, "hello");  // 等价于插入pair(42, "hello")
+    ```
+
+    
+
+  
+
+
+
+
+
+
 
 
 
@@ -1858,7 +2160,7 @@ void swap(T &a,T &b)
 
 ## 其他
 
-- strlen函数，计算一个C风格字符串的长度
+- strlen函数，计算一个C风格字符串的长度，头文件是string.h
 - **sizeof**是一个关键字，在编译时就能确定结果，计算一个类型或者变量占用的字节数
   - **sizeof 运算符可用于获取类、结构、共用体和其他用户自定义数据类型的大小。**
 
@@ -2050,6 +2352,8 @@ void swap(T &a,T &b)
 
 - 这里我的理解是这里将所有的段都定义在0~4GB的虚拟空间中，段的概念在这里只进行一些内存上的保护(还不是很清楚)
 
+
+
 ### 内核空间和用户空间
 
 - 进程在用户态时，只能访问用户空间内存 | 只有进入内核态后，才可以访问内核空间的内存；
@@ -2067,6 +2371,8 @@ void swap(T &a,T &b)
   ![image-20250310225715737](figure/image-20250310225715737.png)
 
 - **注意：对于多进程环境而言，进程之间的内存地址不受影响，相互隔离，故操作系统可以为每个线程分配一套虚拟内存地址空间**
+
+- 假设当前是一个32位的系统，其对应的虚拟内存大小是4GB, 那么在用户空间中的3GB空间中，堆是由程序员自行申请的，大小基本可以在2GB左右，栈的默认大小在8MB，当然栈的空间也可以在Linux中修改
 
 
 
@@ -2432,6 +2738,8 @@ void swap(T &a,T &b)
 
 # 计算机网络
 
+
+
 ## 网络模型
 
 - 对于不同设备上的进程间通信，就需要网络通信，而设备是多样性的，所以要兼容多种多样的设备，就协商出了一套**通用的网络协议**。并且这个网络协议是分层的，每一层都有其对应的作用。
@@ -2520,6 +2828,14 @@ void swap(T &a,T &b)
 
 - IP 在 TCP/IP 参考模型中处于第三层，也就是**网络层**
 - 
+
+
+
+
+
+
+
+
 
 
 
@@ -2792,6 +3108,10 @@ vector<vector<int>> res = {{}};   // 这个二维数组的size = 1，其第一�
 vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方案
 ```
 
+### 扩容
+
+- 扩容部分主要处理的是vector中size与capcity的关系，当size到capcity大小的时候会触发二倍扩容。这里主要实现的方法还是拷贝。
+
 
 
 ### 函数方法
@@ -2920,7 +3240,41 @@ vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方�
     };
     ```
 
-    
+
+#### 元素去重
+
+- 使用双指针方法可以直接给一个数组元素进行去重处理，即不断地查找相邻的相同元素然后再去判断用fast指针指向的数据覆盖slow位置处的数据。
+
+  ```cpp
+  int main()
+  {
+      // 对于一个长数组的去重
+      vector<int> a = {1,1,1,1,2,2,2,2,2,3,4,4,5,6,6,6,6,6,6,8};
+      // 双指针方法进行去重
+      int slow = 0;
+      int fast = 0;
+      while(fast < a.size())
+      {
+          if(fast >= 1 && a[fast-1] == a[fast])
+          {
+              ++fast;
+              continue;
+          }
+          else
+              a[slow++] = a[fast++];
+      }
+  
+      for(int i = 0; i < slow; ++i)
+      {
+          cout << a[i] << " ";
+      }
+  
+      system("pause");
+      return 0;
+  }
+  ```
+
+  
 
 #### 元素平方排序
 
@@ -3813,7 +4167,286 @@ for (auto it = lst.begin(); it != lst.end();) {
   };
   ```
 
+
+
+
+#### LRU
+
+- 其主要是使用一个双向链表以及一个哈希表来实现，并且在链表节点中保留了一个可以指向map中key取值的成员变量，通过该值可以进行map中元素的删除操作。在实际处理中，只要被get或者新push的函数，其对应的位置都应该出现在链表的最后位置。这样在最开始的节点就是最长没有被使用的节点。
+
+  ```cpp
+  struct Node
+  {
+      // 因为需要从链表反推map中的元素(方便后续的删除map中的元素), 所以这里Node中也要保留key对应的元素，这样才能删除
+      int key;
+      int val;
+      Node* next_ptr;
+      Node* last_ptr;
+      Node() = default;
+      Node(int key, int val) : key(key), val(val)
+      {
+          next_ptr = nullptr;
+          last_ptr = nullptr;
+      }
+  };
   
+  class LRUCache {
+  public:
+  
+      //  本问题实现O(1)的get与put：get即可以使用一个unordered_map进行快速地查找 |
+      //      put需要将最近使用的元素快速的移动到链表的最后位置, 在快速改变这个链表元素的时候使用双向链表是最合适的,即如果这里是一个单向链表这里改变链表节点对应位置的时候时间复杂度就不再是O(1)
+  
+      LRUCache(int capacity) {
+          m_capacity = capacity;
+          header = new Node(0, 0);
+          tailer = new Node(0, 0);
+      }
+  
+      // 将一个Node移动到最后的位置 即tailor之前
+      void move(int key)
+      {
+          auto tmp = m[key];
+          if(tmp->last_ptr != nullptr && tmp->next_ptr != nullptr)
+          {
+              tmp->last_ptr->next_ptr = tmp->next_ptr;
+              tmp->next_ptr->last_ptr = tmp->last_ptr;
+              // 该元素被放置在最后的位置
+              tailer->last_ptr->next_ptr = tmp;
+              tmp->last_ptr = tailer->last_ptr;
+              tailer->last_ptr = tmp;
+              tmp->next_ptr= tailer;
+          }
+          else
+          {
+              tailer->last_ptr->next_ptr = tmp;
+              tmp->last_ptr = tailer->last_ptr;
+              tmp->next_ptr = tailer;
+              tailer->last_ptr = tmp;
+          }
+  
+      }
+  
+      int get(int key) {
+          if(m.find(key) != m.end())
+          {
+              move(key);
+              return m[key]->val;
+          }
+          else
+              return -1;
+      }
+      
+      void put(int key, int value)
+      {
+          if(m.find(key) != m.end())
+          {
+              m[key]->val = value;
+              // 完成put之后，这个值应该被移动到最后
+              move(key);
+          }
+          else
+          {
+              // 需要移除元素
+              if(m.size() >= m_capacity && m.size() > 0)
+              {
+                  // 移除元素
+                  m.erase(header->next_ptr->key);
+                  header->next_ptr = header->next_ptr->next_ptr;
+                  header->next_ptr->last_ptr = header;
+              }
+              // 创建新元素 并且将这个元素放在最后
+              Node* tmp = new Node(key, value);
+              m[key] = tmp;
+              // 处理其创建的新节点的取值情况
+              if(m.size() == 1)
+              {
+                  // 当前只有一个节点出现
+                  header->next_ptr = tmp;
+                  tmp->last_ptr = header;
+                  tailer->last_ptr = tmp;
+                  tmp->next_ptr = tailer;
+              }
+              else
+                  move(key);
+          }
+      }
+  
+      unordered_map<int, Node*> m;
+      int m_capacity;
+      Node* header;
+      Node* tailer;
+  
+  };
+  ```
+
+
+
+
+#### LFU 
+
+- 相比于LRU，在LFU中需要统计的是最小使用次数的节点进行弹出，只有使用次数相同的时候才会直接将最长时间没有使用的节点进行弹出(类似于LRU的操作)。LFU整体的思路就是维护了两个unordered_map，一个map是维持key值直接访问Node节点，另一个map是维持访问次数直接访问一个双向链表，在其中保存的就是相同操作次数的节点值。
+
+  - 每次get，其对应的节点都会从当前的cnt链表中进行取出，然后移动到cnt+1的链表中(需要判断这个链表是否存在)，并且判断该操作是否会影响最小的使用次数值
+  - 每次push，就需要判断当前节点是否已经存在。如果需要新增，就判断是否需要弹出之前的节点(弹出需要看是否需要修改map结构，即是否要删除对应的节点，key_map是肯定要删除，freq_map只需要在双端队列消失的时候删除)，当前最小使用次数肯定下降到1。
+
+  ```cpp
+  struct Node
+  {
+      int val;
+      int key;
+      int cnt;
+      Node* next;
+      Node* last;
+      Node() = default;
+      Node(int _key, int _val, int _cnt) : key(_key), val(_val), cnt(_cnt)
+      {
+          next = nullptr;
+          last = nullptr;
+      }
+  };
+  
+  struct twoList
+  {
+      int size;
+      Node* head;
+      Node* tail;
+      twoList()
+      {
+          size = 0;
+          head = new Node(0, 0, 0);
+          tail = new Node(0,0,0);
+          head->next = tail;
+          tail->last = head;
+      }
+  
+      twoList(Node* tmp)
+      {
+          size = 1;
+          head = new Node(0, 0, 0);
+          tail = new Node(0,0,0);
+          head->next = tmp;
+          tmp->last = head;
+          tmp->next = tail;
+          tail->last = tmp;
+      }
+  
+      ~twoList()
+      {
+          delete head;
+          delete tail;
+      }
+  };
+  
+  
+  class LFUCache {
+  public:
+      // note 在这里使用优先级队列时不能实现O(1)的push操作的, 这里的思路是补充一个unordered_map, 其中保存的是freq(使用次数)到一个双向链表的索引(因为对于相同使用次数的Node，需要按照LRU中的最近最少使用来清理内存)
+      int min_freq = 0;
+      int m_size = 0;
+      int m_capacity = 0;
+      unordered_map<int, twoList*> freq_map;
+      unordered_map<int, Node*> key_map;
+  
+      // 将当前cnt对应的双向链表中移除该元素, 并将其移动到下一个cnt值对应的链表中, 判断当前是否会影响最小索引值
+      void move(Node* tmp)
+      {
+          tmp->next->last = tmp->last;
+          tmp->last->next = tmp->next;
+          freq_map[tmp->cnt]->size--;
+          if(freq_map[tmp->cnt]->size == 0 && tmp->cnt == min_freq)
+              ++min_freq;
+  
+          auto a = ++ tmp->cnt;
+          if(freq_map.find(a) != freq_map.end())
+          {
+              // 放到tail位置
+              auto cur_list = freq_map[a];
+              cur_list->size++;
+              auto _node = cur_list->tail->last;
+              _node->next = tmp;
+              tmp->last = _node;
+              tmp->next = cur_list->tail;
+              cur_list->tail->last = tmp;
+          }
+          else
+          {
+              // 创建新的双向链表并导入数据
+              auto new_list = new twoList(tmp);
+              freq_map[a] = new_list;
+          }
+      }
+  
+      LFUCache(int capacity) {
+          m_capacity = capacity;
+      }
+      
+      int get(int key) {
+          if(key_map.find(key) != key_map.end())
+          {
+              // 更新当前节点
+              auto tmp = key_map[key];
+              move(tmp);
+              return tmp->val;
+          }
+          else
+              return -1;
+      }
+      
+      void put(int key, int value)
+      {
+          if(key_map.find(key) != key_map.end())
+          {
+              key_map[key]->val = value;
+              move(key_map[key]);
+          }
+          else
+          {
+              // 判断是否超过了元素上限
+              if(key_map.size() >= m_capacity)
+              {
+                  // 弹出元素 list 与 key_map都要进行数据删除 - 最小值对应的双向队列中head的下一个元素直接删除
+                  auto _list = freq_map[min_freq];
+                  _list->size--;
+                  auto _node = _list->head->next;
+                  _list->head->next = _node->next;
+                  _node->next->last = _list->head;
+  
+                  key_map.erase(_node->key);
+                  if(_list->size == 0)
+                      freq_map.erase(min_freq);
+              }
+  
+              auto _node = new Node(key, value,1);
+              min_freq = 1;
+              // 判断是否有 cnt = 1的双端队列
+              if(freq_map.find(_node->cnt) != freq_map.end())
+              {
+                  auto _list = freq_map[_node->cnt];
+                  _list->size++;
+                  auto a = _list->tail->last;
+                  a->next = _node;
+                  _node->last = a;
+                  _list->tail->last = _node;
+                  _node->next = _list->tail;
+              }
+              else
+              {
+                  // 创建队列
+                  auto _list = new twoList(_node);
+                  freq_map[_node->cnt] = _list;
+              }
+              // 为key_map补充元素
+              key_map[key] = _node;
+          }
+      }
+  };
+  ```
+
+  
+
+
+
+
 
 
 ## Hash表
@@ -5238,6 +5871,84 @@ for(int i = 0; i < n; ++i)
 ### 子序列问题 
 
 - 个人感觉在分析子序列问题中，递推的感觉只要初始状态正确，递推分析只需要符合逻辑，就可以直接得到结果。比如分析子序列问题中，虽然是提供删除字符串中的可能，但是只需要手动去执行这种推导过程，就可以不去直接分析各种字符串可能出现的情况。
+
+
+
+
+
+
+
+
+
+## 单调栈
+
+- 单调栈解决的主要是寻找左侧比自己大/小 或者 右侧比自己大/小的元素。常见的解决方法就是保留一个元素递增或者元素递减的栈元素。
+
+### 常见问题
+
+#### 每日温度
+
+#### 接雨水
+
+- 接雨水问题在单调栈问题上，还需要找到另一个边界。遍历height数组的时候可以找到右侧边界，还得从栈中获取另外的左侧边界。当前也可以使用双指针方法解决该问题，三次O(n)遍历操作也能解决类似问题。
+
+  ```cpp
+  int trap(vector<int>& height) {
+              stack<int> s;
+              // 栈中存放的数据是index 存在index才能计算整个雨水的容量, 并且在实际的计算中, 需要计算的是下一个stack中的top()值到当前height[i]的一个差值
+              s.push(0);
+              int res = 0;
+  
+              for(int i = 1; i < height.size(); ++i)
+              {
+                  while(!s.empty() && height[s.top()] < height[i])
+                  {
+                      if(s.size() <= 1)
+                          s.pop();
+                      else
+                      {
+                          auto tmp = s.top();
+                          s.pop();
+                          // 注意这里的凹槽计算容积来处理数据
+                          res += ( min(height[s.top()], height[i]) - height[tmp] ) * (i - 1 - s.top());
+                      }
+                  }
+                  s.push(i);
+              }
+              return res;
+          }
+  ```
+
+  ```cpp
+      int trap(vector<int>& height)
+      {
+          vector<int> left(height.size(), 0);
+          vector<int> right(height.size(), 0);
+          for(int i = 0; i < left.size(); ++i)
+          {
+              if(i == 0) left[i] = height[i];
+              else
+                  left[i] = max(left[i-1], height[i]);
+          }
+          for(int j = right.size()-1; j >= 0; --j)
+          {
+              if(j == right.size()-1) right[j] = height[j];
+              else
+                  right[j] = max(right[j+1], height[j]);
+          }
+  
+          int res = 0;
+          for(int i = 0; i < height.size(); ++i)
+          {
+              res += min(left[i], right[i]) - height[i];
+          }
+          return res;
+      }
+  ```
+
+  
+
+
 
 
 
