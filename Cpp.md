@@ -336,9 +336,43 @@ shared_ptr | weak_ptr | unique_ptr
 
 ### 实现原理
 
-- 对于shared_ptr而言，其要求这个类中既要保留一个指向数据内容的指针，还有一个指针要保留引用计数等数据。**后者就是使用一个控制块指针来实现的**。
+#### unique_ptr
 
-  - 创建使用make_shared<T>()的方式要更加方便，一次操作就可以完成操作
+- 对unique_ptr来说，其是不需要保存一个引用计数的，其整体的构造要更加简单。unique_ptr在实际构造中，是禁用了拷贝构造，但保留了移动语义构造（方便独占指针可以换指向的对象）
+
+    ```cpp
+    // 内部对象
+    T* ptr;                  // 指向所拥有的对象
+    Deleter deleter;         // 删除器
+    
+    // 为了保证独占性，需要手动禁止使用拷贝构造函数
+    unique_ptr(const unique_ptr&) = delete;
+    unique_ptr& operator=(const unique_ptr&) = delete;
+    
+    // 移动构造和移动赋值
+    unique_ptr(unique_ptr&& other) noexcept
+        : ptr(other.ptr), deleter(std::move(other.deleter)) {
+        other.ptr = nullptr;
+    }
+    
+    unique_ptr& operator=(unique_ptr&& other) noexcept {
+        if (this != &other) {
+            reset();  // 释放当前资源
+            ptr = other.ptr;
+            deleter = std::move(other.deleter);
+            other.ptr = nullptr;
+        }
+        return *this;
+    }
+    ```
+
+    - 关于unique_ptr以及shared_ptr中的delete部分，其没有直接使用delete删除元素，其作用个人理解为：由于delete在删除的那个元素或者数组时需要的操作不同，封装成一个deleter可以通过重载来方便使用。并且两者在性能上的区别体现在:  (1) shared_ptr需要维护引用计数，这是一个原子变量，其需要保证线程安全所以性能差一些。(2) shared_ptr需要构造的对象更多，如果频繁的构造以及析构的话，shared_ptr耗费更多的性能。
+
+#### shared_ptr
+
+- 对于shared_ptr而言，其要求这个类中既要保留一个指向数据内容的指针，还有一个指针要保留引用计数等数据(即控制块)。**数据以及控制块**都被保留在堆上。
+
+  - 创建shared_ptr指向对象时，使用make_shared<T>()的方式要更加方便，一次操作就可以完成操作，使用new实际上是使用了两次堆内存的分配
 
   ```cpp
   /////////////////////////////////////////////////
@@ -346,15 +380,17 @@ shared_ptr | weak_ptr | unique_ptr
   auto ptr = new MyObject();
   std::shared_ptr<MyObject> sp(ptr); // 控制块单独分配
   /////////////////////////////////////////////////
+  // 同时控制块与数据指针同时分配
   auto sp = std::make_shared<MyObject>();
   ```
-
+  
   - 关于shared_ptr的实现原理:
     - 强引用计数与弱引用计数 —— 两者都被保留在控制块内存中，并且其都是**线程安全的原子类型**
       - 当强引用计数 shared_count 为 0时，释放指向对象的内存
       - 当弱引用计数 weak_count 为0 并且强引用计数为0时，才会释放掉控制块的内存
+      - deleter为析构器，当强引用计数的时候，利用其释放指向的数据
       - 注意: 因为weak_ptr是类似与"观察者"身份出现，其是不会影响指向对象的生命周期的，weak_count != 0 但是 shared_count = 0时，是没有办法再访问对象了(其已经被释放掉了，但是控制块仍然保留)
-
+  
   ```cpp
   template<typename T>
   struct control_block {
@@ -380,17 +416,17 @@ shared_ptr | weak_ptr | unique_ptr
       }
   };
   ```
-
+  
   ![image-20250321114546744](figure/image-20250321114546744.png)
-
+  
   - **误区：**引用计数并不是一个static类型，这样的话就会出现两个指针指向的对象不相同，但是由于其类型相同，其共享了这个引用计数
 
 ### 线程安全
 
 - 一个对象是否是线程安全的，主要是要看这部分的对象是否是能否解决多线程同时访问时出现的问题 (不能在一个线程写的时候另一个线程又来写)
   - **shared_ptr 其指向的对象并不是线程安全的，但是其对应的引用计数是线程安全的** | 即引用计数表示存在多少指针指向这部分内存，**其是一个原子变量，故线程安全！！！**
-
-
+  
+  
 
 
 
@@ -1463,46 +1499,58 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 
 - C++经常使用的转换类型一般有四种，static_cast, dynamic_cast，const_cast以及reinterpret_cast类型之间的转换。**除去dynamic_cast是运行期确定的，其余都是编译期确定的**
 
-  - static_cast : 基本类型之间的转换或者是**基类与派生类的指针或引用**之间的转换，可以进行向上转换以及向下转换
+  - static_cast : **基本类型**之间的转换或者是**基类与派生类的指针或引用**之间的转换，可以进行向上转换以及向下转换
 
     - 向上转换是安全的 ，向上转换主要是派生类到基类的转换，由于派生类指向的对象是要多于基类的，使用指针或者引用的话，直接转换是安全的。
     - 向下转换是不安全的，因为基类指针可以指向派生类，但是也可以直接指向的基类，这种情况可以直接使用dynamic_cast进行分析
-
-  - dynamic_cast : **多态类之间的转换，尤其是基类的指针或引用转换到派生类的指针或者引用**
-
+    - 向下转换中导致的未定义行为:
+  
+        ```cpp
+        #include <iostream>
+        class Base {
+        public:
+            int a = 1;
+        };
+        
+        class Derived : public Base {
+        public:
+            int b = 2;
+        };
+        int main() {
+            Base base;
+            Base* base_ptr = &base;
+            // 强制将 Base* 转为 Derived*（危险！） | 可以直接理解成为这里实际上是直接给的内存地址，deriverd_ptr指向自己基类的地址，但是基类中不包含自己对象的数据, 所以会出现未定义行为
+            Derived* derived_ptr = static_cast<Derived*>(base_ptr);
+            std::cout << "base_ptr->a = " << base_ptr->a << std::endl;
+            // ⚠️ 这里访问的是 derived_ptr->b，实际内存中并没有 b！
+            std::cout << "derived_ptr->b = " << derived_ptr->b << std::endl; // ❌ 未定义行为！
+            return 0;
+        }
+        ```
+  
+  - dynamic_cast : **其只能用于多态类之间的转换，尤其是基类的指针或引用转换到派生类的指针或者引用**
+  
     - 同样可以向上转换，与static_cast没有区别
     - 向下转换是安全的 —— 会进行安全检查，但是要求**基类必须包含虚函数**
-
-  - const_cast : 用于去除常量性，但是其不会直接去除常量自身的常量性，去除的主要是其对应的指针或引用的常量性
-
+  
+  - const_cast : 用于去除常量性，但是其不会直接去除常量自身的常量性，去除的是指针或引用的常量性。一般是用于这个对象本身是一个非常量，但是函数中可能使用一个常量指针指向这部分数据，再使用const_cast<non const>解决掉其对应的常量性
+  
+    - const对象本身的常量性绝不能直接去除！！！
+  
     ```cpp
     const int a = 10;
-    const int * p = &a;
-    *p = 20;                  //compile error(p目前还是一个常量指针)
-    int b = const_cast<int>(a);  //compile error(a的常量性不可以改变)
+    const int* p = &a;
+    *p = 20;                  	 // compile error(p目前还是一个常量指针)
+    int b = const_cast<int>(a);  // compile error(a的常量性不可以改变)
     ```
+  
+  
+  - reinterpret_cast : 用于完全不相关变量类型的转换，比如从整型转换成为指针或者引用。
 
-  - reinterpret_cast : 用于完全不相关变量类型的转换，比如从整形转换成为指针或者引用。
+​	
 
 
 
-### 显式类型转换(这里还是不太明确)
-
-Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
-
-- static_cast<type>(expression) 将expression转换成type类型（**静态转换，即在编译期进行转换，不会影响到运行期** —— dynamic_cast是在运行期转换的，但安全性上要高于static_cast）。
-  - 有一些转换也是做不到的 如"Hindoeiw"转换成int。（只要存在从expression 的类型到该 type 的隐式类型转换，那么static_cast这种方法基本就可以使用）
-  - 对于一些隐式类型做不到的，该方法也可能可以做到。隐式类型转换不能将一个void* 的数据转换成int* ,可以通过static_cast<int*>(...) 进行转换。
-  - 不能更改常量性（改变常量指针或者常量引用都不行）
-
-```cpp
-	int x = 3;
-	int y = 4;
-	std::cout<<3/4.0<<std::endl; // 一个常数除法，只需要其中一个是double，结果就是double类型
-	std::cout<<(static_cast<double>(x)/y)<<std::endl;
-```
-
-- dynamic_cast —— 运行期中使用的类型转换，增加了安全性的判断
 - const_cast —— 可以去除/增加常量性（但一定要注意去除常量性是一种很危险的行为，尤其是对一个const int类型的常量，使用const_cast去除指向其的指针或者对其的引用的常量性，来更改这个常量值——很危险）
 - reinterpret_cast —— 重新解释（主要用于指针的重新解释上）
   - int指针改成double指针之后，指针解引用时会多读取本不属于int类型数据的四个字节(得到的结果很可能是错的)
@@ -3541,15 +3589,16 @@ void swap(T &a,T &b)
 
 
     ![生产者-消费者模型](figure/20-生产者消费者.jpg)
-
+    
     - 另外一个经典案例就是哲学家吃饭问题 - 如果直接使用信号量PV操作会导致死锁的问题出现 
-
+    
       - 限定条件为只有哲学家同时拿起两边的叉子才能吃饭，如果直接使用信号量PV，会出现哲学家如果同时拿起左边叉子之后，在拿起右侧叉子时所有的P都小于0，则线程全部被堵塞，即导致死锁问题。
 
-        
+
+​        
 
     - 另一个经典案例就是读者-写者问题 ：其主要是分为三种操作 (具体解决方法没有准备)
-
+    
       - 读-读 其可以多线程同时处理
       - 读-写 其是互斥操作
       - 写-写 其也是互斥操作

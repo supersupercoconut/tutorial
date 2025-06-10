@@ -64,12 +64,7 @@ nano ~/.config/ibus/rime/default.custom.yaml
 在文件中加入
 
 ```yaml
-patch:
-  schema_list:
-    - schema: luna_pinyin_simp  # 使用简体拼音输入方案
-
-  simplifier:
-    option_name: 'simplification'  # 启用简化字输出
+.589*-
 ```
 
 最后重新部署 ibus-daemon -drx
