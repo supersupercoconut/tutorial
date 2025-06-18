@@ -502,7 +502,7 @@ rqt可以方便监视话题信息以及tf树
 
 ### CMake升级
 
-一般来说，升级cmake要非常小心，一个错误操作可能就导致整个系统崩溃，尤其使用sudo apt-get autoremove cmake这种命令，具体可以使用软链接的方法进行处理，可以参考: https://blog.csdn.net/FLM19990626/article/details/129631927
+一般来说，升级cmake要非常小心，一个错误操作可能就导致整个系统崩溃，尤其使用sudo apt-get autoremove cmake这种命令，具体可以使用软链接的方法进行处理，可以参考: https://blog.csdn.net/loveCC_orange/article/details/136073681
 
 
 
