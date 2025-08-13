@@ -81,7 +81,7 @@
   {
       std::string strTest = "This is a test.";
       return strTest;
-  }
+  } 
   int main()
   {
       /* 错误表示(在这句话执行完之后 pc就变成了悬空指针) */
@@ -109,7 +109,7 @@
 
 ## C++内存
 
-堆/栈/全局(静态)存储区/代码存储区
+堆/栈/全局(静态)/常量区/代码存储区
 
 - 栈: 编译器自动分配回收
 
@@ -203,7 +203,13 @@
 
 ## 模板类/常规类
 
-- 模板类：这种模板本质上是一种代码蓝图，但是对于编译器来说，要想进行编译是需要明确类型的。当你在代码中使用 `Box<int>` 时，编译器必须能够看到模板的**完整定义**（包括成员函数的实现），才能为 `int` 类型生成实际的类代码。如果模板的成员函数定义在 `.cpp` 文件中，其他源文件（如 `main.cpp`）在编译时无法看到这些定义，导致**链接错误**。
+- 模板类与常规类的不同在于——类声明的那个头文件中是否能包含类函数的定义
+  - 常规类：可以在.h文件对类函数进行声明+定义，但这里的类函数会被理解成为inline函数。
+  - 模板类：声明与定义必须同时放在一起放在头文件中。
+
+
+
+- 模板类：但是对于编译器来说，要想进行编译是需要明确类型的。当你在代码中使用 `Box<int>` 时，编译器必须能够看到模板的**完整定义**（包括成员函数的实现），才能为 `int` 类型生成实际的类代码。如果模板的成员函数定义在了另外一个`.cpp` 文件中，其他源文件（如 `main.cpp`）在编译时无法看到这些定义，导致**链接错误**。
 
   - 如果只存在模板类，编译器是不会去编译这部分内容的，编译必须要明确类型才能编译！！！
 
@@ -240,23 +246,29 @@
 
 - memset：给内存直接赋值，`memset` 的功能是**逐字节设置内存值**，无论 `buffer` 指向的数据类型是什么。它的行为可以总结为：
 
-  - **按字节操作**：将 `buffer` 指向的内存区域的**前 `count` 个字节**，每个字节的值设置为 `ch` 的**低 8 位**（即 `ch & 0xFF`）。
-  - **无视数据类型**：不关心 `buffer` 是 `int` 数组、`char` 数组还是其他类型，只是机械地按字节填充。
-
+  - **按字节操作**：将 `buffer` 指向的内存区域的**前 `count` 个字节**，每个字节的值设置为 `ch` 的**低 8 位**（即 `ch & 0xFF`）。**这里一定是对每一个字节赋值，与类型无关**。
+  
   ```cpp
   // buffer：为指向一片内存空间的指针（任意类型）
   // ch: 要被设置的值。该值以 int 形式传递
   // count：被设置为该值的字节数
   void *memset(void *buffer, int ch, int count)
   ```
-
+  
 - memcpy：给一块内存拷贝另一块内存的数据
+
+  ```cpp
+  int *dest = (int *)malloc(3 * sizeof(int));
+  memcpy(dest, src, 5 * sizeof(int)); // 错误！越界写入
+  ```
+
+  
 
 
 
 ## string(C)
 
-- C中字符串实际上是使用空字符 **\0** 结尾的一维字符数组。因此，**\0** 是用于标记字符串的结束。比如，字符串“Hello”是当作数组`{'H', 'e', 'l', 'l', 'o'}`处理的
+- C中字符串实际上是使用空字符 **\0** 结尾的一维字符数组。因此，**\0** 是用于标记字符串的结束。比如，字符串“Hello”是当作数组`{'H', 'e', 'l', 'l', 'o'}`处理的。
 
   ```cpp
   // 方式1：显式指定大小并初始化
@@ -273,7 +285,7 @@
 
 - C++中string对象本身位于栈上，其对应的字符串数据会保留在堆上面。但是字符串比较短时，会出现一种SSO(最小字符串优化)的处理思路，即如果初始化string中分配的字节数大于16字节，字符串数据会保留到栈上，但是如果大于16字节，会在堆上进行内存分配。常见问题：
 
-  - c_str() 实际上会返回指向string对象字符数组的指针, 即一个const char* 类型
+  - c_str() 实际上会返回指向string对象字符数组的指针, 即一个const char* 类型。
 
   ```cpp
   #include <iostream>
@@ -300,8 +312,6 @@
   ```
 
   
-
-​	
 
 
 
@@ -335,69 +345,123 @@ shared_ptr | weak_ptr | unique_ptr
 
 - weak_ptr 即保证其指向这块内存不会改变其对应的引用计数，就是使用时需要调用lock()转换成为shared_ptr使用。weak_ptr就类似于一种观察者，其通过这个指针可以去获取其指向对象的数据(先转换成shared_ptr)，又不会去应该这个对象被删除的时间。
 
-  ![img](figure/v2-292689d420d5a15740cd3291f3a77ad4_1440w.jpg)
-
-
-
-
+  
 
 ### 实现原理
 
-- 对于shared_ptr而言，其要求这个类中既要保留一个指向数据内容的指针，还有一个指针要保留引用计数等数据。**后者就是使用一个控制块指针来实现的**。
+- 其实现形式主要是有两种部分 unqiue_ptr 以及 shared_ptr/weak_ptr，前者的实现逻辑比较简单，后者的实现逻辑比较复杂。
 
-  - 创建使用make_shared<T>()的方式要更加方便，一次操作就可以完成操作
+  - unqiue_ptr 只需要保证这个指针指向对象是独占即可，只保留一个指向对象的指针，并且禁用考虑构造函数即可，只接受使用移动
+
+    ```cpp
+    template<class T>
+    class unique_ptr {
+        T* ptr = nullptr;
+    public:
+        explicit unique_ptr(T* p = nullptr) : ptr(p) {}
+        ~unique_ptr() { delete ptr; }          // RAII：析构时自动释放
+    
+        // 禁止拷贝 → 独占
+        unique_ptr(const unique_ptr&)            = delete;
+        unique_ptr& operator=(const unique_ptr&) = delete;
+    
+        // 允许移动 → 转移所有权
+        unique_ptr(unique_ptr&& other) noexcept
+            : ptr(other.ptr) { other.ptr = nullptr; }
+    
+        T* get() const { return ptr; }
+        T& operator*()  const { return *ptr; }
+        T* operator->() const { return ptr; }
+    };
+    ```
+
+    ```cpp
+    unique_ptr<Foo> p(new Foo);
+    unique_ptr<Foo> q = std::move(p);   // p 置空，q 接管
+    ```
+
+  - shared_ptr / weak_ptr 则需要使用一个计数值来确定是否要释放当前内存，所以其实现分成了两个环节 (1) 数据指针 (2) 控制块指针。
+
+    ```cpp
+    template<class T>
+    class shared_ptr {
+        T* ptr = nullptr;
+        control_block* ctrl = nullptr;
+    
+        void release() {
+            if (!ctrl) return;
+            if (--ctrl->shared == 0) {
+                ctrl->deleter(ctrl->ptr);   // 调自定义删除器
+                if (ctrl->weak == 0) delete ctrl;
+            }
+        }
+    public:
+        template<class U>
+        explicit shared_ptr(U* p) : ptr(p) {
+            ctrl = new control_block{1, 0, [](void* v){ delete static_cast<U*>(v); }, p};
+        }
+    
+        shared_ptr(const shared_ptr& other) noexcept
+            : ptr(other.ptr), ctrl(other.ctrl) {
+            if (ctrl) ++ctrl->shared;
+        }
+    
+        shared_ptr& operator=(const shared_ptr& other) noexcept {
+            if (this != &other) {
+                release();
+                ptr  = other.ptr;
+                ctrl = other.ctrl;
+                if (ctrl) ++ctrl->shared;
+            }
+            return *this;
+        }
+    
+        ~shared_ptr() { release(); }
+    
+        T* get() const { return ptr; }
+        T& operator*() const { return *ptr; }
+        T* operator->() const { return ptr; }
+    };
+    ```
+
+    - 控制块中包含的内容有：
+      - shared_count 强引用计数
+      - weak_count 弱引用计数
+      - T* ptr 数据指针：当强引用计数为0时，会调用deleter来释放掉当前数据指针指向的内存 (这里ptr更像是一种备份类型的工作)
+      - deleter 自定义释放器
+
+    ```cpp
+    template<typename T>
+    struct control_block 
+    {
+        std::atomic<long> use_count;
+        std::atomic<long> weak_count;
+        Deleter deleter;
+        T* ptr; // 仅当控制块与对象分离时存在
+    };
+    ```
+
+
+
+- PS：当弱引用计数 weak_count 为0 并且强引用计数为0时，才会释放掉控制块的内存。如果使用make_shared()来创建shared_ptr指向的对象只会调用一次new，反之是需要两次new的过程。**当弱引用计数 weak_count 为0 并且强引用计数为0时，才会释放掉控制块的内存**
 
   ```cpp
-  /////////////////////////////////////////////////
+  
   // 先创建对象指针(new), 然后再单独创建控制块指针
   auto ptr = new MyObject();
   std::shared_ptr<MyObject> sp(ptr); // 控制块单独分配
-  /////////////////////////////////////////////////
+  
   auto sp = std::make_shared<MyObject>();
   ```
 
-  - 关于shared_ptr的实现原理:
-    - 强引用计数与弱引用计数 —— 两者都被保留在控制块内存中，并且其都是**线程安全的原子类型**
-      - 当强引用计数 shared_count 为 0时，释放指向对象的内存
-      - 当弱引用计数 weak_count 为0 并且强引用计数为0时，才会释放掉控制块的内存
-      - 注意: 因为weak_ptr是类似与"观察者"身份出现，其是不会影响指向对象的生命周期的，weak_count != 0 但是 shared_count = 0时，是没有办法再访问对象了(其已经被释放掉了，但是控制块仍然保留)
+- **误区：**引用计数并不是一个static类型，这样的话就会出现两个指针指向的对象不相同，但是由于其类型相同，其共享了这个引用计数。
 
-  ```cpp
-  template<typename T>
-  struct control_block {
-      std::atomic<long> use_count;
-      std::atomic<long> weak_count;
-      Deleter deleter;
-      T* ptr; // 仅当控制块与对象分离时存在
-  };
-  
-  template<typename T>
-  class shared_ptr {
-      T* ptr;                // 指向实际对象
-      control_block<T>* ctrl; // 指向控制块
-  
-      // 析构逻辑示例
-      ~shared_ptr() {
-          if (ctrl && ctrl->use_count.fetch_sub(1) == 1) {
-              ctrl->deleter(ptr);     // 销毁对象
-              if (ctrl->weak_count == 0) {
-                  delete ctrl;       // 释放控制块
-              }
-          }
-      }
-  };
-  ```
 
-  ![image-20250321114546744](figure/image-20250321114546744.png)
-
-  - **误区：**引用计数并不是一个static类型，这样的话就会出现两个指针指向的对象不相同，但是由于其类型相同，其共享了这个引用计数
 
 ### 线程安全
 
 - 一个对象是否是线程安全的，主要是要看这部分的对象是否是能否解决多线程同时访问时出现的问题 (不能在一个线程写的时候另一个线程又来写)
   - **shared_ptr 其指向的对象并不是线程安全的，但是其对应的引用计数是线程安全的** | 即引用计数表示存在多少指针指向这部分内存，**其是一个原子变量，故线程安全！！！**
-
-
 
 
 
@@ -587,9 +651,9 @@ shared_ptr | weak_ptr | unique_ptr
     }
     ```
 
-- 类中使用的静态成员变量/函数：static 修饰类中变量或者函数时，其作为该类实例化对象共有的部分。**静态成员变量需要在类外单独定义！！或者在类的构造函数中直接定义(类内定义只能static const才可以，只有一个static不行)**
+- 类中使用的静态成员变量/函数：static 修饰类中变量或者函数时，其作为该类实例化对象共有的部分。类的静态成员变量初始化一般在实现这个类的cpp文件进行初始化。**静态成员变量需要在类外单独定义，C++17之后可以在类内进行初始化！！**
 
-  -  类的静态成员变量是该类所有的对象共同拥有的类对象，并不是不能修改!!
+- 类的静态成员变量是该类所有的对象共同拥有的类对象，并不是不能修改!!
 
   ```cpp
   // 头文件 MyClass.h
@@ -615,6 +679,8 @@ shared_ptr | weak_ptr | unique_ptr
       static const int static_const_var = 100; // ✅ 类内初始化（无需类外定义）
   };
   ```
+
+  
 
 - 注意： **类中的static函数只能访问static的成员变量**
 
@@ -719,7 +785,7 @@ shared_ptr | weak_ptr | unique_ptr
   const MyClass obj;
   ```
 
-- 类的const成员变量要通过类的列表初始化定义，不能直接在成员函数中直接定义
+- 类的const成员变量要通过类的列表初始化定义（即使用构造函数进行读取），不能直接在成员函数中直接定义。
 
   ```cpp
   #pragma once
@@ -743,7 +809,7 @@ shared_ptr | weak_ptr | unique_ptr
 
 ### const/static区别
 
-- 如果不在类中: static可以先声明然后再进行初始化，但是const在声明的时候就必须要初始化
+- 如果不在类中: **static可以先声明然后再进行初始化**，但是const在声明的时候就必须要初始化
 - 如果在类中: 在类中实际上都是一种声明，对于static需要类外初始化，对于const需要使用类的列表初始化
 - 但是对于全局的static, 由于全局中是不允许先声明后定义的，所以要声明的时候就直接定义
 
@@ -768,7 +834,7 @@ shared_ptr | weak_ptr | unique_ptr
   }
   ```
 
-- **注意突出形参是否能进行修改，值传递并没有修改形参，后续两种方式都没有办法修改形参**
+- **注意突出形参是否能进行修改，值传递并没有修改形参，后续两种方式可以修改形参**
 
 
 
@@ -812,32 +878,32 @@ shared_ptr | weak_ptr | unique_ptr
 - 函数重定义
 
   - 派生类重新定义父类中相同名字的非virtual 函数，参数列表和返回类型都可以不同。父类中的同名函数被隐藏起来了，想使用基类中的成员只能显式调用
+
+  ```cpp
+  class Base {
+  public:
+      void show() { std::cout << "Base\n"; }       // 非虚函数
+      void show(int x) { std::cout << x << "\n"; } // 重载函数
+  };
   
-    ```cpp
-    class Base {
-    public:
-        void show() { std::cout << "Base\n"; }       // 非虚函数
-        void show(int x) { std::cout << x << "\n"; } // 重载函数
-    };
-    
-    class Derived : public Base {
-    public:
-        void show() { std::cout << "Derived\n"; } // 隐藏基类的所有 show() 函数
-    };
-    
-    int main() {
-        Derived d;
-        d.show();        // 正确：调用 Derived::show()
-        // d.show(10);   // 错误！Base::show(int) 被隐藏
-        d.Base::show(10); // 正确：显式调用基类版本
-    }
-    ```
+  class Derived : public Base {
+  public:
+      void show() { std::cout << "Derived\n"; } // 隐藏基类的所有 show() 函数
+  };
+  
+  int main() {
+      Derived d;
+      d.show();        // 正确：调用 Derived::show()
+      // d.show(10);   // 错误！Base::show(int) 被隐藏
+      d.Base::show(10); // 正确：显式调用基类版本
+  }
+  ```
 
 ### C++函数重载
 
 - C中没有函数重载
 
-- C++的函数重载虽然函数名是相同的，但是重载函数中不同的形参是会影响函数编译之后的符号名。虽然重载函数名称相同，但是其对应的符号名都是唯一的。
+- C++的函数重载虽然函数名是相同的，但是重载函数中不同的形参是会影响函数编译之后的符号名。重载函数编译生成的符号是唯一的。
 
   ```cpp
   void foo(int);    // 可能修饰为 _Z3fooi
@@ -850,61 +916,61 @@ shared_ptr | weak_ptr | unique_ptr
 
 ## 虚函数以及纯虚函数
 
-- 虚函数/纯虚函数是实现多态的一种手段。**所谓多态：**是可以通过基类指针或引用可以直接调用派生类中重写的虚函数，但是不能调用派生类中的其他函数。
+- 虚函数/纯虚函数是实现多态的一种手段。**所谓多态：**是通过基类指针或引用直接调用派生类中重写的虚函数，但是不能调用派生类中的其他函数。
 
   - 在基类中使用**virtual**关键字表示，在派生类中使用**override**关键字
   - 包含虚函数对应的基类是可以实例化的，包含纯虚函数的基类不可以被实例化。
 
   - **在运行期中**，animal->speak() 才能确定被调用的哪一个派生类或者基类中的speak()函数
-
-```cpp
-class Animal 
-{
-public:
-    virtual void speak() { 
-        cout << "Animal sound" << endl; 
-    }
-};
-
-class Dog : public Animal 
-{
-public:
-    void speak() override {  // 重写基类虚函数
-        cout << "Woof!" << endl; 
-    }
-};
-
-int main() 
-{
-    Animal* animal = new Dog();
-    animal->speak();  // 输出 "Woof!"（调用的是 Dog 的 speak）
-    delete animal;
-}
-```
+  
+  ```cpp
+  class Animal 
+  {
+  public:
+      virtual void speak() { 
+          cout << "Animal sound" << endl; 
+      }
+  };
+  
+  class Dog : public Animal 
+  {
+  public:
+      void speak() override {  // 重写基类虚函数
+          cout << "Woof!" << endl; 
+      }
+  };
+  
+  int main() 
+  {
+      Animal* animal = new Dog();
+      animal->speak();  // 输出 "Woof!"（调用的是 Dog 的 speak）
+      delete animal;
+  }
+  ```
 
 - 纯虚函数是在基类中声明的虚函数，它在基类中没有定义，但要求任何派生类都要定义自己的实现方法。在基类中实现纯虚函数的方法是在函数原型后加 **=0**
   - 包含纯虚函数的类没有办法被实例化， 只能成为一个抽象类。对应的派生类必须重写基类中的纯虚函数，否则会被直接当成抽象类，为下一层的派生类使用。
   - **override **关键字可以提示编译器目前在进行虚函数的重写，无论是纯虚函数还是普通的虚函数。override 都可以提供一种检查，即在重写的时候如果将函数写错，实际上编译器可能当在实现派生类的普通函数，加上override会提示编译器这是虚函数的重定义，函数名一定要一样。
-
-```cpp
-virtual void funtion1()=0;
-```
-
-```cpp
-class Base {
-public:
-    virtual void virtualFunc() {}        // 普通虚函数
-    virtual void pureVirtualFunc() = 0;  // 纯虚函数
-};
-
-class Derived : public Base {
-public:
-    void virtualFunc() override {}       // 重写普通虚函数
-    void pureVirtualFunc() override {}   // 重写纯虚函数
-};
-```
-
-​	
+  
+  ```cpp
+  virtual void funtion1()=0;
+  ```
+  
+  ```cpp
+  class Base {
+  public:
+      virtual void virtualFunc() {}        // 普通虚函数
+      virtual void pureVirtualFunc() = 0;  // 纯虚函数
+  };
+  
+  class Derived : public Base {
+  public:
+      void virtualFunc() override {}       // 重写普通虚函数
+      void pureVirtualFunc() override {}   // 重写纯虚函数
+  };
+  ```
+  
+  
 
 ### 虚函数表/虚函数表指针
 
@@ -912,14 +978,18 @@ public:
 
   ![img](figure/v2-e864f4fe6a480b3230a5c9aebd7df996_1440w.jpg)
 
-  - 对于派生类，其同样会保留一个虚函数表以及指向这个虚函数表的指针，并且这个虚函数表中保留的是指向虚函数的函数地址。在派生类中是会跟据其重写、补充或者继承的虚函数来修改其继承到的虚函数表。
+  - 对于派生类，其同样会保留一个虚函数表以及指向这个虚函数表的指针，这里虚函数表中保留的是该类中虚函数对应的函数地址。**在派生类中是会跟据其重写、补充或者继承的虚函数来修改其继承到的虚函数表。**
 
-    - 基类指针/引用调用派生类时，其访问的是这个派生类虚函数表，从而访问派生类虚函数实现多态。
+    - 对于虚函数表，一个类只会有一个，该类的所有实例化对象都共享这个虚函数表（所以其储存位置不是在每一个类中，应该在全局/静态储存区）。 每个类的实例对象都有一个指向其所属类虚函数表的指针（vptr），无论是基类还是派生类。
+
+    - 基类指针/引用调用派生类时，其是通过虚函数表指针访问这个派生类虚函数表，从而访问派生类虚函数实现多态。**但是基类指针只能调用派生类中重写的虚函数，其不能调用补充进来的新的虚函数**。
+
+      
 
     ![img](figure/v2-0fceb07713e411d48b4c361452129585_1440w.jpg)
-
+  
   - 举例 (这里的重写没有写明override，但实际上派生类还是对基类的函数进行了重写以及重定义 | 下图中的非虚函数B::func2()绘制错误，应为func1())
-
+  
     ```cpp
     class A {
     public:
@@ -945,7 +1015,7 @@ public:
         int m_data1, m_data4;
     };
     ```
-
+  
     ![img](figure/v2-dfe4aefdee7e06cf3151b57492ed42a2_1440w.jpg)
 
 
@@ -1056,7 +1126,7 @@ public:
   ```
 
   - 这里pBase虽然是一个指向Base的指针, 但是通过 Base* pBase = new Derived() 其可以访问派生类Derived中对应的虚函数，可这里pBase->work();是无法调用派生类中对应的work()函数的，调用的还是自己基类中定义的work函数。当然可以使用dynamic_cast进行指针的转换，将基类指针转换成为派生类指针进行使用。
-  - 派生类实际上可以不定义自己的work函数，直接使用基类中的work函数，即实现了继承。这里相当于是实现了派生类对基类函数的重定义
+  - 派生类实际上可以不定义自己的work函数，直接使用基类中的work函数，即实现了继承。这里相当于是实现了派生类对基类函数的重定义。
 
 
 
@@ -1216,7 +1286,7 @@ new malloc delete free，其中new与delete是C++新引入的部分，malloc与f
 
 - new的使用要比malloc方便很多，其会先分配一块内存，再为分配的内存调用一个或多个构造函数构建对象
 - delete为将被释放的内存调用一个或多个析构函数并释放内存(通过operator delete 函数)
-  - 关于析构函数，调用析构函数实际上就可以为一个类释放其占用的资源，包括我动态分配给其的资源(堆内存)以及系统分配给其的资源，**析构函数一定不会释放内存！！！（内存是编译器自己干的事情，有堆内存与栈内存之间的区别）**。在调用delete或者是对象的生命周期结束的时候会自动调用析构函数进行资源的释放。
+  - 关于析构函数，调用析构函数实际上就可以为一个类释放其占用的资源，包括我动态分配给其的资源(堆内存)以及系统分配给其的资源，**析构函数一定不会释放该对象的内存！！！（内存是编译器自己干的事情，有堆内存与栈内存之间的区别）**。在调用delete或者是对象的生命周期结束的时候会自动调用析构函数进行资源的释放。
 
 
 
@@ -1375,6 +1445,34 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
 
   
 
+### auto
+
+- auto 在进行自动类型推导时可能会丢弃引用或者const的属性，如果想保留这些特性，就需要使用auto&，或者const auto&。
+
+  - 注意 auto 会有引用折叠的情况，但一定没有auto*这种类型，因为auto本身可以实现指针类型的推导
+
+  ```cpp
+  int x = 42;
+  int& ref = x;
+  
+  auto a = ref;  // 推导为 int（丢弃 &）
+  a = 10;        // 不影响 x，因为 a 是 x 的副本
+  
+  const int ci = 42;
+  auto b = ci;  // 推导为 int（丢弃顶层 const）
+  b = 10;       // 合法，因为 b 是非 const 的副本
+  
+  const int ci = 42;
+  const auto& d = ci;  // 显式声明为 const 引用
+  // d = 10;           // 错误，不能修改 const 引用
+  
+  auto& e = ci;        // 推导为 const int&（保留底层 const）
+  ```
+
+  - auto& 指向的对象如果是const，这里就会推导出来const；const auto&推导出来的对象会自动补充上const
+
+
+
 
 
 ## Hash表
@@ -1392,7 +1490,7 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
     - 负载因子：负载因子（load factor）是哈希表的一个重要概念，其定义为哈希表的元素数量除以桶数量，用于衡量哈希冲突的严重程度，**也常作为哈希表扩容的触发条件**。例如在 Java 中，当负载因子超过 0.75 时，系统会将哈希表扩容至原先的 2 倍。Hash表扩容是比较耗费时间的，需要将当前的所有元素都迁移至新的Hash表 —— 对于Hash表来说，存在冲突就进行扩容的方法是非常耗时的，所以引入了如下两种方法：
     - 链式地址
 
-      - 将一个桶位置处只能储存一个键值对，将这里的单个元素转换成为了链表，即将发生Hash冲突的所有键值对都保存在同一链表中。但是由于链表是没有直接O(1)的查询操作的，所以在查找中会将链表遍历一遍，其比较耗费时间
+      - 一个桶位置处只能储存一个键值对，将这里的单个元素转换成为了链表，即将发生Hash冲突的所有键值对都保存在同一链表中。但是由于链表是没有直接O(1)的查询操作的，所以在查找中会将链表遍历一遍，其比较耗费时间
 
         ![image-20250227191901764](figure/image-20250227191901764.png)
     
@@ -1400,42 +1498,40 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
     ![链式地址哈希表](figure/hash_table_chaining.png)
     
     - 开放寻址
-      - 不引入额外的数据结构，而是通过多次探测来处理哈希冲突。探测方式主要包括线性探测、平方探测和多次哈希等。**其实就是在Hash函数计算出来的这个基本位置处，不断的向后继续查找**
-        - 对于线性寻址，即在Hash函数计算处的结果处(定义为x)，剩下就是先查找 x + 1位置是否存在元素，没有元素就可以插入该元素，成为一个新的键值对。对于查找操作的话，这里就是不断的向后查找，如果先查找到空桶，就说明没有这个元素，可以直接返回。
-        - 平方探测同理，只不过往后查找的从线性步长变为了平方步长。
+      
+      - 这里不使用额外的数据结构来实现哈希结构，而是通过探测的方法来处理哈系冲突。**探测方法有：线性探测，平方探测，多次哈希函数等等。** key值通过哈希函数计算的数组位置如果已经有了其他元素，那么说明这里出现了哈希冲突，这里的逻辑为 (1) 线性探测: 继续向下寻找 (从x变x+1，不断向下)，直到对应元素或者为空桶。(2) 平方探测：向下寻找位置变成 1 4 9这种 (3) 多次哈希，每次向下的位置由 f1(), f2(), f3()等等函数直接决定。
+      
+      
+      
       - **删除元素： **开放寻址中不能直接删除元素，因为删除带来的空桶会导致在查询中，如果找到空桶，系统就会自动返回或者直接在这个位置插入元素，导致一些元素本身在Hash表中但是不能被正确的查询到。
-        - 对于删除元素可采用懒删除（lazy deletion）机制：它不直接从哈希表中移除元素，**而是利用一个常量 `TOMBSTONE` 来标记这个桶**。在该机制下，`None` 和 `TOMBSTONE` 都代表空桶，都可以放置键值对。但不同的是，线性探测到 `TOMBSTONE` 时应该继续遍历，因为其之下可能还存在键值对
+        - 对于删除元素可采用懒删除（lazy deletion）机制：它不直接从哈希表中移除元素，**而是利用一个常量 `TOMBSTONE` 来标记这个桶**。在该机制下，`None` 和 `TOMBSTONE` 都代表空桶，都可以放置键值对。但不同的是，探测到 `TOMBSTONE` 时应该继续遍历，因为其之下可能还存在键值对。
 
 ### 使用
 
-- unordered_map的使用 | 对于unordered_map<int, int>这种 如果insert的一个未出现过的元素(key值)，那么其对应的数据会自动定义成为0。
+- unordered_map的使用 | 对于unordered_map<int, int>这种 如果insert的一个未出现过的元素(key值)，那么其对应的数据会自动定义成为0。初始化过程可以描述为：
 
-  - 初始化
+  ```cpp
+  // 基本声明
+  std::unordered_map<std::string, int> umap;
+  
+  // 初始化列表（C++11+）
+  std::unordered_map<std::string, int> umap = {
+      {"Alice", 25},
+      {"Bob", 30},
+      {"Charlie", 35}
+  };
+  
+  // 方法1：insert()
+  umap.insert({"David", 40});
+  
+  // 方法2：emplace()（更高效，直接构造键值对）
+  umap.emplace("Eve", 45);
+  
+  // 方法3：通过下标操作符[]
+  umap["Frank"] = 50;  // 若键不存在，会创建新键值对
+  ```
 
-    ```cpp
-    // 基本声明
-    std::unordered_map<std::string, int> umap;
-    
-    // 初始化列表（C++11+）
-    std::unordered_map<std::string, int> umap = {
-        {"Alice", 25},
-        {"Bob", 30},
-        {"Charlie", 35}
-    };
-    
-    // 方法1：insert()
-    umap.insert({"David", 40});
-    
-    // 方法2：emplace()（更高效，直接构造键值对）
-    umap.emplace("Eve", 45);
-    
-    // 方法3：通过下标操作符[]
-    umap["Frank"] = 50;  // 若键不存在，会创建新键值对
-    ```
-
-    
-
-
+  
 
 
 
@@ -1473,56 +1569,26 @@ inline函数主要是直接将函数插入到被调用部分。对于需要被�
   - static_cast : 基本类型之间的转换或者是**基类与派生类的指针或引用**之间的转换，可以进行向上转换以及向下转换
 
     - 向上转换是安全的 ，向上转换主要是派生类到基类的转换，由于派生类指向的对象是要多于基类的，使用指针或者引用的话，直接转换是安全的。
-    - 向下转换是不安全的，因为基类指针可以指向派生类，但是也可以直接指向的基类，这种情况可以直接使用dynamic_cast进行分析
+    - 向下转换是不安全的，因为基类指针可以指向派生类，但是也可以直接指向基类，这种情况可以直接使用dynamic_cast进行分析
 
   - dynamic_cast : **多态类之间的转换，尤其是基类的指针或引用转换到派生类的指针或者引用**
 
     - 同样可以向上转换，与static_cast没有区别
     - 向下转换是安全的 —— 会进行安全检查，但是要求**基类必须包含虚函数**
 
-  - const_cast : 用于去除常量性，但是其不会直接去除常量自身的常量性，去除的主要是其对应的指针或引用的常量性
+  - const_cast : 用于增加或者去除指针或者引用的const限定，其不会应该变量原始属性。
 
     ```cpp
-    const int a = 10;
-    const int * p = &a;
-    *p = 20;                  //compile error(p目前还是一个常量指针)
-    int b = const_cast<int>(a);  //compile error(a的常量性不可以改变)
+    const int*        p1 = nullptr;
+    int*              p2 = const_cast<int*>(p1);     // 去 const
+    const int* const  p3 = const_cast<const int*>(p2); // 加 const
     ```
 
-  - reinterpret_cast : 用于完全不相关变量类型的转换，比如从整形转换成为指针或者引用。
+  - reinterpret_cast : 将一块内存上的数据**按位**解释成为另外一种数据，甚至可以实现指针与整数之间的转换(因为指针对应内存上保留的数据一个地址，所以这里实际是将地址转换成为了整数 **(如果转换之后的变量字节数与转换之前的字节数不同，非常有可能出现未定义的错误)**。
 
 
 
-### 显式类型转换(这里还是不太明确)
 
-Cpp的显示类型转换方式都会有一定的风险，所以能避免使用转换就避免掉，使用起来也要小心一些。
-
-- static_cast<type>(expression) 将expression转换成type类型（**静态转换，即在编译期进行转换，不会影响到运行期** —— dynamic_cast是在运行期转换的，但安全性上要高于static_cast）。
-  - 有一些转换也是做不到的 如"Hindoeiw"转换成int。（只要存在从expression 的类型到该 type 的隐式类型转换，那么static_cast这种方法基本就可以使用）
-  - 对于一些隐式类型做不到的，该方法也可能可以做到。隐式类型转换不能将一个void* 的数据转换成int* ,可以通过static_cast<int*>(...) 进行转换。
-  - 不能更改常量性（改变常量指针或者常量引用都不行）
-
-```cpp
-	int x = 3;
-	int y = 4;
-	std::cout<<3/4.0<<std::endl; // 一个常数除法，只需要其中一个是double，结果就是double类型
-	std::cout<<(static_cast<double>(x)/y)<<std::endl;
-```
-
-- dynamic_cast —— 运行期中使用的类型转换，增加了安全性的判断
-- const_cast —— 可以去除/增加常量性（但一定要注意去除常量性是一种很危险的行为，尤其是对一个const int类型的常量，使用const_cast去除指向其的指针或者对其的引用的常量性，来更改这个常量值——很危险）
-- reinterpret_cast —— 重新解释（主要用于指针的重新解释上）
-  - int指针改成double指针之后，指针解引用时会多读取本不属于int类型数据的四个字节(得到的结果很可能是错的)
-
-```cpp
-	int x = 3;
-	int* ptr = &x;
-	double* ptr2 = reinterpret_cast<double*>(ptr);
-	std::cout<<*ptr2<<std::endl;
-```
-
-> [!CAUTION]
->
 > **C类型显示转换： ** C类型（类似于 (double)a 这种 ）中的显示转换不太支持使用——因为在CPP中使用c类型的转换，系统还是会默认转换成const_cast、static_cast等方法来完成转换；而且如果直接使用C类型的转换，有可能系统中默认使用了reinterpret_cast这种方法，导致莫名其妙的错误。
 
 
@@ -1716,21 +1782,31 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
   - **这里调用赋值运算符与拷贝构造函数中的赋值完全不一样，这里要求左右两边的对象都是被创建好了，如果没有显式实现一个赋值运算符的重载，系统本身也是会自动生成一个默认的赋值运算符来完成拷贝工作(当然也是浅拷贝)**
 
     ```cpp
-    A a1, A a2; a1 = a2;//调⽤赋值运算符
-    A a3 = a1;//调⽤拷⻉构造函数，因为进⾏的是初始化⼯作，a3在使用之前并未存在
+    //调⽤赋值运算符
+    A a1, A a2; a1 = a2;
+    //调⽤拷⻉构造函数，因为进⾏的是初始化⼯作，a3在使用之前并未存在
+    A a3 = a1;
     ```
 
-  - 并且对于赋值运算符，其对应的返回值一般是这个类的引用
-
+  - 赋值运算符，对应的返回值一般是这个类的引用
+  
     ```cpp
     Person& operator=(const Person& p)
     {
         cout << "Assign" << endl;
+        // 这里由于返回类型是引用类型，所以这里表示的是(*this)这块内存的引用
         return *this;
     }
     ```
-
-
+    
+    ```cpp
+    int x = 10;
+    int& getX() {
+        return x;  // 返回的是 x 的引用
+    }
+    ```
+    
+    
 
 ### 基本使用
 
@@ -1747,6 +1823,8 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
   };
   ```
 
+
+
 #### 自定义类
 
 - 类声明的时候有时候会按照C的方法来进行构造，这个时候就需要注意一下C语言风格的字符串(最后一个元素是'\0')，其中strlen()被定义在string.h这个头文件中。
@@ -1757,7 +1835,7 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
   - **注意这里构造函数中用的也是const char* str**，这样可以直接接受一个右值对象进行构造。下面第一种写法是错误的，因为C++中的"123"这种字符串字面值是直接表示为const char[xx]类型的，char*不能直接指向该数据，只能使用后面的方法来接受该字符串的值。
 
-    ```cpp
+    ```
     char* p = "123";
     char p2[] = "123";
     const char* p3 = "123";
@@ -1842,60 +1920,70 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
 
 #### 只在堆上定义的类
 
-- 首先需要将一些构造函数定义成为私有而非公有
+- 首先需要将一些构造函数定义成为私有而非公有。**将析构或者构造函数定义成为私有，则说明了编译器不能自己去调用析构或者构造函数，析构跟构造都是程序员手动调用函数执行，故编译器不能在栈上创建或者自动销毁类**。
 
-  - **个人理解：**这里HeapOnly a; 编译器会自动去访问其对应构造函数，但是这里的构造函数是私有的话，编译器就不能通过这种方法来实现构造，就需要定义一个static函数，其定义为共有，通过这个静态成员函数才能去访问这个构造函数。对于所有的构造函数，其实都是编译器在类外去调用这个函数来初始化这个类的，定义成为私有后，编译器就无法操作。
-  - **个人理解：**为什么这里使用static成员函数可以访问其他的非静态成员函数，是因为对于构造函数而言是不需要this指针的，因为在调用这个函数时，类中还没有this指针。所以该静态成员函数可以调用该构造函数。
-  - HeapOnly(const HeapOnly&) = delete; 这里为了防止编译器生成默认的构造函数，这里就加上一个限制，直接禁止掉使用拷贝构造函数。该语句在public区比private要好一些。
+- 这里实现思路为: 禁用拷贝以及移动构造函数，只保留一种类的构造函数，并且将析构函数私有化，这样编译器如果在栈上创建这个类，就会因为找不到对应的析构函数报错。
+
+- **个人理解：使用static成员函{数调用类的构造函数是可以的，因为对于构造函数是不需要使用this指针来进行创建。**
+
+-  HeapOnly(const HeapOnly&) = delete; 这里为了防止编译器生成默认的构造函数，这里就加上一个限制，直接禁止掉使用拷贝构造函数。该语句在public比private要好一些。
 
   ```cpp
-  #include <iostream>
-  using namespace std;
-  class HeapOnly {
-      public:
-          static HeapOnly* create()
-          {
-              return new HeapOnly;
-          }
-          void destrsoy() {
-              delete this; // 通过成员函数释放对象
-          }
+  class HeapOnly 
+  {
+  public:
+  
+      static HeapOnly* create() {
+          return new HeapOnly();
+      }
+  
+      void destroy() {
+          delete this;
+      }
+  
+      // 禁用拷贝
       HeapOnly(const HeapOnly&) = delete;
-      private:
-          HeapOnly() {} // 私有构造函数
-          ~HeapOnly() {} // 私有析构函数
+      HeapOnly& operator=(const HeapOnly&) = delete;
+  
+      // 显式禁用移动
+      HeapOnly(HeapOnly&&) = delete;
+      HeapOnly& operator=(HeapOnly&&) = delete;
+  
+  private:
+      // new的时候还是要需要一个构造函数, 所以这里设计成为私有
+      HeapOnly() = default;
+      ~HeapOnly() = default;
   };
   
   int main()
   {
-      HeapOnly* a = HeapOnly::create();
-      system("pause");
+      HeapOnly* heap = HeapOnly::create();
+      // 由于这里析构函数也是私有, 所以得靠这个类指针访问自己类的中私有函数才能完成内存释放
+      heap->destroy();
+      // delete heap; (我觉得这里应该得使用destroy()这个函数来执行才对，不能用delete)
+  
       return 0;
   }
+  ```
+
+
+
+- 补充：这里相当于使用A()后形成一个临时变量，再将这个临时变量赋值给a变量。当然在编译器优化中，这个临时变量的参与过程会被自动的优化掉。
+
+  ```CPP
+  struct A {
+      A(int a = 0) {
+          a_ = a;
+      }
+      int a_;
+  };
   
+  A a = A(); 
   ```
 
   
 
 
-
-- **补充对于类的使用：**
-
-    - 这里相当于使用A()后形成一个临时变量，再将这个临时变量赋值给a变量。当然在编译器优化中，这个临时变量的参与过程会被自动的优化掉。
-
-    ```cpp
-    struct A {
-        A(int a = 0) {
-            a_ = a;
-        }
-     
-        int a_;
-    };
-    
-    A a = A(); 
-    ```
-
-    
 
 ## 变量/类的初始化
 
@@ -1955,30 +2043,31 @@ Cpp的显示类型转换方式都会有一定的风险，所以能避免使用�
     - **补充: **在c++11之后出现了泛左值、将亡值以及纯右值
       - 泛左值 = 左值 + 将亡值
       - 右值 = 将亡值 + 右值
-      - 纯右值: 即一些字面值以及不具名的临时对象(如int func()这种返回非引用类型函数的返回值)
-      - 将亡值(即即将被销毁的值)，其与右值不一样的地方在于其可以被取地址，比如std::move()的返回值，虽然其是一个右值，但是其可以被取地址
-
-
-```cpp
-
-// a为左值 5为右值
-int a = 5;
-// a为左值 A()形成的临时变量是一个右值
-struct A {
-    A(int a = 0) {
-        a_ = a;
-    }
- 
-    int a_;
-};
-A a = A();
-```
+      - 纯右值：即一些字面值以及不具名的临时对象(如int func()这种返回非引用类型函数的返回值)
+      - 将亡值(即将被销毁的值)，其与右值不一样的地方在于其可以被取地址，比如std::move()的返回值，虽然其是一个**右值**，但是其可以被取地址。
+    
+    ```cpp
+    // a为左值 5为右值
+    int a = 5;
+    // a为左值 A()形成的临时变量是一个右值
+    struct A 
+    {
+        A(int a = 0) 
+        {
+            a_ = a;
+        }
+        int a_;
+    };
+    A a = A();
+    ```
+    
+    
 
 - 左值引用/右值引用
 
     - 左值引用 : **所谓的左值引用就是定义一个引用，其直接指向一个左值 (对于一个函数返回值如果其返回左值就能复制给左值引用)**
 
-        - 除去const对应的左值引用是可以指向右值的
+        - const对应的左值引用是可以指向右值的
 
         ```cpp
         const int &ref_a = 5;  // 编译通过
@@ -2143,8 +2232,6 @@ A a = A();
     
     
     
-    
-    
     ### 实现原理
     
     - std::move()的实现原理为: 即无论输入的参数是左值还是右值都统一转换成右值引用，其中 remove_reference<T>::type 即可以将输入的T类型(无论T后面有没有引用)都转换成为没有引用的T类型，最终返回的就是右值引用
@@ -2178,7 +2265,7 @@ A a = A();
 
   - 很典型的例子就是移动构造函数，通过使用这个构造函数将直接将一个数据从一个对象转换到该对象手里，**避免了使用拷贝(无论是深浅)导致的时间浪费**
 
-    - std::move() 这里是直接将一个左值转换成为一个右值处理，转换成为右值之后会自动调用使用右值引用的函数处进行后续处理。**注意std::move()在使用中只相当于左值转换成为右值，在移动语义中真正让程序效率提升的部分还是后续操作提升程序的效率**
+    - std::move() 这里是直接将一个左值转换成为一个右值引用处理，转换成为右值之后会自动调用使用右值引用的函数处进行后续处理。**注意std::move()在使用中只相当于左值转换成为右值，在移动语义中真正让程序效率提升的部分还是后续操作提升程序的效率**
     - MyObject&& other 相当于是一个右值引用，接受的对象可以是天然右值，也可以是使用std::move()的返回结果。
     
     ```cpp
@@ -2255,7 +2342,21 @@ A a = A();
     }
     ```
     
-    - 对于forward<T>(x)而言，其返回值依赖与T，如果T为左值引用，则返回x的左值引用; 如果不是非引用类型，则返回x的右值引用。
+    - 对于forward<T>(x)而言，其返回值依赖与T，如果T为左值引用，则forward()返回x的左值引用; 如果不是非引用类型，则forward()返回x的右值引用。
+    
+    ```cpp
+    template<typename T>
+    void relay(T&& x)           // x 在函数体里是左值
+    {
+        // 如果直接写 inner(x)  => 永远是左值
+        inner(x);
+    
+        // 完美转发
+        inner(std::forward<T>(x)); // 按 T 的编码还原成 左值/右值
+    }
+    ```
+    
+    
   
 
 
@@ -2271,8 +2372,7 @@ A a = A();
 
   - 赋值运算符重载
     - **重载运算符有一个返回类型和一个参数列表**, 对于C++中的赋值运算符而言，其会直接支持 a = b = c 的连续赋值操作，其中b=c会返回b本身的值，即需要重载使用的运算符也得要能支持这种操作，故这里需要返回*this
-
-
+  
   ```cpp
   MyObject& operator=(const MyObject& other) {
       std::cout << "Copy Assignment Operator" << std::endl;
@@ -2280,6 +2380,8 @@ A a = A();
       return *this;
   }
   ```
+  
+  
 
   - ()括号重载
     - 在优先级队列中使用过，即对自定义类型实现一种大顶堆或者小顶堆，返回值是bool类型
@@ -2941,9 +3043,7 @@ void swap(T &a,T &b)
   - 大端：更符合人的读取逻辑，低地址放数据的高位，高地址放数据的低位。比如0x1122
   - 小端：低地址放数据的低位，高地址放数据的高位。
 
-- 小端的优势：https://www.ruanyifeng.com/blog/2022/06/endianness-analysis.html
-
-
+- 小端的优势：https://www.ruanyifeng.com/blog/2022/06/endianness-analysis.html 比如判断一个数据的奇偶性，直接读取到第一位就能判断出来该数据是奇数还是偶数。
 
 
 
@@ -2956,6 +3056,8 @@ void swap(T &a,T &b)
 ### 函数对象
 
 ### lambda
+
+- 在需要传递函数指针或可调用对象的场景（如 STL 算法、事件回调），lambda 可以直接定义逻辑，无需单独声明函数或类。
 
 #### 普通lambda
 
@@ -3007,7 +3109,7 @@ void swap(T &a,T &b)
 
 - 函数对象模板
 
-  - 在普通lambda的基础上，泛型lambda函数的形参也可以进行类型推导(即可以直接给auto)。泛型lambda本质上形成的是一个函数模板
+  - 在普通lambda的基础上，泛型lambda函数的形参也可以进行类型推导(即可以直接给auto)。泛型lambda本质上形成的是一个函数模板。
 
     ```cpp
     auto generic_lambda = [](auto a, auto b) { 
@@ -3574,7 +3676,7 @@ vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方�
 
 ### 扩容
 
-- 扩容部分主要处理的是vector中size与capcity的关系，当size到capcity大小的时候会触发二倍扩容。这里主要实现的方法还是拷贝。
+- 扩容部分主要处理的是vector中size与capcity的关系，当size到capcity大小的时候会触发二倍扩容。这里主要实现的方法还是拷贝。C++11之后扩容的方法变成引用
 
 
 
@@ -3626,7 +3728,7 @@ vector<vector<int>> arr(3, vector<int>(4, 0));  // 二维数组的初始化方�
 - **关于vector清空当前元素快速方法** | 生成一个与当前vector大小相同的vector，然后交换两个向量之间的元素(使用swap)
     - 因为vector中内存在整个数据没有被释放的时候是不会减小自己的内存的，也就是clear只能清理掉当前的元素，即改变size()的取值，但是对于整个vector的capcity，其是无法清除的。
 
-
+- 关于push_back()函数使用：至少会出现一次拷贝 / 移动过程，取决于是使用 push_back(T&& x) 还是 push_back(T& x)，前者是移动，后者是实现一次拷贝。emplace_back()是直接在vector申请的内存上直接构造，不会出现拷贝。
 
 
 
@@ -5570,6 +5672,46 @@ PS：感觉有一些像大小顶堆
 
 
 
+### 常见问题
+
+- 删除字符串中的重复元素(这里只需要删除相邻的重复元素)，所以使用栈或者使用队列来实现都是可以的。
+
+  ```cpp
+  class Solution {
+  public:
+      string removeDuplicates(string s)
+      {
+          // 使用栈来删除相邻重复项
+          deque<char> st;
+          string res;
+          for(int i = 0; i < s.size(); ++i)
+          {
+              if(st.empty() || st.back() != s[i])
+              {
+                  st.push_back(s[i]);
+              }
+              else
+              {
+                  st.pop_back();
+              }
+          }
+  
+          // 重新生成res
+          while(!st.empty())
+          {
+              res += st.front();
+              st.pop_front();
+          }
+  
+          return res;
+      }
+  };
+  ```
+
+  
+
+
+
 
 
 ## 二叉树
@@ -6498,9 +6640,7 @@ void backtracking(vector<int>& nums)
 ## 动态规划
 
 - 背包问题 | 打家截舍 | 股票问题 | 子序列问题等等一般都是属于动态规划问题。**动态规划问题中的下一步是需要基于上一步中的状态实现出来的，即需要确定递推公式，DP数组以及DP数组的初始化方法**
-    - DP数组debug的时候一般需要将整个DP数组打印出来
-
-
+    - DP数组debug的时候一般需要将整个DP数组打印出来.
 
 **动态规划中的处理模板**
 
@@ -6516,32 +6656,72 @@ void backtracking(vector<int>& nums)
 
 ### 背包问题
 
-#### 01背包
+#### 01背包 / 完全背包
 
-- 背包问题中主要分析的是01背包，完全背包，对于更困难的多重背包问题，leetcode上面还没有类似的问题。背包问题都是需要自行分析题目确实是背包问题才可以继续处理。
+- 01背包即物体只能使用1次，完全背包即物体可以重复使用。
+
+- 对于排列问题，二维数组天生不适合解决类似的问题，不如改用一维数组解决。因为二维数组dp\[i\]\[j\]中i代表容量，j代表当前考虑到的元素，这种就自然的将nums[j]先考虑了，对于后续逻辑有点难写，不如直接使用一维来的方便（我估计要使用三层for循环来实现）。
+
+- 对于背包问题
+
+  - 01背包
+
+    - 二维dp：可应对组合问题，先遍历物体后遍历背包即可。都是从不考虑第i个物体开始。
+
+      ```cpp
+      dp[i][j] = max(dp[i-1][j], dp[i-1][j-weight[i]] + value[i]) 
+      ```
+
+    - 一维dp：可应对组合问题（如果要分析排序那么就是先遍历背包，再反向遍历物体即可）。这里不反向遍历就表示这个物体可被重复获取多次。
+
+      ```cpp
+      for (int i = 1; i < m; i++)
+      {
+          for (int j = n; j >= 1; --j)
+          {
+              // 处理元素
+              if (j >= s[i])
+                  dp[j] = max(dp[j], dp[j - s[i]] + v[i]);
+          }
+      }
+      ```
+
+      
+
+  - 完全背包
+
+    - 二维dp：可应对组合问题，先遍历物体后遍历背包就可，**这里遍历时可以考虑当前这个物体。**
+
+      ```cpp
+      dp[i][j] = max(dp[i-1][j], dp[i][j-weight[i]] + value[i]) 
+      ```
+
+    - 一维dp：可应对组合/排列问题
+
+      - 对于排列问题就应该先遍历背包后遍历物体
+      
+      ```cpp
+      for (int i = 0; i <= target; i++)
+      {
+          for (int j = 0; j < nums.size(); j++)
+          {
+              if (i >= nums[j]) dp[i] += dp[i-nums[j]];
+          }
+      }
+      ```
+      
 
 
 
-#### 完全背包
-
-完全背包就是元素的个数可以是无限的，可以重复选择同一个元素。**主要是修改了遍历背包容量的时候，将倒叙遍历转换成为正序遍历**
-
-```cpp
-// n为物体种类 v背包的总容量
-for(int i = 0; i < n; ++i)
-{
-    for(int j = weight[i]; j <= v; ++j)
-    {
-        dp[j] = max(dp[j], dp[j-weight[i]] + value[i]);
-    }
-}
-```
+PS：对于一维dp中，是使用dp[i]还是dp[j]需要看当前表示背包容量是i还是j。
 
 
 
-**遍历顺序**
 
-- 主要是看问题转换成为背包问题之后，是求解一种组合还是一种排列。如果是组合，就可以先遍历物体，再遍历背包。对于排序问题的话，就需要先去背包再去遍历物体
+
+
+
+
 
 
 
@@ -6549,7 +6729,103 @@ for(int i = 0; i < n; ++i)
 
 - 需要分析是否有买卖次数的限制
 
-****
+
+
+
+
+### 打家劫舍问题
+
+- 这部分的问题就是分析当前这个房间是否进行操作，从而将整个选择情况中的最大值进行分析。
+
+### 常见问题
+
+#### 139 单词拆分
+
+- 一开始没有想到可以使用动态规划实现。因为字符串是一种排列，所以这部分的是先遍历背包后遍历物体的模式。
+
+  ```cpp
+  class Solution {
+  public:
+      bool wordBreak(string s, vector<string>& wordDict) {
+   // note 这里一开始知道其是一个完全背包问题, 但还是没想出来竟然这么实现的
+          unordered_set<string> dict(wordDict.begin(), wordDict.end());
+          // 先背包后物体实现的是排列
+          vector<bool> dp(s.size()+1, 0);
+          dp[0] = true;
+          
+          // i为背包的容量
+          for (int i = 1; i <= s.size(); ++i)
+          {
+              for (int j = 0; j < wordDict.size(); ++j)
+              {
+                  if (i >= wordDict[j].size())
+                  {
+                      // 子字符串
+                      string tmp = s.substr( i - wordDict[j].size(), wordDict[j].size());
+  
+                      // 需防止在遍历wordDict的时候出现相同长度的物体，并且后续出现的false覆盖掉之前的true
+                      if (dict.find(tmp) != dict.end() && dp[i] == false)
+                      {
+                          dp[i] = dp[i - wordDict[j].size()];
+                      }
+                  }
+              }
+          }
+          return dp[s.size()];
+      }
+  };
+  ```
+
+  
+
+
+
+
+
+#### 198 打家劫舍
+
+
+
+#### 213 打家劫舍
+
+
+
+#### 337 打家劫舍 
+
+- 这里使用二叉树进行分析的时候，需要使用一个数组来分析偷/不偷当前节点的情况。并且当前节点如果不偷的话，其左右子结点未必要进行偷取，要对最大情况进行判断。
+
+  ```cpp
+  class Solution {
+  public:
+      // 这部分设计的比较巧妙，使用偷/不偷统计了所有可能出现的状态
+      // 这里使用数组表示偷这个结点的最大值以及不偷这个节点的最大值
+      vector<int> traversal(TreeNode* root)
+      {
+          if(root == nullptr) return {0,0};
+  
+          auto left = traversal(root->left);
+          auto right = traversal(root->right);
+  
+          // 偷
+          int val = left[0] + right[0] + root->val;
+          // 不偷
+          int val1 = max(left[0], left[1]) + max(right[0], right[1]);
+  
+          // 这里很容易写反, 到底是一种偷的状态还是一种不偷的状态
+          return {val1, val};
+      }
+  
+      int rob(TreeNode* root)
+      {
+          auto res = traversal(root);
+          return max(res[0], res[1]);
+      }
+  };
+  ```
+
+  
+
+
 
 
 
@@ -6567,11 +6843,89 @@ for(int i = 0; i < n; ++i)
 
 ## 单调栈
 
-- 单调栈解决的是寻找左侧比自己大/小 或者 右侧比自己大/小的元素。常见解决方法就是保留一个元素递增或者元素递减的栈。本身是使用空间换时间的方法。
+- 单调栈解决的是寻找左侧比自己大/小 或者 右侧比自己大/小的元素。常见解决方法就是保留一个元素递增或者元素递减的栈。本身是使用空间换时间的方法。**栈中保留的元素可以是序号下标也可以是元素值本身。**
 
 ### 常见问题
 
 #### 每日温度
+
+- 每日温度属于是非常简单的单调栈问题，其主要是使用栈来保留元素值。这里需要分析是几天之后温度更高，所以栈中保留下表序号。
+
+  ```cpp
+  vector<int> dailyTemperatures(vector<int>& temperatures)
+  {
+      // 当前天之后下一天的温度时间出现的时间，即可以直接使用对应的队列来解决(或者可以写成栈结构)
+      vector<int> res(temperatures.size(), 0);
+      deque<int> q;
+      for(int i = 0; i < temperatures.size(); i++)
+      {
+          while (!q.empty() && temperatures[q.back()] < temperatures[i])
+          {
+              res[q.back()] = i - q.back();
+              q.pop_back();
+          }
+          q.push_back(i);
+      }
+      return res;
+  }
+  ```
+
+#### 下一个更大元素
+
+- 这里查找的是nums1中的元素在nums2中之后的下一个最大元素，那么就可以先使用哈希表分析出来nums1元素对应的下标，后续对nums2分析下一个最大元素，其结果就可以保存到新数组中。
+
+  ```cpp
+  vector<int> nextGreaterElement(vector<int>& nums1, vector<int>& nums2)
+  {
+      /* 方法2: 在方法1的基础上, unordered_map的对象从nums2修改成nums1 */
+      vector<int> res(nums1.size(), -1);
+      unordered_map<int,int> mp;
+      for (int i = 0; i < nums1.size(); i++)
+      {
+          mp[nums1[i]] = i;
+      }
+  
+      // 栈中保留数字而不是下标值
+      stack<int> st;
+  
+      for (int i = 0; i < nums2.size(); i++)
+      {
+          while (!st.empty() && st.top() < nums2[i] )
+          {
+              if (mp.find(st.top()) != mp.end())
+              {
+                  res[mp[st.top()]] = nums2[i];
+              }
+              st.pop();
+          }
+          st.push(nums2[i]);
+      }
+      return res;
+  }
+  ```
+
+- 该问题对应的变形就是分析一个循环数组的下一个更大元素，可以直接用 i % nums.size() 充当下标进行分析，其余逻辑就是分析最大元素的逻辑。
+
+  ```cpp
+  vector<int> nextGreaterElements(vector<int>& nums)
+  {
+      // 目前直接尝试 i % nums.size()的方式进行循环处理, 其他与之前问题基本没有区别
+      stack<int> st;
+      vector<int> res(nums.size(), -1);
+      for (int i = 0; i < 2 * nums.size(); i++)
+      {
+          while (!st.empty() && nums[st.top()] < nums[i % nums.size()])
+          {
+              res[st.top()] = nums[i % nums.size()];
+              st.pop();
+          }
+          st.push(i % nums.size());
+      }
+      return res;
+  }
+  ```
+
+  
 
 #### 接雨水
 
@@ -6633,9 +6987,39 @@ for(int i = 0; i < n; ++i)
 
   
 
+#### 柱状图中的最大矩形
 
+- 这里与接雨水类似，但是这里使用的是一个单调递减的栈元素。因为是递减单调栈，所以左右边界要么是栈顶的上一个元素，要么是当前这个元素，这里只需要计算当前围出来的最大面积。
 
+  ```cpp
+      int largestRectangleArea(vector<int>& heights)
+      {
+          // 处理这部分的长度数据(这里与接雨水的思路是类似的, 只是从前后最小元素决定上下限, 变成了前后最大元素决定上下限)
+          int res = 0;
+          stack<int> st;
+          heights.push_back(0);
+          heights.insert(heights.begin(), 0);
+          st.push(0);
+          // note 这里非常有意思, 竟然可以用这种思路来解决对应的问题
+          for (int i = 1; i < heights.size(); ++i)
+          {
+              // 相同也进行弹出
+              while (!st.empty() && heights[st.top()] > heights[i])
+              {
+                  if (st.size() > 1)
+                  {
+                      int mid = st.top();
+                      st.pop();
+                      res = max(res, heights[mid] * (i - st.top() - 1) );
+                  }
+              }
+              st.push(i);
+          }
+          return res;
+      }
+  ```
 
+  
 
 
 
@@ -6741,13 +7125,39 @@ void join(int u, int v) {
 
 ## 大/小顶堆
 
-大小顶堆都是完全二叉树，不同的地方在于左右子节点是大于还是小于父节点。
+- 堆属于是一种满足特定条件的完全二叉树，与普通的二叉树的区别在于：
+  - 大顶堆：任意节点的值 ≥ 其子节点的值。
+  - 小顶堆：任意节点的值 ≤ 其子节点的值。
+  - 根节点为"堆顶"，树的底层最靠右的部分为"堆底"。
 
 <img src="./figure/min_heap_and_max_heap.png" alt="小顶堆与大顶堆" style="zoom:50%;" />
 
-一般来说大小顶堆是为了优先级队列的。所谓优先级队列，即利用大小顶堆“模拟”出一个队列，其中的元素顺序是递增或者递减的。大顶堆就是大的元素在队列的前面，小顶堆是小的元素在队列前面。
+- 优先级队列：
 
-- 堆中放入一个元素与弹出一个元素，实际上都是一个O(logn)的操作，即数据弹出/放入时，堆都要自动进行一种维护处理，继续保证整体的二叉树结构 https://www.hello-algo.com/chapter_heap/heap/ 
+  - 基于大顶堆：大元素在队列前面。
+  - 基于小顶堆：小元素在队列前面。
+
+  
+
+- 大/小顶堆表示方式：使用数组保存堆数据。
+
+![堆的表示与存储](./figure/representation_of_heap.png)
+
+
+
+![image-20250811170205836](./figure/image-20250811170205836.png)
+
+- 堆化过程：即弹出一个元素或者输入一个元素之后要重新恢复堆结构的状态 **(后续均使用大顶堆为例，其时间复杂度均为 O(log n) )**。 https://www.hello-algo.com/chapter_heap/heap/ 
+
+  - 输入元素：属于是向上的堆化过程。新输入的元素从堆底开始向上运动，不断与其父节点相比大小，比父节点大就一直与父节点互换位置。
+
+    ![heap_push_step2](./figure/heap_push_step2.png)
+
+  - 输出元素：属于是向下的堆化过程。先互换堆顶以及堆底的元素，然后将堆底元素弹出(由于保存方式是数组，这里直接resize数组的大小即可)。之后堆顶元素不断向下，与左右子树中最大者互换。
+
+    ![heap_pop_step3](./figure/heap_pop_step3.png)
+
+
 
 - 若使用自定义的数据结构，需要自定义堆中元素的排序方法 | **整体元素的定义方法为: **priority_queue<Typename, Container, Functional> typename为其中的元素类型(即自定义的数据结构或者基本数据结构)。container对应的是实现这个大小顶堆的数据结构，一般都是vector（因为一个完全二叉树是可以直接用一个一维数组来表示的），functional对应的是排序函数，其返回true的时候表示优先级的先后顺序，如func(a,b)返回true的时候表示b的优先级高于a
 
@@ -6788,6 +7198,10 @@ void join(int u, int v) {
     ```
 
 ****
+
+
+
+
 
 ## 多线程与mutex
 
@@ -7420,4 +7834,4 @@ https://blog.csdn.net/gongjianbo1992/article/details/105128849
 
 
 
-3. 关于using namespace std； 由于这种使用方法可能会直接不想要的命名空间中的内容全部引入，导致对一个大型项目中的命名空间被污染，所以可以使用其他方法来解决这种问题。**eg: 使用using std::string可以将后续中的所有的std::string都简化成为string。**
+3. 关于using namespace std； 由于这种使用方法可能会直接不想要的命名空间中的内容全部引入，导致对一个大型项目中的命名空间被污染，所以可以使用其他方法来解决这种问题。**eg: 使用using std::string可以将后续中的所有的std::string都简化成为string。**			
